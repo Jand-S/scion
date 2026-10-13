@@ -1,0 +1,120 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jand-s.github.io/scion/schemas/v1/cli/graft-build.schema.json",
+  "title": "graft build output",
+  "description": "Output of dotnet scion graft build: the graft DLL compiled against the test build.",
+  "allOf": [
+    {
+      "$ref": "https://jand-s.github.io/scion/schemas/v1/envelope.schema.json"
+    },
+    {
+      "type": "object",
+      "properties": {
+        "command": {
+          "const": "graft build"
+        },
+        "dll": {
+          "type": "string",
+          "description": "The DLL."
+        },
+        "build_id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{12}$"
+        },
+        "abi": {
+          "type": "integer",
+          "description": "ABI."
+        },
+        "grafts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Grafts compiled."
+        },
+        "seconds": {
+          "type": "number",
+          "description": "Seconds."
+        },
+        "diagnostics": {
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "type": "object",
+                "description": "One compiler or Scion diagnostic.",
+                "properties": {
+                  "file": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "Source file relative to the project root, or null."
+                  },
+                  "line": {
+                    "type": "integer",
+                    "description": "1-based line, 0 when the diagnostic has no position.",
+                    "minimum": 0
+                  },
+                  "code": {
+                    "type": "string",
+                    "description": "SCNxxx for Scion diagnostics, CSxxxx for compiler errors, build for a failed build."
+                  },
+                  "message": {
+                    "type": "string",
+                    "description": "The message."
+                  },
+                  "hint": {
+                    "type": "string",
+                    "description": "The fix, when the diagnostic has one."
+                  },
+                  "did_you_mean": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Close names, for SCN103."
+                  }
+                },
+                "required": [
+                  "file",
+                  "line",
+                  "code",
+                  "message"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "$ref": "https://jand-s.github.io/scion/schemas/v1/envelope.schema.json#/$defs/more"
+              }
+            ]
+          },
+          "description": "Problems."
+        }
+      },
+      "required": [
+        "dll",
+        "build_id",
+        "abi",
+        "grafts",
+        "diagnostics"
+      ]
+    }
+  ],
+  "examples": [
+    {
+      "schema_version": 1,
+      "command": "graft build",
+      "ok": true,
+      "dll": "/Users/alex/orchard/.scion/grafts/ScionGrafts_51c2.dll",
+      "build_id": "4c49a1e0b2f3",
+      "abi": 1,
+      "grafts": [
+        "Orchard.Grafts.CritShake.After"
+      ],
+      "seconds": 0.5,
+      "diagnostics": [],
+      "next_step": "inject: dotnet scion graft inject"
+    }
+  ]
+}

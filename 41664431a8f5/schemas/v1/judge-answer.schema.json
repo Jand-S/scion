@@ -1,0 +1,238 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jand-s.github.io/scion/schemas/v1/judge-answer.schema.json",
+  "title": "Judge answer (eval-out.json)",
+  "description": "Answers per item; the output of trial eval evaluators and of judge run.",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "description": "Format version of this file. Always 1 in Scion 1.x."
+    },
+    "model": {
+      "type": "string",
+      "description": "Evaluator or judge model."
+    },
+    "head_version": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Head and version, for example readability@3."
+    },
+    "items": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "description": "Answers for one item.",
+        "properties": {
+          "answers": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "description": "One answer.",
+              "properties": {
+                "type": {
+                  "enum": [
+                    "noul",
+                    "score",
+                    "choice"
+                  ]
+                },
+                "noul": {
+                  "type": "number",
+                  "description": "Probability of yes, 0 to 1."
+                },
+                "score": {
+                  "type": "number",
+                  "description": "Weighted mean of the levels."
+                },
+                "choice": {
+                  "type": "string",
+                  "description": "Chosen option id."
+                },
+                "probabilities": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "number"
+                  },
+                  "description": "Probability per level or option."
+                },
+                "confidence": {
+                  "type": "number",
+                  "description": "0 to 1: how concentrated the probabilities are; not an accuracy."
+                },
+                "legend": {
+                  "type": "string",
+                  "description": "One line explaining the answer."
+                },
+                "evidence": {
+                  "type": "object",
+                  "description": "Where the answer comes from.",
+                  "properties": {
+                    "frame": {
+                      "type": "integer",
+                      "description": "Frame.",
+                      "minimum": -1
+                    },
+                    "region": {
+                      "anyOf": [
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "integer"
+                          },
+                          "minItems": 4,
+                          "maxItems": 4,
+                          "description": "[x, y, width, height] in pixels, origin at the top left."
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "frame"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "type"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "escalate": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Question ids with low confidence: ask a stronger reviewer."
+          }
+        },
+        "required": [
+          "answers"
+        ],
+        "additionalProperties": false
+      },
+      "description": "By item label."
+    },
+    "preferences": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "description": "A duel result.",
+        "properties": {
+          "pair": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 2,
+            "maxItems": 2
+          },
+          "winner": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Label, or null for a tie."
+          },
+          "strength": {
+            "enum": [
+              1,
+              2
+            ],
+            "description": "1 better, 2 much better."
+          }
+        },
+        "required": [
+          "pair",
+          "winner"
+        ],
+        "additionalProperties": false
+      },
+      "description": "Duel results, when pairs were asked."
+    },
+    "calibration": {
+      "type": "object",
+      "description": "How far this head can be trusted.",
+      "properties": {
+        "gold_set": {
+          "type": "string",
+          "description": "Gold set name."
+        },
+        "agreement": {
+          "type": "number",
+          "description": "Agreement with the people who labeled the gold set."
+        }
+      },
+      "required": [
+        "gold_set",
+        "agreement"
+      ],
+      "additionalProperties": false
+    },
+    "usage": {
+      "type": "object",
+      "description": "Free usage data (time, tokens)."
+    }
+  },
+  "required": [
+    "schema_version",
+    "model",
+    "items"
+  ],
+  "additionalProperties": true,
+  "examples": [
+    {
+      "schema_version": 1,
+      "model": "scion-judge-ui",
+      "head_version": "readability@3",
+      "items": {
+        "X": {
+          "answers": {
+            "has_glitch": {
+              "type": "noul",
+              "noul": 0.04
+            },
+            "readability": {
+              "type": "score",
+              "score": 1.2,
+              "confidence": 0.41,
+              "probabilities": {
+                "0": 0.12,
+                "1": 0.56,
+                "2": 0.32
+              }
+            },
+            "main_issue": {
+              "type": "choice",
+              "choice": "contrast",
+              "confidence": 0.82
+            }
+          },
+          "escalate": [
+            "readability"
+          ]
+        }
+      },
+      "preferences": [
+        {
+          "pair": [
+            "X",
+            "Y"
+          ],
+          "winner": "Y",
+          "strength": 1
+        }
+      ],
+      "calibration": {
+        "gold_set": "ui_v1",
+        "agreement": 0.78
+      }
+    }
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jand-s.github.io/scion/schemas/v1/preset.schema.json",
+  "title": "Feel preset",
+  "description": "scion/presets/<name>.json: a named set of tunable values that recipes, the live loop and guided search blend.",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "description": "Format version of this file. Always 1 in Scion 1.x."
+    },
+    "name": {
+      "type": "string",
+      "description": "Preset name."
+    },
+    "description": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "One line."
+    },
+    "tunables": {
+      "type": "object",
+      "additionalProperties": {
+        "type": [
+          "number",
+          "boolean",
+          "string"
+        ]
+      },
+      "description": "Values by Type.Member key."
+    }
+  },
+  "required": [
+    "schema_version",
+    "name",
+    "tunables"
+  ],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "schema_version": 1,
+      "name": "heavy",
+      "description": "Slow, weighty hits.",
+      "tunables": {
+        "CritShake.Strength": 0.6,
+        "HitFlash.Seconds": 0.12,
+        "HitStop.Seconds": 0.09
+      }
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 300" width="760" height="300" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="13">
+  <title>How the weaver turns grafts into a final build and a test build</title>
+  <rect width="760" height="300" rx="10" fill="#f7f8f4"/>
+  <defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#3d4a3a"/></marker></defs>
+  <g fill="#ffffff" stroke="#3d4a3a" stroke-width="1.5">
+    <rect x="20" y="40" width="160" height="56" rx="6"/>
+    <rect x="20" y="190" width="160" height="56" rx="6"/>
+    <rect x="250" y="115" width="170" height="70" rx="6" fill="#e3efd9"/>
+    <rect x="500" y="40" width="240" height="70" rx="6"/>
+    <rect x="500" y="190" width="240" height="70" rx="6"/>
+  </g>
+  <g fill="#1d2a1b" text-anchor="middle">
+    <text x="100" y="64" font-weight="600">Game code</text>
+    <text x="100" y="82">HitPresenter.Play</text>
+    <text x="100" y="214" font-weight="600">Grafts folder (.asmref)</text>
+    <text x="100" y="232">CritShake.After</text>
+    <text x="335" y="143" font-weight="600">Weaver (ILPostProcessor)</text>
+    <text x="335" y="162">rewrites each anchor</text>
+    <text x="620" y="66" font-weight="600">Final build: call mode</text>
+    <text x="620" y="86">anchor calls D_&lt;id&gt; directly</text>
+    <text x="620" y="216" font-weight="600">Test build: slot mode</text>
+    <text x="620" y="236">anchor calls slot F_&lt;id&gt;; injection swaps it</text>
+  </g>
+  <g stroke="#3d4a3a" stroke-width="1.5" fill="none" marker-end="url(#a)">
+    <path d="M180 68 L248 130"/>
+    <path d="M180 218 L248 170"/>
+    <path d="M420 140 L498 78"/>
+    <path d="M420 160 L498 222"/>
+  </g>
+  <g fill="#3d4a3a" font-size="12">
+    <text x="440" y="96">no define</text>
+    <text x="440" y="214">SCION_SLOTS</text>
+  </g>
+  <text x="380" y="285" text-anchor="middle" fill="#3d4a3a" font-size="12">Grafts compile into the anchor's own assembly; the weaver only rewrites the assembly it compiles.</text>
+</svg>

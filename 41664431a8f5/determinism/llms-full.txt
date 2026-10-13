@@ -1,0 +1,585 @@
+# Scion 1.0.0 documentation: Determinism
+
+> Every page below is also at its own URL plus `.md`. Index: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# Deterministic runs
+
+A trial is only useful if the same recipe gives the same result every time. In test builds the weaver redirects
+every source of variation the game reads (time, wall clock, screen size, unseeded randomness) to Scion's virtual
+versions, and the session resets them at the start of every recipe. The game's rules then produce the same state
+hash on every round and machine, and the same frames, so a difference always means a change.
+
+## How it works
+
+### What is redirected
+
+With `SCION_TRIALS`, the weaver rewrites reads in every assembly that references `Scion.Runtime`, and the reads only
+in the assemblies listed in `trials.redirect_assemblies` of `ScionSettings.json`:
+
+| The game reads | In a test build it reads |
+|---|---|
+| `Time.time`, `timeAsDouble`, `timeSinceLevelLoad(AsDouble)` | `Clock.Time`, ... (virtual, from 1000 s at each recipe) |
+| `Time.unscaledTime(AsDouble)`, `unscaledDeltaTime` | `Clock.UnscaledTime`, ... |
+| `Time.realtimeSinceStartup(AsDouble)` | `Clock.RealtimeSinceStartup` (= virtual unscaled time) |
+| `DateTime.Now`, `UtcNow`, `Today` | `Clock.Now`, ... (from `Clock.Epoch`, 2000-01-01 by default; no time zone) |
+| `Screen.width`, `Screen.height` | `VirtualScreen.Width`, `Height` (the capture size, also in `-batchmode`) |
+| `new WaitForSecondsRealtime(t)` | `new VirtualWaitForSecondsRealtime(t)` |
+| `new System.Random()` (no seed) | `new SeededRandom()` (seed from the recipe and creation order) |
+
+`Time.deltaTime` needs no redirect: `Time.captureFramerate = recipe.Fps` makes every frame advance exactly `1/Fps`
+of game time, however long it took to render.
+
+### What the session resets per recipe
+
+1. `UnityEngine.Random.InitState(recipe.Seed)`;
+2. `Time.captureFramerate = recipe.Fps`;
+3. `Clock.Begin(Clock.RecipeStart)`: virtual time restarts at 1000 s, so the position in the queue does not matter;
+4. `SeededRandom.Reset(recipe.Seed)`: the n-th `new System.Random()` gets the same seed every round;
+5. the determinism controls of `recipe.Control`: particle seeds, animator and UI Toolkit updates, physics stepping
+   ([Particles, animators, UI and physics](/scion/determinism/control/)).
+
+### What the game must do
+
+- Seed its own generators from the recipe (`Seed`) and the run (`RunSeed`).
+- Keep rules on the main thread, with ordered collections and integer math in the core (rules R4 and R5 of the
+  [Scion Standard](/scion/standard/rules/)).
+- Mark real-time code (profilers, timeouts) with `[WallClock]` so it keeps the real clock.
+
+`dotnet scion diagnose` finds the rest: wall-clock reads, threads, unordered collections, `GetHashCode` seeds and
+`Guid`s, with file and line ([Find non-determinism](/scion/determinism/diagnose/)).
+
+### The state hash
+
+The adapter's `StateHash` is a hash of the rules state after the recipe. It is the main determinism signal: rounds
+must agree on it, baselines store it, the multiverse compares it per turn and co-op peers compare it per turn.
+
+## Key terms
+
+| Term | Meaning |
+|---|---|
+| Virtual clock | `Clock`: time that advances one capture step per frame, from 1000 s at each recipe. |
+| Epoch | The virtual wall-clock start, `Clock.Epoch` (`-scion-epoch`). |
+| Recipe seed | `TrialRecipe.Seed`: seeds Unity's random and `SeededRandom` per recipe. |
+| Run seed | `TrialSession.RunSeed` (`--seed`): the game maps it to its world seed. |
+| State hash | The adapter's hash of rules state; equal across rounds when deterministic. |
+| Adoption level | 1 (grafts), 2 (trials), 3 (multiverse): what the project can use today ([Find non-determinism](/scion/determinism/diagnose/)). |
+
+## Guarantees and limits
+
+- Redirects exist only in test builds; final builds read the real clock and screen.
+- Only `new` expressions in woven code are replaced: a class derived from `System.Random`, or one created by
+  reflection, keeps its behavior; pass it a seed.
+- Inside `FixedUpdate`, the virtual `Time.time` keeps the frame's value; fixed-step code should add up
+  `Time.fixedDeltaTime`.
+- Netcode keeps its own tick unless `SCION_NETCLOCK` is on ([Netcode clock](/scion/determinism/netclock/)).
+- Pixels can still vary with GPU drivers across machines; images compare per platform.
+
+## See also
+
+- [Clock, screen and random](/scion/determinism/clock-and-screen/)
+- [Verify determinism](/scion/determinism/verify/)
+- [Find non-determinism](/scion/determinism/diagnose/)
+- [Determinism API](/scion/reference/api/determinism/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# Clock, screen and random
+
+These types are the targets of the weaver's redirects in test builds (`SCION_TRIALS`) and live in `Scion.Runtime`,
+namespace `Scion`. Game code rarely calls them directly: it keeps reading `Time`, `Screen` and `DateTime`, and the
+weaver points the reads here. This page lists what each one does, when it is active, and how to keep real time with
+`[WallClock]`.
+
+## Clock
+
+| Member | Meaning |
+|---|---|
+| `const double RecipeStart = 1000.0` | `Time` and `UnscaledTime` at the start of every recipe. |
+| `static readonly DateTime DefaultEpoch` | 2000-01-01T00:00:00Z. |
+| `static bool Active` | True between `Begin` and `End`. Inactive, every property returns the real value. |
+| `static DateTime Epoch` | The virtual wall-clock start (`-scion-epoch`). |
+| `static void Begin(double start = RecipeStart)` | Called by the session at each recipe. |
+| `static void End()` | Called at the end of the queue. |
+| `static void Advance(float delta)` | Tests outside Unity: move every clock by `delta`. |
+| `Time`, `TimeAsDouble` | Virtual `Time.time`. |
+| `TimeSinceLevelLoad`, `TimeSinceLevelLoadAsDouble` | Virtual time since the recipe start. |
+| `UnscaledTime`, `UnscaledTimeAsDouble`, `UnscaledDeltaTime` | Virtual unscaled time. |
+| `RealtimeSinceStartup`, `RealtimeSinceStartupAsDouble` | Equal to virtual unscaled time. |
+| `Now`, `UtcNow`, `Today` | `Epoch` plus elapsed virtual unscaled time. `Now` and `UtcNow` have the same value. |
+
+## VirtualScreen
+
+| Member | Meaning |
+|---|---|
+| `static void Set(int width, int height)` | The capture size; the session sets it from `--size`. |
+| `static void Clear()` | Back to the real screen. |
+| `static int Width`, `Height` | Targets of `Screen.width` and `Screen.height`. |
+
+`-batchmode` players report 640x480 from `Screen`; with `VirtualScreen` the game lays out its UI at the capture size.
+
+## VirtualWaitForSecondsRealtime
+
+A `WaitForSecondsRealtime` whose wait reads `Clock.RealtimeSinceStartupAsDouble`, so a real-time wait lasts the
+same number of frames in every run. The weaver replaces `new WaitForSecondsRealtime(t)` with it.
+
+## SeededRandom
+
+A `System.Random` whose seed is a hash of the recipe seed and the order of creation within the recipe.
+`SeededRandom.Reset(seed)` restarts the count; the session calls it at each recipe. The weaver replaces
+`new System.Random()` with `new SeededRandom()`. Create instances on the main thread so the order is stable.
+
+## WallClock
+
+```csharp
+[WallClock]
+static double ElapsedRealSeconds() => Time.realtimeSinceStartupAsDouble - startedAt;
+```
+
+`[WallClock]` on a method, class or struct stops every redirect inside it, including compiler-generated code
+(iterators, async bodies, lambdas, local functions) and nested types. Use it for profilers, timeouts and log
+timestamps. It changes nothing in final builds.
+
+## Redirect assemblies
+
+Assemblies that do not reference `Scion.Runtime` (Unity UI, URP) can have their reads redirected too:
+
+```json
+{"schema_version":1,"trials":{"redirect_assemblies":["UnityEngine.UI","Unity.RenderPipelines.Universal.Runtime"]}}
+```
+
+in `ProjectSettings/ScionSettings.json`. Only reads are redirected there; `new` expressions are not replaced. Scion's
+own assemblies are never redirected. Recompile after editing the file.
+
+## See also
+
+- [Deterministic runs](/scion/determinism/overview/)
+- [Determinism API](/scion/reference/api/determinism/)
+- [Configuration](/scion/reference/configuration/)
+- [SCN301-SCN307](/scion/reference/diagnostics/determinism/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# Particles, animators, UI and physics
+
+Time and randomness are not the only sources of variation: particle systems pick their own seeds, animators and UI
+Toolkit update on their own schedules, and physics steps depend on frame timing. `DeterminismControl` turns Scion's
+control of each on or off per recipe (`Particles`, `Animators`, `UiToolkit`, `Physics`; all on by default), and
+`Determinism.SeedFor` gives your own systems stable seeds by path and creation order.
+
+## When to use
+
+- Leave `Control = DeterminismControl.All` unless a recipe tests the uncontrolled behavior.
+- Turn one control off when it conflicts with how the game drives that system, and mask or skip the affected pixels.
+- Use `SeedFor` for procedural systems of your own (foliage sway, ambient creatures).
+
+## Steps
+
+### 1. Keep the default, or narrow it
+
+```csharp
+public sealed class FireballArea : OrchardRecipe
+{
+    public FireballArea()
+    {
+        Control = DeterminismControl.All & ~DeterminismControl.Physics;   // the game steps physics itself
+    }
+}
+```
+
+### 2. Seed your own systems
+
+```csharp
+void Awake()
+{
+#if SCION_TRIALS
+    seed = Determinism.SeedFor(transform.GetHierarchyPath(), creationOrder: Sway.Count++);
+#else
+    seed = Environment.TickCount;
+#endif
+}
+```
+
+### 3. Verify
+
+```sh
+dotnet scion trial run FireballArea --rounds 3 --check
+```
+
+## Reference
+
+### Controls
+
+| Flag | What Scion does while a recipe runs |
+|---|---|
+| `Particles` | Every `ParticleSystem` gets `useAutoRandomSeed = false` and `randomSeed = SeedFor(path, order)` when it starts; clones of one prefab differ by creation order. |
+| `Animators` | Animators update in the session's frame step (`AnimatorUpdateMode.Normal` driven by virtual time), never with `UnscaledTime` from the real clock. |
+| `UiToolkit` | UI Toolkit panels tick on the virtual clock, so transitions and caret blinks land on the same frames. |
+| `Physics` | `Physics.simulationMode = Script` and one `Physics.Simulate(1/Fps)` per frame; `Physics2D` likewise. |
+
+`DeterminismControl.None` turns all off; `All` turns all on.
+
+### Determinism members
+
+| Member | Meaning |
+|---|---|
+| `Determinism.SeedFor(string path, int creationOrder)` | FNV hash of the recipe seed, the path and the order. |
+| `Determinism.Census()` | What this frame still depends on: real-time reads, auto-seeded systems, dynamic bodies. Logged in `report.md` when a round differs. |
+| `Determinism.Begin`, `End` | Called by the session. |
+
+## Errors
+
+| Code | Exit | Cause | Next action |
+|---|---|---|---|
+| check `px` fails | 1 | Pixels differ between rounds. | Read `determinism.tsv` with `--check`; look at `Census` in `report.md`. |
+| warning `px_unstable` | 0 | Pixels differ between rounds of the run. | Find the uncontrolled system; mask it as a last resort. |
+
+## Examples
+
+### A recipe that tests physics as the game runs it
+
+```csharp
+Control = DeterminismControl.Particles | DeterminismControl.Animators | DeterminismControl.UiToolkit;
+```
+
+### Print the census from the adapter
+
+```csharp
+foreach (var line in Determinism.Census()) s.Note(line);
+```
+
+## See also
+
+- [Deterministic runs](/scion/determinism/overview/)
+- [Verify determinism](/scion/determinism/verify/)
+- [Determinism API](/scion/reference/api/determinism/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# Netcode clock
+
+Netcode for GameObjects keeps its own time from the real clock, so a networked recipe can tick one frame earlier or
+later between rounds: the state hash still agrees, but the frame count jitters by one. With the define
+`SCION_NETCLOCK` and `netclock_assemblies` in `ScionSettings.json`, the weaver redirects the time reads of Netcode
+to the virtual clock on the host, and frame counts become exact.
+
+## When to use
+
+- Turn it on when co-op or networked solo recipes report `frame_jitter` and you want frames to fail on difference
+  (`Deterministic(frames: true)`).
+- Leave it off for games without Netcode.
+
+## Before you begin
+
+- Netcode for GameObjects in the project.
+- A test build workflow (`dotnet scion build test`).
+
+## Steps
+
+### 1. List Netcode's assembly
+
+`ProjectSettings/ScionSettings.json`:
+
+```json
+{"schema_version":1,"trials":{"netclock_assemblies":["Unity.Netcode.Runtime"]}}
+```
+
+### 2. Add the define to test builds
+
+Add `SCION_NETCLOCK` to the scripting defines of the test build profile, or pass it in your build script:
+
+```csharp
+ScionBuild.BuildTestPlayer(options with { extraScriptingDefines = new[] { "SCION_NETCLOCK" } });
+```
+
+### 3. Verify
+
+```sh
+dotnet scion build test
+dotnet scion trial run CoopTurn --rounds 3 --check
+```
+
+`frame_jitter` in the output should be empty.
+
+## Reference
+
+| Item | Detail |
+|---|---|
+| What is redirected | Netcode's reads of `Time.realtimeSinceStartup`, `Time.unscaledTime`, `Time.unscaledDeltaTime` in the listed assemblies. |
+| Where | Only on the host of a group, and in solo copies. Clients stay on the real clock and follow the host's ticks. |
+| Continuity | The netclock never jumps back at `Clock.Begin`: it advances continuously across recipes, so connections survive the queue. |
+| `NetClock` type | `Scion.Trials.NetClock.Time` and `DeltaTime`: the same continuous time, for libraries you cannot weave (a custom time provider). |
+| Without the define | `netclock_assemblies` is ignored. |
+
+### A time provider for libraries you cannot weave
+
+```csharp
+sealed class TrialsTimeProvider : IRealTimeProvider   // Netcode for GameObjects, host of a trials run
+{
+    public float RealTimeSinceStartup => (float)NetClock.Time;
+    public float UnscaledTime => (float)NetClock.Time;
+    public float UnscaledDeltaTime => NetClock.DeltaTime;
+    public float DeltaTime => UnityEngine.Time.deltaTime;
+    public float FixedDeltaTime => UnityEngine.Time.fixedDeltaTime;
+}
+```
+
+## Errors
+
+| Code | Exit | Cause | Next action |
+|---|---|---|---|
+| `SCN114` | compile error | A redirect target is missing in `Scion.Runtime` (a mismatched package). | Reinstall the package; CLI and package versions must match. |
+| warning `frame_jitter` | 0 | Frame counts differ by one between rounds. | Turn on `SCION_NETCLOCK`. |
+
+## Examples
+
+### Fail co-op recipes on any frame difference
+
+```csharp
+protected override void Checks(TrialChecks c) => c.Deterministic(frames: true);
+```
+
+### Check the tick column
+
+```sh
+dotnet scion trial run CoopTurn --rounds 2 --check
+grep tick .scion/runs/20261011-143200/q0/determinism.tsv
+```
+
+## See also
+
+- [Co-op trials (1-4 players)](/scion/trials/coop/)
+- [Clock, screen and random](/scion/determinism/clock-and-screen/)
+- [Configuration](/scion/reference/configuration/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# Verify determinism
+
+Determinism is verified, not assumed. Two or more rounds of a recipe in one process must give the same state hash
+(the `determinism` check) and the same pixels (`px`). `--check` compares every later round frame by frame with the
+first and writes `determinism.tsv` with the first frame that differs and the first cause; `--jitter` adds random
+real-time delays to expose code that follows the wall clock.
+
+## When to use
+
+- Run 2 rounds on every change (`--rounds 2`): it costs little and catches most problems.
+- Run `--check --jitter 20` nightly, on many rounds, to catch the rare ones.
+- Run `--check` when a round differs and you need to know where.
+
+## Steps
+
+### 1. Two rounds
+
+```sh
+dotnet scion trial run --rounds 2
+```
+
+The output's `determinism` block says whether every hash was stable and which recipes jittered by a frame:
+
+```json
+{"hash_stable":true,"frame_jitter":["CoopTurn 212/213"]}
+```
+
+### 2. Find where rounds diverge
+
+```sh
+dotnet scion trial run FireballArea --rounds 3 --check
+```
+
+`q0/determinism.tsv`:
+
+```tsv
+id	round	vs_round	status	frame	cause	detail
+FireballArea	2	1	same	-1	none	
+FireballArea	3	1	diff	17	rng	Random.state differs from frame 17
+```
+
+### 3. Shake the timing
+
+```sh
+dotnet scion trial run --rounds 4 --check --jitter 20
+```
+
+From the second round of each id, every frame sleeps a random 0 to 20 ms of real time. Deterministic code does not
+notice; code that reads the real clock does.
+
+## Reference
+
+### Causes, in order
+
+`cause` is the first column of `frames.tsv` that differs, in this order:
+
+| Cause | Column | Usually means |
+|---|---|---|
+| `state` | the adapter's `state` sensor | A rule diverged. Look at the frame's events. |
+| `tick` | the adapter's `tick` sensor | Network or fixed-step timing ([Netcode clock](/scion/determinism/netclock/)). |
+| `rng` | `UnityEngine.Random` state | Something consumed random numbers in a different amount. |
+| `unscaled` | virtual unscaled time | A real-time read leaked. |
+| `time` | virtual time | `Time.timeScale` changed differently. |
+| `px` | pixel hash | Only presentation differs ([Particles, animators, UI and physics](/scion/determinism/control/)). |
+| `frames` | frame count | The cut ended on a different frame. |
+
+Register the `state` and `tick` sensors in the adapter's `Prepare` so the first two causes can be found.
+
+### Options
+
+| CLI | Player flag | Meaning |
+|---|---|---|
+| `--rounds N` | `-scion-rounds N` | Rounds per id. |
+| `--check` | `-scion-check` | Frame-by-frame comparison; writes `determinism.tsv`. Never changes a verdict. |
+| `--jitter <ms>` | `-scion-jitter <ms>` | Random real-time sleep per frame from the second round; 0 to 1000. |
+
+### In the CLI output
+
+| Field | Meaning |
+|---|---|
+| `determinism.hash_stable` | Every id had the same hash in every round. |
+| `determinism.frame_jitter` | Ids whose frame counts differed by one, as `Id a/b`. |
+| warning `px_unstable` | Pixel hashes varied between rounds. |
+
+## Errors
+
+| Code | Exit | Cause | Next action |
+|---|---|---|---|
+| check `determinism` fails | 1 | Hashes differ between rounds. | `--check`; fix the cause at the frame. |
+| check `px` fails | 1 | Pixels differ between rounds. | See `cause` `px`. |
+| warning `frame_jitter` | 0 | Frame counts off by one. | Usually Netcode; turn on `SCION_NETCLOCK`. |
+
+## Examples
+
+### A nightly batch
+
+```sh
+dotnet scion trial run --rounds 10 --check --jitter 20 -j 8
+```
+
+### One recipe, many seeds
+
+```sh
+dotnet scion trial run KnightFalls --seeds 1-50 --rounds 2
+```
+
+## See also
+
+- [Find non-determinism](/scion/determinism/diagnose/)
+- [results.tsv, frames.tsv, determinism.tsv](/scion/reference/files/tables/)
+- [Run Scion in CI](/scion/cookbook/ci/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# Find non-determinism
+
+`dotnet scion diagnose` reads the determinism scan the weaver writes for each game assembly
+(`Library/Scion/determinism-<assembly>.json`) and turns it into a report: the project's **adoption level** (1 to 3),
+the blockers with file and line (SCN303 to SCN307), what test builds already redirect (SCN301, SCN302), the
+singletons that block the mosaic, a plan, and an adapter skeleton when there is no adapter yet.
+
+## When to use
+
+- First thing in an existing project: it says what works today and what to fix first.
+- When `--check` points at `unscaled`, `rng` or `state` and the cause is not obvious.
+- Before turning on the mosaic or the multiverse.
+
+## Steps
+
+### 1. Compile the project once
+
+Open the project in Unity (or build). The weaver writes the scan for every assembly that references
+`Scion.Runtime`.
+
+### 2. Run diagnose
+
+```sh
+dotnet scion diagnose
+```
+
+<!-- validate: cli/diagnose -->
+```json
+{"schema_version":1,"command":"diagnose","ok":true,"adoption_level":2,"assemblies":["Orchard.Core","Orchard.Runtime"],"counts":{"SCN301":14,"SCN302":2,"SCN303":1,"SCN304":1,"SCN305":2,"SCN306":0,"SCN307":0},"blockers":[{"file":"Assets/Orchard/Runtime/TurnTimer.cs","line":31,"code":"SCN303","message":"TurnTimer.Tick reads the wall clock (Stopwatch.GetTimestamp), which is not redirected."},{"file":"Assets/Orchard/Core/AiPlanner.cs","line":88,"code":"SCN305","message":"AiPlanner.Pick depends on an unordered collection or query (HashSet<Unit>)."}],"singletons":[],"plan":["Use Time in TurnTimer.Tick or mark it [WallClock].","Sort candidates in AiPlanner.Pick before choosing."],"adapter_skeleton":null,"report":"Library/Scion/diagnose.md","next_step":"fix the 2 blockers, then: dotnet scion trial run --rounds 2 --check"}
+```
+
+### 3. Fix, rebuild, verify
+
+Fix the blockers in the order of `plan`, then:
+
+```sh
+dotnet scion build test
+dotnet scion trial run --rounds 2 --check
+```
+
+## Reference
+
+### Adoption levels
+
+| Level | Needs | Unlocks |
+|---|---|---|
+| 1. Grafts | The package. | Grafts, automatic anchors, `graft check`, the project index. |
+| 2. Trials | An adapter; recipes give the same hash every round (`hash_stable`). | Parallel recipes, captures, checks, baselines, bisect, co-op comparison, the judge. |
+| 3. Multiverse | The rules in an assembly without engine references, registered as an `ISimulation`, and no blockers. | Balance specs, the multiverse, metamorphic tests, the hunter, guided search; the mosaic once `singletons` is empty. |
+
+`doctor` reports the same level with `adoption_next`, the next step.
+
+### Findings
+
+| Id | Severity | Finding |
+|---|---|---|
+| SCN301 | info | A read redirected in test builds (time, screen). |
+| SCN302 | info | A creation replaced in test builds (`Random`, `WaitForSecondsRealtime`). |
+| SCN303 | warning | A wall-clock read that is not redirected (`Stopwatch`, `Environment.TickCount`). |
+| SCN304 | warning | Threads or tasks in game logic. |
+| SCN305 | warning | An unordered collection or query decides an outcome. |
+| SCN306 | warning | Randomness seeded from `GetHashCode`. |
+| SCN307 | warning | A `Guid` created at run time. |
+
+SCN3xx never appear in the Unity console: the scan can list hundreds of lines, which would bury real errors. They
+appear only in the scan file and in `diagnose`. Details: [SCN301-SCN307](/scion/reference/diagnostics/determinism/).
+
+### Options
+
+| Option | Meaning |
+|---|---|
+| `--assembly <name>` | Only one assembly. |
+| `--adapter` | Write an adapter skeleton to `Assets/Orchard/Trials/GameAdapter.cs` (`--dry-run` prints it). |
+
+## Errors
+
+| Code | Exit | Cause | Next action |
+|---|---|---|---|
+| `config_not_found` | 2 | No `scion.json` above the current folder. | `dotnet scion init`. |
+| warning `recipes_unchecked` | 0 | No scan file yet. | Open the project in Unity once. |
+
+## Examples
+
+### Only the core
+
+```sh
+dotnet scion diagnose --assembly Orchard.Core
+```
+
+### Suppress a reviewed finding
+
+```csharp
+#pragma warning disable SCN305 // order does not matter: we sum the set
+int total = units.Sum(u => u.Hp);
+#pragma warning restore SCN305
+```
+
+## See also
+
+- [diagnose](/scion/cli/diagnose/)
+- [SCN301-SCN307](/scion/reference/diagnostics/determinism/)
+- [Add Scion to an existing game](/scion/start/existing-project/)

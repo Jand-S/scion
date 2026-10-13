@@ -1,0 +1,237 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jand-s.github.io/scion/schemas/v1/compare.schema.json",
+  "title": "compare.json",
+  "description": "The comparison of every recipe of a run with its approved baseline.",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "description": "Format version of this file. Always 1 in Scion 1.x."
+    },
+    "recipes": {
+      "type": "object",
+      "description": "One entry per recipe id.",
+      "additionalProperties": {
+        "type": "object",
+        "description": "Comparison of one recipe.",
+        "properties": {
+          "vs_approved": {
+            "enum": [
+              "same",
+              "within",
+              "px_changed",
+              "changed",
+              "new",
+              "stale"
+            ],
+            "description": "Comparison with the approved baseline."
+          },
+          "reasons": {
+            "type": "array",
+            "items": {
+              "enum": [
+                "baseline",
+                "hash",
+                "frames",
+                "px",
+                "image",
+                "rule_hash"
+              ]
+            },
+            "description": "Why the verdict is not same."
+          },
+          "stale": {
+            "type": "array",
+            "items": {
+              "enum": [
+                "platform",
+                "fps",
+                "player_args",
+                "unity"
+              ]
+            },
+            "description": "Why the platform data was not compared."
+          },
+          "hash": {
+            "type": "object",
+            "description": "State hash.",
+            "properties": {
+              "approved": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Approved hash."
+              },
+              "current": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Hashes of the passing rounds."
+              },
+              "stable": {
+                "type": "boolean",
+                "description": "All rounds agree."
+              }
+            },
+            "required": [
+              "approved",
+              "current",
+              "stable"
+            ],
+            "additionalProperties": false
+          },
+          "frames": {
+            "type": "object",
+            "description": "Frame counts.",
+            "properties": {
+              "approved": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "description": "Approved frame count."
+              },
+              "current": {
+                "type": "array",
+                "items": {
+                  "type": "integer"
+                },
+                "description": "Frame counts of the passing rounds."
+              }
+            },
+            "required": [
+              "approved",
+              "current"
+            ],
+            "additionalProperties": false
+          },
+          "px_diff": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "description": "Fraction of frames whose px differs from the baseline."
+          },
+          "px_unstable": {
+            "type": "number",
+            "description": "Fraction of frames whose px varied between the rounds of this run."
+          },
+          "images": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "description": "One compared image.",
+              "properties": {
+                "file": {
+                  "type": "string",
+                  "description": "Image file."
+                },
+                "status": {
+                  "enum": [
+                    "same",
+                    "within",
+                    "changed"
+                  ],
+                  "description": "ImageDiff status."
+                },
+                "ratio": {
+                  "type": "number",
+                  "description": "Changed fraction of the unmasked area."
+                },
+                "bounds": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer"
+                  },
+                  "minItems": 4,
+                  "maxItems": 4,
+                  "description": "[x, y, width, height] in pixels, origin at the top left."
+                },
+                "diff": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "description": "Heatmap relative to run, or null."
+                }
+              },
+              "required": [
+                "file",
+                "status",
+                "ratio",
+                "bounds",
+                "diff"
+              ],
+              "additionalProperties": false
+            },
+            "description": "Image comparisons."
+          }
+        },
+        "required": [
+          "vs_approved",
+          "reasons",
+          "stale",
+          "hash",
+          "frames",
+          "px_diff",
+          "px_unstable",
+          "images"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "schema_version",
+    "recipes"
+  ],
+  "additionalProperties": true,
+  "examples": [
+    {
+      "schema_version": 1,
+      "recipes": {
+        "SlashHit": {
+          "vs_approved": "changed",
+          "reasons": [
+            "image"
+          ],
+          "stale": [],
+          "hash": {
+            "approved": "9F3A0C11D2E4B5A6",
+            "current": [
+              "9F3A0C11D2E4B5A6",
+              "9F3A0C11D2E4B5A6"
+            ],
+            "stable": true
+          },
+          "frames": {
+            "approved": 46,
+            "current": [
+              46,
+              46
+            ]
+          },
+          "px_diff": 0.12,
+          "px_unstable": 0,
+          "images": [
+            {
+              "file": "window.png",
+              "status": "changed",
+              "ratio": 0.003,
+              "bounds": [
+                400,
+                180,
+                64,
+                64
+              ],
+              "diff": "diff/SlashHit/r1/window.diff.png"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

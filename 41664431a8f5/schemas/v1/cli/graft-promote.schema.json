@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jand-s.github.io/scion/schemas/v1/cli/graft-promote.schema.json",
+  "title": "graft promote output",
+  "description": "Output of dotnet scion graft promote: a draft graft moved into the promoted folder.",
+  "allOf": [
+    {
+      "$ref": "https://jand-s.github.io/scion/schemas/v1/envelope.schema.json"
+    },
+    {
+      "type": "object",
+      "properties": {
+        "command": {
+          "const": "graft promote"
+        },
+        "name": {
+          "type": "string",
+          "description": "Graft name."
+        },
+        "from": {
+          "type": "string",
+          "description": "Draft file."
+        },
+        "to": {
+          "type": "string",
+          "description": "Promoted file."
+        },
+        "dry_run": {
+          "type": "boolean",
+          "description": "Nothing moved."
+        },
+        "staged": {
+          "type": "boolean",
+          "description": "git add ran."
+        }
+      },
+      "required": [
+        "name",
+        "from",
+        "to"
+      ]
+    }
+  ],
+  "examples": [
+    {
+      "schema_version": 1,
+      "command": "graft promote",
+      "ok": true,
+      "name": "CritShake",
+      "from": "scion/grafts/CritShake.cs",
+      "to": "Assets/Orchard/Grafts/CritShake.cs",
+      "dry_run": false,
+      "staged": true,
+      "next_step": "rebuild and approve: dotnet scion build test"
+    }
+  ]
+}

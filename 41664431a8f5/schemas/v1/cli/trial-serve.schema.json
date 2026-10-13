@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jand-s.github.io/scion/schemas/v1/cli/trial-serve.schema.json",
+  "title": "trial serve output",
+  "description": "Output of dotnet scion trial serve: the warm copies started or stopped.",
+  "allOf": [
+    {
+      "$ref": "https://jand-s.github.io/scion/schemas/v1/envelope.schema.json"
+    },
+    {
+      "type": "object",
+      "properties": {
+        "command": {
+          "const": "trial serve"
+        },
+        "copies": {
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "type": "object",
+                "description": "A warm copy.",
+                "properties": {
+                  "q": {
+                    "type": "integer",
+                    "description": "Copy index."
+                  },
+                  "pid": {
+                    "type": "integer",
+                    "description": "Process id."
+                  },
+                  "port": {
+                    "type": "integer",
+                    "description": "Control port."
+                  },
+                  "state": {
+                    "enum": [
+                      "preparing",
+                      "idle",
+                      "running"
+                    ]
+                  },
+                  "out": {
+                    "type": "string",
+                    "description": "Output folder."
+                  }
+                },
+                "required": [
+                  "q",
+                  "pid",
+                  "port",
+                  "state",
+                  "out"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "$ref": "https://jand-s.github.io/scion/schemas/v1/envelope.schema.json#/$defs/more"
+              }
+            ]
+          },
+          "description": "Warm copies."
+        },
+        "stopped": {
+          "type": "integer",
+          "description": "Copies stopped (--stop)."
+        }
+      },
+      "required": []
+    }
+  ],
+  "examples": [
+    {
+      "schema_version": 1,
+      "command": "trial serve",
+      "ok": true,
+      "copies": [
+        {
+          "q": 0,
+          "pid": 4242,
+          "port": 51234,
+          "state": "idle",
+          "out": "/Users/alex/orchard/.scion/warm/q0"
+        },
+        {
+          "q": 1,
+          "pid": 4243,
+          "port": 51240,
+          "state": "idle",
+          "out": "/Users/alex/orchard/.scion/warm/q1"
+        }
+      ],
+      "next_step": "run: dotnet scion trial run --warm"
+    }
+  ]
+}

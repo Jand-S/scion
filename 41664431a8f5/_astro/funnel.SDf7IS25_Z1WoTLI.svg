@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 260" width="760" height="260" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="13">
+  <title>The evaluation funnel: state oracle, objective gates, taste triage, a person picks</title>
+  <rect width="760" height="260" rx="10" fill="#f7f8f4"/>
+  <g stroke="#3d4a3a" stroke-width="1.5">
+    <path d="M40 30 H720 L680 80 H80 Z" fill="#e3efd9"/>
+    <path d="M80 90 H680 L640 140 H120 Z" fill="#ffffff"/>
+    <path d="M120 150 H640 L600 200 H160 Z" fill="#ffffff"/>
+    <path d="M200 210 H560 L540 245 H220 Z" fill="#e3efd9"/>
+  </g>
+  <g fill="#1d2a1b" text-anchor="middle">
+    <text x="380" y="52" font-weight="600">1. State oracle: hash, checks, probes</text>
+    <text x="380" y="70">blocks</text>
+    <text x="380" y="112" font-weight="600">2. Objective gates: overflow, contrast, flashes, regression</text>
+    <text x="380" y="130">blocks</text>
+    <text x="380" y="172" font-weight="600">3. Taste triage: judge heads, evaluators</text>
+    <text x="380" y="190">only orders</text>
+    <text x="380" y="233" font-weight="600">4. A person picks</text>
+  </g>
+</svg>

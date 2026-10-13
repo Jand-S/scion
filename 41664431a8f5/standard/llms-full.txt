@@ -1,0 +1,366 @@
+# Scion 1.0.0 documentation: Scion Standard
+
+> Every page below is also at its own URL plus `.md`. Index: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# The Scion Standard
+
+The Scion Standard is a small set of rules for how a Unity game is organized so that Scion, people and agents can
+extend it safely. Its five principles say where rules live and how they change; its six layers (Core, Presentation,
+Grafts, Adapters, Trials, Tests) say what may depend on what. Analyzers SCN001 to SCN005, `doctor` and the scaffolds
+of `scion new` enforce it; nothing in it is required to use grafts or trials, but every rule you follow makes the
+adapter thinner and unlocks more of Scion.
+
+## How it works
+
+### Five principles
+
+1. **Rules are explicit in the core.** Plain C#, deterministic, integer math, extended by registration
+   (`RuleModifier<T>`), never by IL weaving.
+2. **Weaving happens only in presentation.** Grafts are visual; deleting the grafts folder still compiles and plays
+   the same.
+3. **Shallow inheritance, content as data.** A new enemy or ability is a data row plus a registered strategy, not a
+   subclass tree.
+4. **Commands go down, events come up.** Presentation sends commands to the core and reacts to its events; the
+   methods that react are the anchors.
+5. **Types, analyzers and `doctor` enforce the standard**, not long text files. Context files alone help little and
+   cost tokens on every request.
+
+### Six layers
+
+| Layer | Contains | May depend on |
+|---|---|---|
+| Core | Rules, state, commands, events, rule tunables, the `ISimulation` | nothing of Unity |
+| Presentation | Views, HUD, camera, audio, the `Fx` sink | Core |
+| Grafts | `[Before]`/`[After]` methods, presentation tunables | Presentation, Core (read only) |
+| Adapters | `TrialAdapter<T>`, network and input ports | Core, Presentation |
+| Trials | Recipes, checks, specs | Adapters, Core |
+| Tests | `dotnet test` projects, completeness tests | anything |
+
+The dependency rule: arrows point down the table and never back up. Nothing depends on Grafts (SCN110); the Core
+depends on nothing of Unity (an assembly with `noEngineReferences: true`).
+
+### In Orchard
+
+| Layer | Orchard |
+|---|---|
+| Core | `Orchard.Core`: `BattleState`, `Command`, `DamageCalc`, `BackstabBonus : RuleModifier<DamageCalc>` |
+| Presentation | `Orchard.Runtime`: `HitPresenter`, `Hud`, `CameraRig`, `DamageNumbers`, `OrchardFxSink` |
+| Grafts | `Assets/Orchard/Grafts`: `HitFlash`, `CritShake`, `DamageNumberPop`, `TurnBanner` |
+| Adapters | `OrchardAdapter`, `OrchardMatchCapture` |
+| Trials | `Orchard.Trials`: `SlashHit`, `CoopTurn`, `HudStates`; `Trials/Specs` |
+| Tests | `Tests/Orchard.Core.Tests`, `Tests/Orchard.Grafts.Tests` |
+
+## Key terms
+
+| Term | Meaning |
+|---|---|
+| Core | The rules assembly, listed in `analyzers.rule_assemblies`. |
+| Rule code | Code in the core; follows SCN001, SCN002 and SCN004. |
+| Primitive | One of the standard's building blocks ([Primitives](/scion/standard/primitives/)). |
+| Exemplar | A small, compiled, tested example in the project that agents copy. |
+| Completeness test | A test that every enum value has a handler, every enemy a presentation. |
+
+## Guarantees and limits
+
+- Following the standard is gradual: each rule stands alone, and `doctor` reports the adoption level.
+- The analyzers only report on assemblies you list; third-party code is never checked.
+- Deviations are allowed with a justification, through the normal Roslyn suppression.
+
+## See also
+
+- [Rules R1-R8](/scion/standard/rules/)
+- [Primitives](/scion/standard/primitives/)
+- [Enforcement](/scion/standard/enforcement/)
+- [Grafts are visual only](/scion/grafts/visual-only/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# Rules R1-R8
+
+Each rule below has a statement, the reason, an example from Orchard and how Scion checks it. Rules are numbered for
+reference in reviews and in agent instructions ("this breaks R3"). Analyzer ids are in
+[SCN001-SCN005](/scion/reference/diagnostics/standard/).
+
+## R1 Inherit one level from a Scion base, sealed
+
+**Why.** The base controls the flow (Template Method), so subclasses cannot get it wrong, and `sealed` lets IL2CPP
+devirtualize calls.
+
+```csharp
+public sealed class OrchardAdapter : TrialAdapter<OrchardRecipe> { /* ... */ }
+public sealed class BackstabBonus : RuleModifier<DamageCalc> { /* ... */ }
+public sealed class HudStates : StaticTrial<HudState> { /* ... */ }
+```
+
+**Enforced by** SCN001 (not sealed) and SCN002 (more than one level) in rule code.
+
+## R2 Anchors take values, not services
+
+**Why.** An anchor method whose parameters are plain values (`HitEvent`, `int turn`) gives grafts everything they
+need without reaching into services, and keeps grafts testable with `new Call<T>(...)`.
+
+```csharp
+public float Play(HitEvent e)   // HitEvent is a readonly struct: attacker, target, amount, crit
+```
+
+**Enforced by** review and the exemplars; `anchor show` prints the signature grafts bind to.
+
+## R3 Rules that change numbers are RuleModifier
+
+**Why.** A rule change registered explicitly with a stage, a priority and integers is visible, ordered and the same
+on every peer. A graft that changed it would vanish outside Unity.
+
+```csharp
+public sealed class BackstabBonus : RuleModifier<DamageCalc>
+{
+    public override Stage Stage => Stage.Mul;
+    public override int Priority => 10;
+    public override void Apply(ref DamageCalc c) { if (c.FromBehind) c.MulPermille += 500; }
+}
+```
+
+**Enforced by** SCN003 (a graft writes rule state), SCN004 (`float` in rule code: use `int` or permille so every
+machine computes the same result) and the hash A/B run.
+
+## R4 New content is a Type Object plus a strategy by enum
+
+**Why.** A new ability is a data row and one case in a strategy, so completeness can be tested: every enum value has
+a handler.
+
+```csharp
+public enum AbilityEffect { Damage, Heal, Push }
+public static int Resolve(AbilityEffect e, ref DamageCalc c) => e switch
+{
+    AbilityEffect.Damage => Damage.Apply(ref c),
+    AbilityEffect.Heal => Heal.Apply(ref c),
+    AbilityEffect.Push => Push.Apply(ref c),
+    _ => throw new ArgumentOutOfRangeException(nameof(e)),
+};
+```
+
+**Enforced by** completeness tests generated by `scion new effect`.
+
+## R5 Interfaces only for context and optional capabilities
+
+**Why.** Interfaces such as `ISaveable` or `IMirrorable` say what the state can do; using them for everything adds
+indirection without value. Serialized types avoid `record` and `init`, which Unity's serializer does not support.
+
+**Enforced by** review and `doctor`'s capability report.
+
+## R6 Every mutation is a Command
+
+**Why.** Commands can be logged, replayed, captured with F9, forked in the multiverse and sent over the network.
+Event dispatch is a `switch` calling named methods, and those methods become anchors.
+
+```csharp
+battle.Issue(Command.Ability("slash", attacker: 0, target: 1));
+```
+
+**Enforced by** level 3 requirements: `ISimulation.Apply(command)` is the only way to change state.
+
+## R7 The adapter is a Template Method
+
+**Why.** One public, non-virtual entry point per job (build state, apply a command, hash) keeps adapters small and
+the same across games.
+
+**Enforced by** `TrialAdapter<TRecipe>` and the skeleton `diagnose --adapter` writes.
+
+## R8 Helpers by composition
+
+**Why.** A thin facade object (`Fx`) gives every graft the same verbs without a fat base class. Extension methods
+only on struct contexts.
+
+**Enforced by** the `Fx` facade and the exemplars.
+
+## See also
+
+- [The Scion Standard](/scion/standard/overview/)
+- [Enforcement](/scion/standard/enforcement/)
+- [SCN001-SCN005](/scion/reference/diagnostics/standard/)
+- [Core API](/scion/reference/api/core/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# Primitives
+
+A primitive is a building block with one job. Choosing the right one is most of following the standard: a number
+that changes a rule is a `RuleModifier<T>`, a sound on a hit is a graft, a number someone will tune is a
+`[Tunable]`. This page lists each primitive, when to use it and where it is documented.
+
+## Table
+
+| Primitive | Use it for | Never for | Docs |
+|---|---|---|---|
+| `[Anchor(Id, Doc)]` | Stable, documented presentation moments agents should find first. | Rule methods. | [Anchors](/scion/grafts/anchors/) |
+| Graft (`[Before]`/`[After]`) | Juice, sound, camera, HUD, telemetry, tutorial hints. | Changing a rule. | [Write a graft](/scion/grafts/write/) |
+| `RuleModifier<T>` + `Stage` | Any rule that changes a number (damage, range, cost). | Presentation. | [Core API](/scion/reference/api/core/) |
+| Strategy by enum | Effects, AI choices, presentation per effect. | Open-ended plugins. | [Rules R1-R8](/scion/standard/rules/) |
+| Type Object | Immutable definitions: abilities, units, rooms (data rows, or a ScriptableObject compiled to a table). | State that changes during a match. | [Rules R1-R8](/scion/standard/rules/) |
+| `[Tunable(min, max)]` | A number someone tunes; on rule fields, it enters the lobby hash. | Constants nobody tunes. | [Tunables and presets](/scion/grafts/tunables/) |
+| `[Probe("key")]` | A rule value recorded in trials. | Per-frame values (use a sensor). | [Telemetry, probes and sensors](/scion/evaluation/telemetry/) |
+| Cue | A visual triggered by an event, one-shot or added and removed (a burning aura). | Logic. | below |
+| Adapter | The game's port: trials, network, input. | Game rules. | [Write an adapter](/scion/trials/adapters/) |
+| Exemplar | A small compiled, tested example per primitive for agents to copy. | Documentation prose. | below |
+
+## Stages of a rule modifier
+
+| Stage | Order | Typical use |
+|---|---|---|
+| `Stage.Base` | 1 | Set the base value from data. |
+| `Stage.Add` | 2 | Flat bonuses. |
+| `Stage.Mul` | 3 | Multipliers in permille (`MulPermille += 500` is +50 %). |
+| `Stage.Clamp` | 4 | Minimums, maximums, immunities. |
+| `Stage.Final` | 5 | Last-word effects (shields that absorb). |
+
+Within a stage, `Priority` orders modifiers (lower first), then the type's full name.
+
+## Cues
+
+A cue is a pattern, not a type: a presentation method that reacts to one core event, named after it, and therefore
+an anchor.
+
+```csharp
+public sealed class StatusCues : MonoBehaviour
+{
+    public void OnBurnAdded(int unit) => Auras.Add(unit, "burn");
+    public void OnBurnRemoved(int unit) => Auras.Remove(unit, "burn");
+}
+```
+
+Grafts on `OnBurnAdded` add sound or shake without touching the status system.
+
+## Exemplars
+
+`Assets/Orchard/Exemplars/` holds one file per primitive (`ExemplarGraft.cs`, `ExemplarModifier.cs`,
+`ExemplarRecipe.cs`...), compiled with the project and covered by a test. `scion new` copies from them, and the
+project index points agents to them.
+
+## See also
+
+- [Rules R1-R8](/scion/standard/rules/)
+- [Core API](/scion/reference/api/core/)
+- [Grafts API](/scion/reference/api/grafts/)
+- [Enforcement](/scion/standard/enforcement/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# Enforcement
+
+The standard is enforced by tools, not by long text: Roslyn analyzers (SCN001 to SCN005, plus SCN003 and SCN110 for
+grafts) report in the IDE and in Unity, scoped to the assemblies you list in `ScionSettings.json`; `doctor` reports
+the adoption level and what is missing; `scion new` scaffolds code that already passes; completeness tests catch
+missing handlers. This guide sets them up.
+
+## When to use
+
+- When adopting the standard in a project: set the scope first, then fix warnings gradually.
+- When reviewing agent changes: the analyzers and tests catch most deviations before review.
+
+## Steps
+
+### 1. Scope the analyzers
+
+`ProjectSettings/ScionSettings.json`:
+
+```json
+{"schema_version":1,"analyzers":{"rule_assemblies":["Orchard.Core"],"rule_types":["Unity.Netcode.*"],"graft_paths":["Assets/Orchard/Grafts/","../scion/grafts/"]}}
+```
+
+Only the assemblies in `rule_assemblies` get SCN001, SCN002, SCN004 and SCN005. Recompile after editing.
+
+### 2. Scaffold new code
+
+```sh
+dotnet scion new feature Burn
+dotnet scion new effect Push
+dotnet scion new graft BurnAuraSound --after Orchard.Presentation.StatusCues.OnBurnAdded
+dotnet scion new trial BurnTicks
+```
+
+Each command writes code that compiles and passes `doctor`, copied from the project's exemplars: a feature gets its
+modifier, its data row and a recipe; an effect gets its enum case, its strategy and a completeness test entry.
+
+### 3. Check the project
+
+```sh
+dotnet scion doctor --level 3
+```
+
+## Reference
+
+### Analyzers
+
+| Id | Severity | Rule |
+|---|---|---|
+| SCN001 | warning | A class in rule code is not sealed (R1). |
+| SCN002 | warning | A class in rule code inherits more than one level (R1). |
+| SCN003 | error | A graft writes rule state (R3). |
+| SCN004 | warning | `float` in rule code (R3). |
+| SCN005 | warning | A numeric `[Tunable]` without a range. |
+| SCN110 | error | Game code calls a graft. |
+
+The analyzers ship in the package (`Scion.Analyzers`, labeled `RoslynAnalyzer`), so Unity and IDEs that read Unity's
+generated projects run them. For `dotnet build` outside Unity, add the `Scion.Testing` package, which carries them.
+
+### Suppressing a deviation
+
+```csharp
+[SuppressMessage("Scion", "SCN002", Justification = "Netcode requires NetworkBehaviour as the base")]
+public sealed class TurnSync : TurnSyncBase { }
+```
+
+or `#pragma warning disable SCN004` around the lines. `doctor` lists every suppression with its justification.
+
+### Completeness tests
+
+`scion new effect` adds the effect to `Tests/Orchard.Core.Tests/Completeness.cs`:
+
+```csharp
+[Fact]
+public void Every_effect_has_a_handler()
+{
+    foreach (AbilityEffect e in Enum.GetValues(typeof(AbilityEffect)))
+        Assert.True(Effects.Handles(e), $"{e} has no handler");
+}
+```
+
+Other completeness tests in the template: every unit kind has a presentation, every status has cues, every rule
+tunable has a range.
+
+## Errors
+
+| Code | Exit | Cause | Next action |
+|---|---|---|---|
+| `SCN001`-`SCN005` | compile warning or error | See the table above. | Follow the hint, or suppress with a justification. |
+| `bad_value` | 2 | `scion new` with an unknown kind. | Use `feature`, `effect`, `graft` or `trial`. |
+
+## Examples
+
+### Fail CI on standard warnings in the core
+
+```sh
+dotnet build Trials/Specs/Orchard.Specs.csproj -warnaserror:SCN001,SCN002,SCN004,SCN005
+```
+
+### Preview a scaffold
+
+```sh
+dotnet scion new feature Burn --dry-run
+```
+
+## See also
+
+- [SCN001-SCN005](/scion/reference/diagnostics/standard/)
+- [init, new, uninstall](/scion/cli/init/)
+- [doctor](/scion/cli/doctor/)
+- [Rules R1-R8](/scion/standard/rules/)

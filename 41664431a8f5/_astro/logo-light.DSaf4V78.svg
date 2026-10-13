@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="Scion">
+  <path d="M12 29V14" stroke="#5d6862" stroke-width="3"/>
+  <path d="M12 15C12 9 17 5.5 24 4.5" stroke="#17784a" stroke-width="3"/>
+  <path d="M24 4.5c-3.5.8-5 3.6-4 6.2 2.6.2 4.6-2.2 4-6.2z" fill="#17784a"/>
+  <rect x="8.5" y="13" width="7" height="4" rx="1.5" fill="#9a5b00"/>
+</svg>

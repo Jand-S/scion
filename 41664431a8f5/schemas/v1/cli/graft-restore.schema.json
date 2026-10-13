@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jand-s.github.io/scion/schemas/v1/cli/graft-restore.schema.json",
+  "title": "graft restore output",
+  "description": "Output of dotnet scion graft restore: every slot back to the promoted grafts.",
+  "allOf": [
+    {
+      "$ref": "https://jand-s.github.io/scion/schemas/v1/envelope.schema.json"
+    },
+    {
+      "type": "object",
+      "properties": {
+        "command": {
+          "const": "graft restore"
+        },
+        "copies": {
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "type": "object",
+                "description": "Result in one copy.",
+                "properties": {
+                  "pid": {
+                    "type": "integer",
+                    "description": "Process id."
+                  },
+                  "ok": {
+                    "type": "boolean",
+                    "description": "Succeeded in this copy."
+                  },
+                  "grafts": {
+                    "type": "integer",
+                    "description": "Injection.Version after restore."
+                  }
+                },
+                "required": [
+                  "pid",
+                  "ok",
+                  "grafts"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "$ref": "https://jand-s.github.io/scion/schemas/v1/envelope.schema.json#/$defs/more"
+              }
+            ]
+          },
+          "description": "Per copy."
+        }
+      },
+      "required": [
+        "copies"
+      ]
+    }
+  ],
+  "examples": [
+    {
+      "schema_version": 1,
+      "command": "graft restore",
+      "ok": true,
+      "copies": [
+        {
+          "pid": 4242,
+          "ok": true,
+          "grafts": 4
+        }
+      ],
+      "next_step": "run: dotnet scion trial run --warm"
+    }
+  ]
+}

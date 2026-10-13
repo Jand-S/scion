@@ -1,0 +1,114 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jand-s.github.io/scion/schemas/v1/cli/graft-check.schema.json",
+  "title": "graft check output",
+  "description": "Output of dotnet scion graft check: Roslyn and the weaver rules against the build, without Unity.",
+  "allOf": [
+    {
+      "$ref": "https://jand-s.github.io/scion/schemas/v1/envelope.schema.json"
+    },
+    {
+      "type": "object",
+      "properties": {
+        "command": {
+          "const": "graft check"
+        },
+        "files": {
+          "type": "integer",
+          "description": "Files checked."
+        },
+        "diagnostics": {
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "type": "object",
+                "description": "One compiler or Scion diagnostic.",
+                "properties": {
+                  "file": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "Source file relative to the project root, or null."
+                  },
+                  "line": {
+                    "type": "integer",
+                    "description": "1-based line, 0 when the diagnostic has no position.",
+                    "minimum": 0
+                  },
+                  "code": {
+                    "type": "string",
+                    "description": "SCNxxx for Scion diagnostics, CSxxxx for compiler errors, build for a failed build."
+                  },
+                  "message": {
+                    "type": "string",
+                    "description": "The message."
+                  },
+                  "hint": {
+                    "type": "string",
+                    "description": "The fix, when the diagnostic has one."
+                  },
+                  "did_you_mean": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Close names, for SCN103."
+                  }
+                },
+                "required": [
+                  "file",
+                  "line",
+                  "code",
+                  "message"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "$ref": "https://jand-s.github.io/scion/schemas/v1/envelope.schema.json#/$defs/more"
+              }
+            ]
+          },
+          "description": "Errors and warnings."
+        },
+        "errors": {
+          "type": "integer",
+          "description": "Errors."
+        },
+        "warnings_count": {
+          "type": "integer",
+          "description": "Warnings."
+        }
+      },
+      "required": [
+        "files",
+        "diagnostics",
+        "errors"
+      ]
+    }
+  ],
+  "examples": [
+    {
+      "schema_version": 1,
+      "command": "graft check",
+      "ok": false,
+      "files": 1,
+      "errors": 1,
+      "warnings_count": 0,
+      "diagnostics": [
+        {
+          "file": "scion/grafts/CritShake.cs",
+          "line": 7,
+          "code": "SCN103",
+          "message": "HitPresenter.Ply does not exist.",
+          "hint": "Did you mean 'Play'?",
+          "did_you_mean": [
+            "Play"
+          ]
+        }
+      ],
+      "next_step": "fix scion/grafts/CritShake.cs:7 (SCN103): use Play"
+    }
+  ]
+}

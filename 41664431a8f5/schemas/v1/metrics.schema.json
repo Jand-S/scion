@@ -1,0 +1,225 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jand-s.github.io/scion/schemas/v1/metrics.schema.json",
+  "title": "metrics.json",
+  "description": "Motion metrics of one recipe and round, measured from the frames (written with --motion).",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "description": "Format version of this file. Always 1 in Scion 1.x."
+    },
+    "id": {
+      "type": "string",
+      "description": "Recipe id."
+    },
+    "round": {
+      "type": "integer",
+      "description": "Round."
+    },
+    "impact_frame": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "description": "First IMPACT frame, or null."
+    },
+    "hit_stop": {
+      "type": "object",
+      "description": "Frames with SSIM >= 0.99 inside the actor box.",
+      "properties": {
+        "frames": {
+          "type": "integer",
+          "description": "Frozen frames after the impact."
+        },
+        "ms": {
+          "type": "number",
+          "description": "Milliseconds."
+        }
+      },
+      "required": [
+        "frames",
+        "ms"
+      ],
+      "additionalProperties": false
+    },
+    "shake": {
+      "type": "object",
+      "description": "Camera shake, HUD masked.",
+      "properties": {
+        "peak_px": {
+          "type": "number",
+          "description": "Peak camera offset."
+        },
+        "rms_px": {
+          "type": "number",
+          "description": "RMS offset."
+        },
+        "decay_ms": {
+          "type": "number",
+          "description": "Time to fall under 10% of the peak."
+        }
+      },
+      "required": [
+        "peak_px",
+        "rms_px",
+        "decay_ms"
+      ],
+      "additionalProperties": false
+    },
+    "flash": {
+      "type": "object",
+      "description": "Flash.",
+      "properties": {
+        "delta_l": {
+          "type": "number",
+          "description": "Peak relative luminance change."
+        },
+        "ms": {
+          "type": "number",
+          "description": "Duration."
+        },
+        "area": {
+          "type": "number",
+          "description": "Fraction of the frame."
+        },
+        "per_second": {
+          "type": "number",
+          "description": "Flashes per second."
+        }
+      },
+      "required": [
+        "delta_l",
+        "ms",
+        "area",
+        "per_second"
+      ],
+      "additionalProperties": false
+    },
+    "anticipation_ms": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "description": "Time from the first mark to the impact, or null."
+    },
+    "numbers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "description": "A damage number.",
+        "properties": {
+          "text": {
+            "type": "string",
+            "description": "The number shown."
+          },
+          "rise_px": {
+            "type": "number",
+            "description": "Vertical travel."
+          },
+          "ms": {
+            "type": "number",
+            "description": "Visible time."
+          },
+          "easing": {
+            "type": "string",
+            "description": "Detected easing: linear, ease-out, overshoot."
+          }
+        },
+        "required": [
+          "text",
+          "rise_px",
+          "ms",
+          "easing"
+        ],
+        "additionalProperties": false
+      },
+      "description": "Damage numbers."
+    },
+    "targets": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "description": "A target.",
+        "properties": {
+          "min": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "description": "Min."
+          },
+          "max": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "description": "Max."
+          },
+          "status": {
+            "enum": [
+              "pass",
+              "warn",
+              "fail"
+            ]
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "additionalProperties": false
+      },
+      "description": "Targets from the recipe or spec, by metric path."
+    }
+  },
+  "required": [
+    "schema_version",
+    "id",
+    "round",
+    "impact_frame",
+    "hit_stop",
+    "shake",
+    "flash",
+    "numbers"
+  ],
+  "additionalProperties": true,
+  "examples": [
+    {
+      "schema_version": 1,
+      "id": "SlashHit",
+      "round": 1,
+      "impact_frame": 12,
+      "hit_stop": {
+        "frames": 3,
+        "ms": 100
+      },
+      "shake": {
+        "peak_px": 6.5,
+        "rms_px": 2.1,
+        "decay_ms": 233
+      },
+      "flash": {
+        "delta_l": 0.42,
+        "ms": 67,
+        "area": 0.08,
+        "per_second": 1
+      },
+      "anticipation_ms": 300,
+      "numbers": [
+        {
+          "text": "12",
+          "rise_px": 38,
+          "ms": 900,
+          "easing": "ease-out"
+        }
+      ],
+      "targets": {
+        "hit_stop.frames": {
+          "min": 2,
+          "max": 6,
+          "status": "pass"
+        }
+      }
+    }
+  ]
+}

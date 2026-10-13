@@ -1,0 +1,149 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jand-s.github.io/scion/schemas/v1/platform.schema.json",
+  "title": "platform.json",
+  "description": "The platform-specific part of an approved baseline: pixel hashes and images of one platform.",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "description": "Format version of this file. Always 1 in Scion 1.x."
+    },
+    "platform": {
+      "type": "string",
+      "description": "Platform id."
+    },
+    "size": {
+      "type": "array",
+      "items": {
+        "type": "integer",
+        "minimum": 1
+      },
+      "minItems": 2,
+      "maxItems": 2,
+      "description": "Capture size [width, height] in pixels."
+    },
+    "unity": {
+      "type": "string",
+      "description": "Unity version."
+    },
+    "build_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{12}$"
+    },
+    "approved_by": {
+      "type": "string",
+      "description": "Approver."
+    },
+    "approved_via": {
+      "enum": [
+        "tty",
+        "script"
+      ],
+      "description": "How it was approved."
+    },
+    "approved_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Approval time, UTC."
+    },
+    "tolerance": {
+      "anyOf": [
+        {
+          "type": "object",
+          "description": "Image tolerance.",
+          "properties": {
+            "pixel": {
+              "type": "number",
+              "description": "Per-pixel OKLab/HyAB distance, 0 to 1."
+            },
+            "max_ratio": {
+              "type": "number",
+              "description": "Fraction of the unmasked area."
+            },
+            "max_pixels": {
+              "type": "integer",
+              "description": "Pixel count limit, -1 for none."
+            }
+          },
+          "required": [
+            "pixel",
+            "max_ratio",
+            "max_pixels"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "The recipe Tolerance at approval; null when the recipe keeps no images."
+    },
+    "images": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "description": "An approved image.",
+        "properties": {
+          "file": {
+            "type": "string",
+            "description": "Image file."
+          },
+          "role": {
+            "type": "string",
+            "description": "Image role."
+          }
+        },
+        "required": [
+          "file",
+          "role"
+        ],
+        "additionalProperties": false
+      },
+      "description": "Approved images (in git LFS)."
+    }
+  },
+  "required": [
+    "schema_version",
+    "platform",
+    "size",
+    "unity",
+    "build_id",
+    "approved_by",
+    "approved_via",
+    "approved_at",
+    "tolerance",
+    "images"
+  ],
+  "additionalProperties": true,
+  "examples": [
+    {
+      "schema_version": 1,
+      "platform": "osx-metal-1280x720-offscreen",
+      "size": [
+        1280,
+        720
+      ],
+      "unity": "6000.3.25f1",
+      "build_id": "4c49a1e0b2f3",
+      "approved_by": "alex",
+      "approved_via": "tty",
+      "approved_at": "2026-10-11T15:00:00Z",
+      "tolerance": {
+        "pixel": 0.1,
+        "max_ratio": 0.001,
+        "max_pixels": -1
+      },
+      "images": [
+        {
+          "file": "window.png",
+          "role": "window"
+        },
+        {
+          "file": "context.png",
+          "role": "context"
+        }
+      ]
+    }
+  ]
+}

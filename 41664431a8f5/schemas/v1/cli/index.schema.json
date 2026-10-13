@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jand-s.github.io/scion/schemas/v1/cli/index.schema.json",
+  "title": "index output",
+  "description": "Output of dotnet scion index without --hook: the project index for agents.",
+  "allOf": [
+    {
+      "$ref": "https://jand-s.github.io/scion/schemas/v1/envelope.schema.json"
+    },
+    {
+      "type": "object",
+      "properties": {
+        "command": {
+          "const": "index"
+        },
+        "text": {
+          "type": "string",
+          "description": "The index, under 2 KB."
+        },
+        "bytes": {
+          "type": "integer",
+          "description": "Size.",
+          "maximum": 2048
+        },
+        "block": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "CLAUDE.md or AGENTS.md updated with --write, or null."
+        }
+      },
+      "required": [
+        "text",
+        "bytes"
+      ]
+    }
+  ],
+  "examples": [
+    {
+      "schema_version": 1,
+      "command": "index",
+      "ok": true,
+      "text": "This project uses Scion 1.0.0 (level 3). Grafts: new code in Assets/Orchard/Grafts/*.cs ...",
+      "bytes": 912,
+      "block": null,
+      "next_step": "list anchors: dotnet scion anchor list --search hit"
+    }
+  ]
+}

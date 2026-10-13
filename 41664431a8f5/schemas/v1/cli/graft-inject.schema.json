@@ -1,0 +1,115 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jand-s.github.io/scion/schemas/v1/cli/graft-inject.schema.json",
+  "title": "graft inject output",
+  "description": "Output of dotnet scion graft inject: the InjectReport of each warm copy.",
+  "allOf": [
+    {
+      "$ref": "https://jand-s.github.io/scion/schemas/v1/envelope.schema.json"
+    },
+    {
+      "type": "object",
+      "properties": {
+        "command": {
+          "const": "graft inject"
+        },
+        "dll": {
+          "type": "string",
+          "description": "Injected DLL."
+        },
+        "isolate": {
+          "type": "boolean",
+          "description": "Isolated."
+        },
+        "copies": {
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "type": "object",
+                "description": "Result in one copy.",
+                "properties": {
+                  "pid": {
+                    "type": "integer",
+                    "description": "Process id."
+                  },
+                  "ok": {
+                    "type": "boolean",
+                    "description": "Succeeded in this copy."
+                  },
+                  "version": {
+                    "type": "integer",
+                    "description": "Injection.Version."
+                  },
+                  "pending": {
+                    "type": "boolean",
+                    "description": "Waits for a boundary."
+                  },
+                  "bound": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Slots."
+                  },
+                  "errors": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Errors."
+                  },
+                  "recycle": {
+                    "type": "boolean",
+                    "description": "Restart soon."
+                  }
+                },
+                "required": [
+                  "pid",
+                  "ok",
+                  "version",
+                  "pending",
+                  "bound",
+                  "errors",
+                  "recycle"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "$ref": "https://jand-s.github.io/scion/schemas/v1/envelope.schema.json#/$defs/more"
+              }
+            ]
+          },
+          "description": "Per copy."
+        }
+      },
+      "required": [
+        "dll",
+        "copies"
+      ]
+    }
+  ],
+  "examples": [
+    {
+      "schema_version": 1,
+      "command": "graft inject",
+      "ok": true,
+      "dll": "/Users/alex/orchard/.scion/grafts/ScionGrafts_51c2.dll",
+      "isolate": false,
+      "copies": [
+        {
+          "pid": 4242,
+          "ok": true,
+          "version": 3,
+          "pending": false,
+          "bound": [
+            "A__Orchard_Presentation_HitPresenter__Play__HitEvent"
+          ],
+          "errors": [],
+          "recycle": false
+        }
+      ],
+      "next_step": "run on the warm copies: dotnet scion trial run SlashHit --warm"
+    }
+  ]
+}

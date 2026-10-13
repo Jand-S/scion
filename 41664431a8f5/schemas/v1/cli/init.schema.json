@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jand-s.github.io/scion/schemas/v1/cli/init.schema.json",
+  "title": "init, new and uninstall output",
+  "description": "Output of dotnet scion init, new and uninstall: what was created, changed or removed.",
+  "allOf": [
+    {
+      "$ref": "https://jand-s.github.io/scion/schemas/v1/envelope.schema.json"
+    },
+    {
+      "type": "object",
+      "properties": {
+        "command": {
+          "enum": [
+            "init",
+            "new",
+            "uninstall"
+          ]
+        },
+        "dry_run": {
+          "type": "boolean",
+          "description": "Nothing was written."
+        },
+        "created": {
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "type": "string",
+                "description": "Path."
+              },
+              {
+                "$ref": "https://jand-s.github.io/scion/schemas/v1/envelope.schema.json#/$defs/more"
+              }
+            ]
+          },
+          "description": "Files and folders created."
+        },
+        "changed": {
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "type": "string",
+                "description": "Path."
+              },
+              {
+                "$ref": "https://jand-s.github.io/scion/schemas/v1/envelope.schema.json#/$defs/more"
+              }
+            ]
+          },
+          "description": "Files changed."
+        },
+        "removed": {
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "type": "string",
+                "description": "Path."
+              },
+              {
+                "$ref": "https://jand-s.github.io/scion/schemas/v1/envelope.schema.json#/$defs/more"
+              }
+            ]
+          },
+          "description": "Files removed (uninstall)."
+        },
+        "skipped": {
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "type": "string",
+                "description": "Path."
+              },
+              {
+                "$ref": "https://jand-s.github.io/scion/schemas/v1/envelope.schema.json#/$defs/more"
+              }
+            ]
+          },
+          "description": "Already present; left alone."
+        },
+        "adoption_level": {
+          "type": "integer",
+          "description": "Adoption level after the command.",
+          "minimum": 0,
+          "maximum": 3
+        }
+      },
+      "required": [
+        "dry_run",
+        "created",
+        "changed",
+        "skipped"
+      ]
+    }
+  ],
+  "examples": [
+    {
+      "schema_version": 1,
+      "command": "init",
+      "ok": true,
+      "dry_run": true,
+      "created": [
+        "scion.json",
+        "scion/grafts/",
+        "scion/recipes/",
+        "scion/baselines/",
+        "Assets/Orchard/Grafts/Orchard.Grafts.asmref",
+        ".config/dotnet-tools.json"
+      ],
+      "changed": [
+        ".gitignore",
+        ".gitattributes",
+        "Packages/manifest.json"
+      ],
+      "skipped": [
+        "ProjectSettings/ScionSettings.json"
+      ],
+      "adoption_level": 1,
+      "next_step": "run without --dry-run: dotnet scion init --existing"
+    }
+  ]
+}

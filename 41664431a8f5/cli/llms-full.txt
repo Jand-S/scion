@@ -1,0 +1,2100 @@
+# Scion 1.0.0 documentation: CLI reference
+
+> Every page below is also at its own URL plus `.md`. Index: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# CLI overview
+
+`dotnet scion` is Scion's command line, a local .NET tool (`Scion.Cli`). Every command has the form
+`dotnet scion <noun> <verb>`, prints one JSON envelope outside a terminal (text inside one), always says the
+`next_step`, and exits 0, 1, 2 or 3. This page covers installation, the global options (`--format`, `--dry-run`,
+`--help`, `--version`), how the CLI finds the project root (`scion.json`), the test build (`--build`, `SCION_BUILD`),
+Unity and the editor, the envelope and the exit-code precedence.
+
+## Synopsis
+
+```text
+dotnet scion <command> [<verb>] [arguments] [options] [-- player-args]
+dotnet scion --help | --version
+```
+
+| Command | Verbs | Page |
+|---|---|---|
+| `doctor` | | [doctor](/scion/cli/doctor/) |
+| `init`, `new`, `uninstall` | | [init, new, uninstall](/scion/cli/init/) |
+| `build` | `test`, `final` | [build test, build final](/scion/cli/build/) |
+| `trial` (alias `trials`) | `list`, `run`, `show`, `approve`, `serve`, `diff`, `eval`, `loop` | [trial run](/scion/cli/trial-run/) and siblings |
+| `anchor` | `list`, `show` | [anchor list, anchor show](/scion/cli/anchor/) |
+| `graft` | `new`, `check`, `build`, `inject`, `restore`, `disable`, `promote`, `watch` | [graft](/scion/cli/graft/) |
+| `bisect` | | [bisect](/scion/cli/bisect/) |
+| `diagnose` | | [diagnose](/scion/cli/diagnose/) |
+| `index`, `guard` | | [index, guard](/scion/cli/index-and-guard/) |
+| `gen` | | [gen](/scion/cli/gen/) |
+| `judge` | `list`, `show`, `new`, `vote`, `train`, `run` | [judge](/scion/cli/judge/) |
+| `multiverse` | `run`, `show` | [multiverse](/scion/cli/multiverse/) |
+| `hunt`, `search` | `run` | [hunt, search](/scion/cli/hunt-and-search/) |
+| `mcp` | | [mcp](/scion/cli/mcp/) |
+
+## Description
+
+### Install
+
+```sh
+dotnet new tool-manifest            # once per repository, if there is no .config/dotnet-tools.json
+dotnet tool install --local Scion.Cli --version 1.0.0
+dotnet tool restore                  # on another machine
+```
+
+The CLI and the package must have the same version: a DLL injected into a build of another weaver ABI is refused
+(SCN131), and `doctor` warns `version_mismatch`.
+
+### How it finds things
+
+| What | Order |
+|---|---|
+| Project root | The nearest folder upward with `scion.json`. |
+| Configuration | `scion.json`, deep-merged with `scion.local.json` (local wins). |
+| Test build | `--build <app\|exe\|folder>`, then `SCION_BUILD`, then `scion.local.json`, then `build.test.output.<os>` in `scion.json`. `scion-build.json` must sit next to it. |
+| Unity | The version in `ProjectSettings/ProjectVersion.txt`, at the Hub's default path for the OS; `unity.editor` in `scion.local.json` overrides. |
+| Editor open | `Temp/UnityLockfile` locked. Builds then go through the open editor (needs `com.unity.pipeline`) or stop with `editor_open`. |
+| Ports | A free port per co-op group and per control channel (bind to 0, release). |
+
+### Behavior every command shares
+
+- Commands that write accept `--dry-run` and are idempotent: running one twice changes nothing the second time.
+- Output is compact JSON (about 1.5 KB at most): long lists are cut with `"more": N`, and the full data goes to a
+  file (`summary.json`) whose path is in the envelope.
+- Arguments after `--` go to every player process; a flag also present in `player_args` replaces it.
+
+## Options
+
+| Option | Default | Meaning |
+|---|---|---|
+| `--format json\|text` | `json` outside a TTY, `text` in one | Output format. |
+| `--dry-run` | off | Print what would change; change nothing. |
+| `--build <path>` | discovery | The test build to use (commands that run players). |
+| `--help`, `-h` | | Help for the command. |
+| `--version` | | `1.0.0`. |
+
+## Output
+
+Every command prints one envelope:
+
+<!-- validate: envelope -->
+```json
+{"schema_version":1,"command":"trial run","ok":false,"next_step":"run: dotnet scion build test","error":{"code":"build_not_found","message":"no test build at /Users/alex/orchard/.scion/builds/test/Orchard.app","hint":"run: dotnet scion build test","did_you_mean":[]}}
+```
+
+| Field | Meaning |
+|---|---|
+| `schema_version` | 1. |
+| `command` | The command as typed, without options (`trial run`). |
+| `ok` | True when the exit code is 0. |
+| `next_step` | One line: what to do next. Always present. |
+| `warnings[]` | `{code, message}`; never change the exit code. |
+| `error` | Only on exit 2 and 3: `code`, `message`, `hint`, `did_you_mean`. |
+| command fields | Documented on each command's page and in its JSON Schema. |
+
+## Exit codes
+
+| Code | Meaning |
+|---|---|
+| 0 | Everything ok (warnings do not count). |
+| 1 | A recipe, check, graft check or spec failed. |
+| 2 | Usage: unknown command, option or value; nothing matched. |
+| 3 | Environment: no build, no Unity, a player crashed, a copy timed out. |
+
+When several copies or steps end differently, the command exits with the highest-priority code: 2, then 3, then 1,
+then 0. See [Exit codes](/scion/reference/exit-codes/).
+
+## Errors
+
+| Code | Exit | Cause | Next action |
+|---|---|---|---|
+| `config_not_found` | 2 | No `scion.json` above the current folder. | `dotnet scion init`, or `cd` into the project. |
+| `config_invalid` | 3 | `scion.json` does not match its schema. | Fix the key in the message. |
+| `unknown_command`, `unknown_option` | 2 | A typo. | Use `did_you_mean`. |
+| `build_not_found` | 3 | No test build found. | `dotnet scion build test`. |
+| `unity_not_found` | 3 | No Unity of the project's version. | Set `unity.editor` in `scion.local.json`. |
+
+Every code: [Error and warning codes](/scion/reference/errors/).
+
+## Examples
+
+### Text output in a script
+
+```sh
+dotnet scion trial run --format text
+```
+
+### Pick a build for one command
+
+```sh
+SCION_BUILD=/tmp/orchard-test/Orchard.app dotnet scion trial list
+```
+
+## See also
+
+- [Install](/scion/start/install/)
+- [Reading results](/scion/agents/reading-results/)
+- [Exit codes](/scion/reference/exit-codes/)
+- [Error and warning codes](/scion/reference/errors/)
+- [Configuration](/scion/reference/configuration/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# doctor
+
+`dotnet scion doctor` checks that everything Scion needs is in place and says what to do about anything that is not.
+It reports one check per line with a `hint`, the suggested number of parallel copies for this machine, the
+project's adoption level (`adoption_level`, 1 to 3) and the next step to the next level (`adoption_next`).
+`--level` sets how deep the checks go.
+
+## Synopsis
+
+```text
+dotnet scion doctor [--level 1|2|3] [--format json|text]
+```
+
+## Description
+
+| Level | Checks |
+|---|---|
+| 1 (default) | `scion.json` and `ScionSettings.json` parse; CLI and package versions match; .NET SDK; Unity of the project's version; the editor lock. |
+| 2 | Level 1, plus: the test build exists, has `SCION_TRIALS`, is not stale; `scion-build.json` reads; the output folder is writable; free memory and cores. |
+| 3 | Level 2, plus: starts the test build with `-scion-list` (recipes, adapters, SCN201 to SCN203); the judge's eye model; Git LFS for baselines; suppressions with justifications. |
+
+Each check has an `id`, a `status` (`ok`, `warn`, `fail`), a `detail` and, unless ok, a `hint`.
+
+`suggested_copies` is the smaller of (cores - 1) and (free memory / memory per copy), using the last run's
+measurement or 600 MB.
+
+## Options
+
+| Option | Default | Meaning |
+|---|---|---|
+| `--level 1\|2\|3` | 1 | Check depth (not the adoption level). |
+| `--format json\|text` | auto | Output format. |
+
+## Output
+
+<!-- validate: cli/doctor -->
+```json
+{"schema_version":1,"command":"doctor","ok":true,"level":2,"version":"1.0.0","adoption_level":2,"adoption_next":"level 3: register an ISimulation over Orchard.Core (see Core API)","checks":[{"id":"config","status":"ok","detail":"/Users/alex/orchard/scion.json"},{"id":"versions","status":"ok","detail":"CLI 1.0.0, package 1.0.0"},{"id":"unity","status":"ok","detail":"6000.3.25f1"},{"id":"build","status":"ok","detail":".scion/builds/test/Orchard.app (4c49a1e0b2f3)"},{"id":"machine","status":"ok","detail":"10 cores, 9.1 GB free of 16.0 GB"}],"suggested_copies":6,"next_step":"dotnet scion trial run -j 6"}
+```
+
+| Field | Meaning |
+|---|---|
+| `level` | The check depth that ran. |
+| `version` | The CLI version. |
+| `adoption_level` | 1 grafts, 2 trials, 3 multiverse. |
+| `adoption_next` | What is missing for the next level, or null at 3. |
+| `checks[]` | `id`, `status`, `detail`, `hint`. |
+| `suggested_copies` | For `trial run -j`. |
+
+Schema: `https://jand-s.github.io/scion/schemas/v1/cli/doctor.schema.json`.
+
+## Exit codes
+
+| Code | When |
+|---|---|
+| 0 | No check failed (warnings allowed). |
+| 2 | Bad option. |
+| 3 | A check failed. |
+
+## Errors
+
+| Code | Exit | Cause | Next action |
+|---|---|---|---|
+| `config_not_found` | 2 | No `scion.json`. | `dotnet scion init`. |
+| warning `version_mismatch` | 0 | The CLI and the package differ. | Install the same version of both. |
+| warning `build_stale` | 0 | The test build is older than the sources. | `dotnet scion build test`. |
+| warning `low_memory` | 0 | Not enough free memory for 2 copies. | Close apps or run `-j 1`. |
+| `model_missing` | 3 | Level 3: the judge's eye model is not downloaded. | Run the command in `hint`. |
+
+## Examples
+
+### The deepest check
+
+```sh
+dotnet scion doctor --level 3
+```
+
+### Only the failing checks, in a script
+
+```sh
+dotnet scion doctor --format json | jq '.checks[] | select(.status != "ok")'
+```
+
+## See also
+
+- [Install](/scion/start/install/)
+- [Parallel copies](/scion/trials/parallel/)
+- [Find non-determinism](/scion/determinism/diagnose/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# init, new, uninstall
+
+Three commands manage Scion in a project. `dotnet scion init` adds Scion to an existing Unity project (`scion.json`,
+`ScionSettings.json`, the grafts folder and `.asmref`, `.gitignore` entries, the agent integration). `dotnet scion
+new` creates a whole project from a genre template, or scaffolds a feature, effect, graft or trial inside one.
+`dotnet scion uninstall` removes what `init` added. All three accept `--dry-run` and report `created`, `changed`,
+`removed` and `skipped` files.
+
+## Synopsis
+
+```text
+dotnet scion init [--existing] [--agent claude|codex|cursor|none] [--game-assembly <name>] [--grafts-folder <path>] [--dry-run]
+dotnet scion new --genre tactics|action|platformer|blank --name <Name> [--players 1-4] [--dry-run]
+dotnet scion new feature|effect|graft|trial <Name> [--after|--before <Type.Method>] [--dry-run]
+dotnet scion uninstall [--purge] [--dry-run]
+```
+
+## Description
+
+`init` never overwrites: an existing file is listed in `skipped`. `uninstall` reverses `init` and keeps your grafts,
+recipes and baselines unless `--purge`.
+
+## init
+
+| Creates or changes | Content |
+|---|---|
+| `scion.json` | Paths, defaults and builds for this project. |
+| `ProjectSettings/ScionSettings.json` | `build.main_assembly`, analyzer scope. |
+| `Assets/<Game>/Grafts/<Game>.Grafts.asmref` | Points the grafts folder at the game assembly. |
+| `Packages/manifest.json` | Adds `me.jandson.scion` if missing. |
+| `.config/dotnet-tools.json` | Adds `Scion.Cli`. |
+| `.gitignore` | `.scion/`, `scion.local.json`, `Library/Scion/`. |
+| `.gitattributes` | LFS for `scion/baselines/**/*.png`. |
+| agent files | With `--agent claude`: the plugin's hooks in `.claude/settings.json` and `CLAUDE.md` pointing to the index. |
+
+`--existing` is required when the project already has scripts: `init` then asks (or takes `--game-assembly`) which
+assembly is the game.
+
+## new
+
+| Form | Creates |
+|---|---|
+| `new --genre tactics --name Orchard --players 4` | A Unity project at level 3: core with `ISimulation`, presentation, grafts, adapter, recipes, specs, tests, exemplars. |
+| `new feature <Name>` | A `RuleModifier<T>`, its data row, a recipe and a completeness entry. |
+| `new effect <Name>` | An enum case, its strategy, a cue, a completeness entry. |
+| `new graft <Name> --after <Type.Method>` | A promoted graft with the right signature (drafts use `graft new`). |
+| `new trial <Name>` | A recipe for the project's adapter, with checks. |
+
+Genres: `tactics` (turn-based, grid), `action` (real time), `platformer`, `blank` (only the layers).
+
+## uninstall
+
+Removes `scion.json`, `ScionSettings.json`, the `.asmref`, the package and tool entries and the agent files. With
+`--purge`, also `scion/` (drafts, recipes, presets, baselines, judge data) and `.scion/`.
+
+## Options
+
+| Option | Commands | Meaning |
+|---|---|---|
+| `--existing` | init | Adopt a project with scripts. |
+| `--agent <name>` | init | Agent integration: `claude` (default), `codex`, `cursor`, `none`. |
+| `--game-assembly <name>` | init | The game assembly, without asking. |
+| `--grafts-folder <path>` | init | Default `Assets/<Game>/Grafts`. |
+| `--genre`, `--name`, `--players` | new | Project template. |
+| `--after`, `--before` | new graft | The target. |
+| `--purge` | uninstall | Also delete Scion data. |
+| `--dry-run` | all | Change nothing. |
+
+## Output
+
+<!-- validate: cli/init -->
+```json
+{"schema_version":1,"command":"init","ok":true,"dry_run":false,"created":["scion.json","ProjectSettings/ScionSettings.json","Assets/Orchard/Grafts/Orchard.Grafts.asmref"],"changed":["Packages/manifest.json",".gitignore",".gitattributes",".config/dotnet-tools.json"],"skipped":[],"adoption_level":1,"next_step":"dotnet scion doctor"}
+```
+
+## Exit codes
+
+| Code | When |
+|---|---|
+| 0 | Done (or nothing to do). |
+| 2 | Bad option, or `init` without `--existing` in a project with scripts. |
+| 3 | A file could not be written. |
+
+## Errors
+
+| Code | Exit | Cause | Next action |
+|---|---|---|---|
+| `usage` | 2 | `init` in a project with scripts and no `--existing`. | Add `--existing`. |
+| `config_invalid` | 3 | An existing `scion.json` is invalid. | Fix it; `init` never overwrites. |
+| `bad_value` | 2 | Unknown genre or kind. | Use one of the listed values. |
+
+## Examples
+
+### Preview init in an existing project
+
+```sh
+dotnet scion init --existing --game-assembly Orchard.Runtime --dry-run
+```
+
+### A four-player tactics project
+
+```sh
+dotnet scion new --genre tactics --name Orchard --players 4
+```
+
+## See also
+
+- [Start a new project](/scion/start/new-project/)
+- [Add Scion to an existing game](/scion/start/existing-project/)
+- [Enforcement](/scion/standard/enforcement/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# build test, build final
+
+`dotnet scion build test` builds the test player (Mono, `SCION_SLOTS` and `SCION_TRIALS`) and writes
+`scion-build.json` next to it; `dotnet scion build final` builds the shipping player without test defines. The CLI
+runs Unity in batchmode with `build.test.method` or `build.final.method` from `scion.json`, or, when the editor is
+open and `com.unity.pipeline` is installed, builds through the open editor. Compile errors come back with file,
+line and code.
+
+## Synopsis
+
+```text
+dotnet scion build test  [--out <dir>] [--dry-run]
+dotnet scion build final [--out <dir>] [--dry-run]
+```
+
+## Description
+
+1. Finds Unity and checks the editor lock.
+2. Closed editor: runs `Unity -batchmode -quit -projectPath <unity_project> -executeMethod <method> -scion-build-out <dir>`.
+   Open editor with the pipeline package: writes `Temp/Scion/ScionBuildEntry.cs` and runs it in the editor.
+3. Reads the `BUILD_RESULT` line and the log, and collects compile errors and SCN diagnostics.
+4. On success, reads `scion-build.json` and prints the build id.
+
+The output folder defaults to `build.test.output.<os>` (or `build.final.output.<os>`) in `scion.json`.
+
+## build test
+
+Builds with `ScionBuild.TestFromCommandLine` (or the method in `build.test.method`): Mono backend, `SCION_SLOTS` and
+`SCION_TRIALS` added for the build only, `scion-build.json` written with the slots and recipe names. Trials, warm
+copies, injection and the multiverse mosaic all need this build.
+
+## build final
+
+Builds with `ScionBuild.FinalFromCommandLine` (or `build.final.method`): the project's backend (IL2CPP by default),
+no test defines, grafts called directly. It fails with SCN121 if a test define is set anywhere in the build.
+
+## Options
+
+| Option | Default | Meaning |
+|---|---|---|
+| `--out <dir>` | from `scion.json` | Output folder. |
+| `--dry-run` | off | Print the program and arguments; build nothing. |
+
+## Output
+
+<!-- validate: cli/build -->
+```json
+{"schema_version":1,"command":"build test","ok":false,"channel":"batchmode","seconds":21.4,"log":".scion/logs/build-20261012-130000.log","build_id":null,"output":".scion/builds/test/Orchard.app","errors":[{"file":"Assets/Orchard/Grafts/CritShake.cs","line":18,"code":"SCN104","message":"The signature of CritShake.After does not match HitPresenter.Play.","hint":"Expected: public static void After(HitPresenter presenter, HitEvent e, ref Call<float> c)","did_you_mean":[]}],"errors_total":1,"next_step":"fix Assets/Orchard/Grafts/CritShake.cs:18, then: dotnet scion build test"}
+```
+
+| Field | Meaning |
+|---|---|
+| `channel` | `batchmode` or `editor`. |
+| `seconds` | Build time. |
+| `build_id` | 12 hex, or null on failure. |
+| `output` | The player path. |
+| `errors[]` | `file`, `line`, `code` (`CS0103`, `SCN104`...), `message`, `hint`. |
+| `errors_total` | All errors, when the list is cut. |
+| `program`, `args` | With `--dry-run`. |
+
+## Exit codes
+
+| Code | When |
+|---|---|
+| 0 | Built. |
+| 1 | Compile errors or a build guard (SCN120, SCN121). |
+| 2 | Bad option. |
+| 3 | No Unity, editor open without the pipeline, Unity crashed. |
+
+## Errors
+
+| Code | Exit | Cause | Next action |
+|---|---|---|---|
+| `editor_open` | 3 | The editor is open and `com.unity.pipeline` is missing. | Close the editor, or install the pipeline package. |
+| `unity_not_found` | 3 | No Unity of the project's version. | Set `unity.editor` in `scion.local.json`. |
+| `unity_failed` | 3 | Unity exited without a `BUILD_RESULT` line. | Read the log in `log`. |
+| warning `unity_exit` | 0 | Unity exited non-zero after a successful build. | Usually harmless; read the log. |
+| `SCN120`, `SCN121` | 1 | Build guards. | See [Build modes](/scion/grafts/build-modes/). |
+
+## Examples
+
+### Show the Unity command
+
+```sh
+dotnet scion build test --dry-run
+```
+
+### A final build for a store
+
+```sh
+dotnet scion build final --out /tmp/orchard-release
+```
+
+## See also
+
+- [Build modes](/scion/grafts/build-modes/)
+- [scion-build.json](/scion/reference/files/scion-build-json/)
+- [Editor API](/scion/reference/api/editor/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# trial list
+
+`dotnet scion trial list` lists the recipes a run can play. By default it reads recipe names from the test build's
+assemblies (without starting it) and adds the sources in `scion/recipes/` and the captured and found matches. With
+`--ids` it starts the build with `-scion-list` and prints every expanded id (variants, modes, seeds) with players,
+tags and flags.
+
+## Synopsis
+
+```text
+dotnet scion trial list [patterns] [--ids] [--tag <tags>] [--players <n>] [--build <path>]
+```
+
+## Description
+
+| Source | `source` | Read how |
+|---|---|---|
+| The test build | `build` | Recipe classes found in `Managed/*.dll` without running the player. |
+| `scion/recipes/*.cs` | `staging` | Recipe sources compiled with `--recipes`. |
+| `scion/recipes/captured/*.match.json` | `captured` | One `CapturedMatch` id per file. |
+| `scion/recipes/found/*.match.json` | `found` | Finds of the hunter. |
+
+A recipe that cannot be built (no public parameterless constructor) is listed with `problem`.
+
+## Options
+
+| Option | Default | Meaning |
+|---|---|---|
+| `patterns` | all | Names, ids or globs. |
+| `--ids` | off | Expand ids by starting the player with `-scion-list`. |
+| `--tag <tags>` | | Only recipes with one of the tags (needs `--ids`). |
+| `--players <n>` | | Only recipes with that `Players` (needs `--ids`). |
+| `--build <path>` | discovery | The test build. |
+
+## Output
+
+<!-- validate: cli/trial-list -->
+```json
+{"schema_version":1,"command":"trial list","ok":true,"build":"/Users/alex/orchard/.scion/builds/test/Orchard.app","build_id":"4c49a1e0b2f3","count":7,"recipes":[{"name":"SlashHit","source":"build","players":1},{"name":"FireballArea","source":"build","players":1},{"name":"KnightFalls","source":"build","players":1},{"name":"CoopTurn","source":"build","players":4},{"name":"HudStates","source":"build","players":1},{"name":"UnitGallery","source":"build","players":1},{"name":"CapturedMatch","id":"CapturedMatch[match=knight-dies-to-crit]","source":"captured","players":1}],"next_step":"dotnet scion trial run"}
+```
+
+With `--ids`, each entry has `id`, `type`, `tags` and `explicit`, and the full list is in `recipes.json` of a
+temporary folder.
+
+## Exit codes
+
+| Code | When |
+|---|---|
+| 0 | Listed. |
+| 2 | A pattern matched nothing. |
+| 3 | No build, or the player failed with `--ids`. |
+
+## Errors
+
+| Code | Exit | Cause | Next action |
+|---|---|---|---|
+| `no_match` | 2 | No recipe matches. | Use `did_you_mean`. |
+| `build_not_found` | 3 | No test build. | `dotnet scion build test`. |
+| warning `recipe_unbuildable` | 0 | A recipe has no public parameterless constructor (SCN201). | Add one. |
+| warning `unreadable_dll` | 0 | A DLL of the build could not be read. | Rebuild. |
+
+## Examples
+
+### Every id of one recipe
+
+```sh
+dotnet scion trial list SlashHit --ids
+```
+
+### Only co-op recipes
+
+```sh
+dotnet scion trial list --ids --players 4
+```
+
+## See also
+
+- [Write a recipe](/scion/trials/recipes/)
+- [Variants, modes and seeds](/scion/trials/variants/)
+- [recipes.json](/scion/reference/files/recipes-json/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# trial run
+
+`dotnet scion trial run` is the command you use most. It selects recipes, starts copies of the test build (or uses
+warm copies), splits the work into shards and co-op groups, waits, compares every result with `scion/baselines/`,
+writes `summary.json`, `summary.tsv` and `compare.json` in a new run folder, and prints a short envelope with counts,
+failures, changes, determinism and the `next_step`. It also runs specs, variants, the mosaic and the motion pack.
+
+## Synopsis
+
+```text
+dotnet scion trial run [patterns] [-j N] [--rounds N] [selection options] [capture options]
+                       [--grafts <dll>] [--recipes <dll>] [--warm] [--spec <Name>] [--variants a,b]
+                       [--build <path>] [-- player-args]
+```
+
+## Description
+
+1. Selects ids: patterns, `--tag`, `--players`, `--mode`, `--seeds`, `--changed`, `--failed`; `Explicit` recipes only
+   when named.
+2. Creates `<trials.out>/<yyyyMMdd-HHmmss>/` and deletes runs beyond `keep_runs`.
+3. Starts copies (cold) or sends `run` to warm copies (`--warm`). Co-op recipes run in groups of `Players` copies.
+4. Waits, with `--timeout` per copy and the 120 s watchdog.
+5. Compares each (id, round) with its baseline: hash, frames, images (cold runs only), rule digest.
+6. Writes `summary.json` (the full envelope plus `copies[]`), `summary.tsv`, `compare.json`, `diff/` heatmaps.
+7. Prints the envelope, with lists cut to stay short.
+
+## Options
+
+### Selection
+
+| Option | Default | Meaning |
+|---|---|---|
+| `patterns` | every non-`Explicit` recipe | Names, ids or globs, comma- or space-separated. |
+| `--tag <tags>` | | Recipes with any of the tags. |
+| `--players <n>` | all | Recipes with that `Players`. |
+| `--mode <name>` | none | One mode of `[assembly: TrialModes]`. |
+| `--seeds <a-b>` | none | Repeat each id per seed; ids get `#<seed>`. |
+| `--changed` | | The ids that were `changed` or `stale` in the last run. |
+| `--failed` | | The ids that failed in the last run. |
+
+### Execution
+
+| Option | Default | Meaning |
+|---|---|---|
+| `-j N` | `trials.defaults.copies` | Parallel copies. |
+| `--rounds N` | 1 | Rounds per id. |
+| `--seed N` | 1 | Run seed (`RunSeed`). |
+| `--timeout <s>` | 300 | Real seconds per copy. |
+| `--check` | off | Frame-by-frame determinism report (`determinism.tsv`). |
+| `--jitter <ms>` | 0 | Random real-time sleep per frame from the second round. |
+| `--warm` | off | Use warm copies (`trial serve`); compares hash and frames only. |
+| `--mosaic <K>` | off | K arenas per process. |
+| `--build <path>` | discovery | The test build. |
+
+### Capture
+
+| Option | Default | Meaning |
+|---|---|---|
+| `--window` | headless | Render to a window. |
+| `--size WxH` | `trials.defaults.size` | Capture size. |
+| `--frames` | off | Every frame as PNG. |
+| `--raw` | off | Keep raw frames. |
+| `--sound` | muted | Audio on. |
+| `--motion` | off | The motion pack. |
+| `--learn-unstable <n>` | off | Run n extra times and learn the unstable mask (cap 2 %). |
+
+### Code and values
+
+| Option | Default | Meaning |
+|---|---|---|
+| `--grafts <dll>` | none | Inject a draft graft DLL at startup (`-scion-inject`); the run cannot be approved. |
+| `--recipes <dll>` | none | Load recipes from a DLL; same `Name` replaces. Repeatable. |
+| `--set <key>=<value>` | none | Override a tunable (`tunable:CritShake.Strength=0.8`). Repeatable. |
+| `--preset <name\|blend>` | none | Apply a preset or blend to every id. |
+| `--variants a,b,c` | none | One variant per preset or blend; ids get `[preset=<name>]`. |
+| `--spec <Name>` | none | Run a spec; the envelope gets `spec`. |
+| `-- args` | | Passed to every player; replaces the same flag in `player_args`. |
+
+## Output
+
+<!-- validate: cli/trial-run -->
+```json
+{"schema_version":1,"command":"trial run","ok":false,"run":"/Users/alex/orchard/.scion/runs/20261011-143200","build_id":"4c49a1e0b2f3","copies":6,"wall_s":27.1,"runs":{"recipes":6,"rounds":2,"total":12,"ok":11,"failed":1,"changed":1,"within":0,"px_changed":0,"new":0,"stale":0},"failed":[{"id":"KnightFalls","round":1,"copy":3,"error":"timeout (30s): unit down animation","report":"q3/KnightFalls/r1/report.md"}],"changed":[{"id":"SlashHit","vs_approved":"changed","hash":"same","image":"q0/SlashHit/r1/window.png","diff":"diff/SlashHit/r1/window.diff.png"}],"determinism":{"hash_stable":true,"frame_jitter":[]},"next_step":"read q3/KnightFalls/r1/report.md; SlashHit changed only in images: see diff/SlashHit/r1/window.diff.png"}
+```
+
+| Field | Meaning |
+|---|---|
+| `run` | The run folder; paths in the envelope are relative to it. |
+| `copies` | Processes started (or warm copies used). |
+| `runs` | Counts: ids, rounds, (id, round) pairs, ok, failed, and per verdict. |
+| `failed[]` | `id`, `round`, `copy`, `error`, `report`. |
+| `changed[]` | `id`, `vs_approved`, `hash` (`same`/`changed`), `image`, `diff`. |
+| `determinism` | `hash_stable`, `frame_jitter`. |
+| `mosaic` | K, when used. |
+| `spec` | With `--spec`: `name`, `ok`, `variants[]`, `verdict`. |
+
+Files: [summary.json, summary.tsv, compare.json](/scion/reference/files/summary/).
+
+## Exit codes
+
+| Code | When |
+|---|---|
+| 0 | Every recipe passed. Verdicts such as `changed` do not fail a run. |
+| 1 | A recipe or check failed, or a spec failed. |
+| 2 | Bad option or a pattern matched nothing. |
+| 3 | No build, a copy crashed or timed out, environment errors. |
+
+Copies are combined with precedence 2 > 3 > 1 > 0.
+
+## Errors
+
+| Code | Exit | Cause | Next action |
+|---|---|---|---|
+| `no_match` | 2 | No id matches. | `did_you_mean`; `trial list --ids`. |
+| `build_not_found` | 3 | No test build. | `dotnet scion build test`. |
+| `build_wrong_mode` | 3 | The build lacks `SCION_TRIALS`. | `dotnet scion build test`. |
+| `player_crashed` | 3 | A copy exited without outputs. | Read `q<i>/player.log`. |
+| `copy_timeout` | 3 | A copy passed `--timeout` or was interrupted. | Raise `--timeout`, or find the stuck `WaitUntil`. |
+| `no_free_port` | 3 | No free port for a group. | Close other servers. |
+| `no_copies` | 3 | `--warm` with no warm copies. | `dotnet scion trial serve -j 2`. |
+| `mosaic_unsupported` | 3 | `--mosaic` and no `IMosaicAdapter`. | Implement it or drop `--mosaic`. |
+| warning `build_stale` | 0 | Sources changed after the build. | Rebuild before trusting the result. |
+| warning `px_unstable` | 0 | Pixels vary between rounds. | See [Verify determinism](/scion/determinism/verify/). |
+| warning `shard_ignored` | 0 | `-scion-shard` passed after `--`. | Let the CLI shard. |
+
+## Examples
+
+### The everyday run
+
+```sh
+dotnet scion trial run --rounds 2
+```
+
+### Combat only, with the motion pack, at 720p
+
+```sh
+dotnet scion trial run --tag combat --motion --size 1280x720
+```
+
+### A draft graft against every recipe
+
+```sh
+dotnet scion trial run --grafts .scion/grafts/ScionGrafts_51c2.dll
+```
+
+## See also
+
+- [How trials work](/scion/trials/overview/)
+- [Parallel copies](/scion/trials/parallel/)
+- [summary.json, summary.tsv, compare.json](/scion/reference/files/summary/)
+- [Reading results](/scion/agents/reading-results/)
+- [Player command line](/scion/reference/player-flags/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# trial show
+
+`dotnet scion trial show` reads a run folder and prints the essentials for some ids: rounds ok and failed, hashes,
+frame counts, the verdict against the baseline with its reasons, and the **paths** of `report.md` and the images.
+It never prints image content: open the paths. With `--grid` it writes baseline, current and difference side by side.
+
+## Synopsis
+
+```text
+dotnet scion trial show <Id...> | --failed | --changed [--run <run>] [--image window|context|still|sheet|motion-diff] [--grid]
+```
+
+## Description
+
+Defaults to the last run. For each id it merges every round and copy. `--image` limits `images[]` to one kind. `--grid`
+writes `diff/<IdDir>/r<n>/<artifact>.grid.png` (baseline, current, heatmap in three columns) and returns its path.
+
+## Options
+
+| Option | Default | Meaning |
+|---|---|---|
+| `<Id...>` | | Ids or patterns. |
+| `--failed` | | Ids with a failed round. |
+| `--changed` | | Ids with verdict `changed`, `stale`, `within` or `px_changed`. |
+| `--run <run>` | last run | A run folder name or path. |
+| `--image <kind>` | all | Only that image kind. |
+| `--grid` | off | Write and return comparison grids. |
+
+## Output
+
+<!-- validate: cli/trial-show -->
+```json
+{"schema_version":1,"command":"trial show","ok":true,"run":"/Users/alex/orchard/.scion/runs/20261011-143200","count":1,"recipes":[{"id":"KnightFalls","rounds":{"ok":1,"failed":1},"hashes":["1B44E07AC9D20F13"],"frames":[52],"vs_approved":"same","round":1,"copy":3,"report":"q3/KnightFalls/r1/report.md","images":["q3/KnightFalls/r1/window.png","q3/KnightFalls/r1/context.png"],"failed":[{"round":1,"copy":3,"error":"timeout (30s): unit down animation"}]}],"next_step":"read q3/KnightFalls/r1/report.md"}
+```
+
+| Field | Meaning |
+|---|---|
+| `recipes[].rounds` | `ok` and `failed` counts. |
+| `hashes`, `frames` | Distinct values seen across rounds. |
+| `vs_approved`, `reasons`, `stale` | Verdict and why. |
+| `px_diff` | Fraction of frames whose pixel hash differs from the baseline. |
+| `report`, `images` | Paths relative to the run. |
+| `grid` | With `--grid`. |
+
+## Exit codes
+
+| Code | When |
+|---|---|
+| 0 | Shown. |
+| 2 | No such id or run. |
+
+## Errors
+
+| Code | Exit | Cause | Next action |
+|---|---|---|---|
+| `no_match` | 2 | The id is not in the run. | `did_you_mean`. |
+| warning `result_unreadable` | 0 | A `result.json` is missing or broken. | The copy crashed; read its `player.log`. |
+| warning `summary_not_written` | 0 | The run was interrupted before `summary.json`. | Run again. |
+
+## Examples
+
+### Everything that failed
+
+```sh
+dotnet scion trial show --failed
+```
+
+### A grid for review
+
+```sh
+dotnet scion trial show SlashHit --grid --image window
+```
+
+## See also
+
+- [Reading results](/scion/agents/reading-results/)
+- [Baselines and approval](/scion/trials/baselines/)
+- [Image comparison](/scion/trials/image-comparison/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# trial approve
+
+`dotnet scion trial approve` writes the results of a run into `scion/baselines/` as the new approved state and stages
+the files with `git add` (it never commits). A reason is required. Approving ids that already have a baseline needs a
+person at an interactive terminal; agents get `human_required`. Approval is all or nothing.
+
+## Synopsis
+
+```text
+dotnet scion trial approve <Id...> | --changed | --new --reason "<text>" [--run <run>] [--dry-run]
+```
+
+## Description
+
+For each selected id, from the given run (default: last):
+
+1. Refuses if any round failed, the run used `--grafts` or `--warm`, or rounds disagree on the hash.
+2. Checks who is approving: without a TTY, only `new` ids pass; anything else is `human_required`.
+3. With a TTY and non-`new` ids, shows the list and asks for confirmation.
+4. Writes `baseline.json` (hash, frames, fps, player args, rule digest, approval) and this platform's folder
+   (`platform.json`, `frames.tsv`, images, learned mask).
+5. Runs `git add` on the written files.
+
+## Options
+
+| Option | Default | Meaning |
+|---|---|---|
+| `<Id...>` | | Ids or patterns. |
+| `--changed` | | Every id whose verdict is not `same` or `new`. |
+| `--new` | | Every `new` id. |
+| `--reason "<text>"` | required | Why; stored in the baseline. |
+| `--run <run>` | last run | The run to approve from. |
+| `--dry-run` | off | List what would be approved. |
+
+## Output
+
+<!-- validate: cli/trial-approve -->
+```json
+{"schema_version":1,"command":"trial approve","ok":false,"run":"/Users/alex/orchard/.scion/runs/20261011-143200","approved":0,"unchanged":0,"baselines":[],"staged":false,"refused":[{"id":"SlashHit","why":"changed needs a person at a terminal"}],"needs_person":true,"next_step":"ask a person to run: dotnet scion trial approve SlashHit --reason \"crit shake is stronger\"","error":{"code":"human_required","message":"approving changed baselines needs an interactive terminal","hint":"show the person trial show SlashHit --grid and the command in next_step","did_you_mean":[]}}
+```
+
+| Field | Meaning |
+|---|---|
+| `approved`, `unchanged` | Ids written; ids already equal to the baseline. |
+| `baselines[]` | `id`, `was` (the verdict), `round`, `copy`, `dir`. |
+| `staged` | `git add` succeeded. |
+| `refused[]` | `id`, `why`. |
+| `needs_person` | True when a person must run the command. |
+| `would_approve` | With `--dry-run`. |
+
+## Exit codes
+
+| Code | When |
+|---|---|
+| 0 | Approved (or nothing to approve). |
+| 1 | Refused: a failed round, `--grafts`, `--warm`, unstable hash. |
+| 2 | `human_required`, missing `--reason`, no match. |
+
+## Errors
+
+| Code | Exit | Cause | Next action |
+|---|---|---|---|
+| `human_required` | 2 | Non-`new` ids without a TTY. | Stop; give the person the command. |
+| `refused` | 1 | An id cannot be approved. | Read `refused[].why`. |
+| `usage` | 2 | No `--reason`. | Add one. |
+| warning `not_staged` | 0 | `git add` failed. | Stage by hand; check Git LFS. |
+| warning `baseline_unreadable` | 0 | An old baseline could not be read; it is replaced. | Review the diff in git. |
+
+## Examples
+
+### Agents: approve the first baselines
+
+```sh
+dotnet scion trial approve --new --reason "baselines for the new gallery"
+```
+
+### People: approve a reviewed change
+
+```sh
+dotnet scion trial approve SlashHit --reason "crit shake is stronger"
+```
+
+## See also
+
+- [Baselines and approval](/scion/trials/baselines/)
+- [Hooks](/scion/agents/hooks/)
+- [baseline.json and platform.json](/scion/reference/files/baselines/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# trial serve
+
+`dotnet scion trial serve -j N` starts N warm copies of the test build in the background: each prepares every
+adapter and waits idle on a local control channel. `trial run --warm` and `graft inject` use them. Without `-j`, the
+command lists the live copies; `--stop` ends them.
+
+## Synopsis
+
+```text
+dotnet scion trial serve [-j N] [--stop] [--window] [--build <path>]
+```
+
+## Description
+
+Each copy starts with `-scion-trials -scion-serve -scion-control 0 -scion-out .scion/serve/q<i>` (no `-scion-quit`),
+writes `control.json` and `~/.scion/live/<pid>.json`, and reaches `idle`. The command returns when all are idle. If
+copies of the same build are already live, `-j N` starts only the missing ones.
+
+## Options
+
+| Option | Default | Meaning |
+|---|---|---|
+| `-j N` | none (list only) | Copies to have running. |
+| `--stop` | | Send `quit` to every live copy of this build. |
+| `--window` | headless | Windows for the copies. |
+| `--build <path>` | discovery | The test build. |
+
+## Output
+
+<!-- validate: cli/trial-serve -->
+```json
+{"schema_version":1,"command":"trial serve","ok":true,"copies":[{"q":0,"pid":4242,"port":51234,"state":"idle","out":"/Users/alex/orchard/.scion/serve/q0"},{"q":1,"pid":4243,"port":51240,"state":"running","out":"/Users/alex/orchard/.scion/serve/q1"}],"next_step":"dotnet scion trial run --warm"}
+```
+
+With `--stop`: `{"stopped": 2}`.
+
+## Exit codes
+
+| Code | When |
+|---|---|
+| 0 | Copies idle, listed or stopped. |
+| 2 | Bad option. |
+| 3 | A copy failed to start or prepare. |
+
+## Errors
+
+| Code | Exit | Cause | Next action |
+|---|---|---|---|
+| `prepare_failed` | 3 | An adapter's `Prepare` failed in a copy. | Read `.scion/serve/q<i>/player.log`. |
+| `build_not_found` | 3 | No test build. | `dotnet scion build test`. |
+| warning `build_changed` | 0 | Live copies run an older build. | `trial serve --stop`, then serve again. |
+| warning `recycle` | 0 | A copy passed 50 injections and is being restarted. | Nothing; it comes back idle. |
+
+## Examples
+
+### Two warm copies
+
+```sh
+dotnet scion trial serve -j 2
+```
+
+### Stop them
+
+```sh
+dotnet scion trial serve --stop
+```
+
+## See also
+
+- [Warm copies](/scion/trials/warm-copies/)
+- [Control protocol](/scion/reference/control-protocol/)
+- [Live injection](/scion/grafts/injection/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# trial diff
+
+`dotnet scion trial diff` compares two run folders (or two copies inside runs) without baselines: for each id in
+both, whether the hash is the same, the frame counts, the first frame where the per-frame data differs and its cause,
+and an image comparison with a heatmap per artifact. Use it for before and after a graft, or two presets.
+
+## Synopsis
+
+```text
+dotnet scion trial diff <runA> <runB> [Id...]
+```
+
+## Description
+
+`runA` and `runB` are run folder names, paths, or `<run>/q<i>` for one copy. Ids default to every id present in
+both. Frame data is compared column by column in the cause order of `determinism.tsv` (`state`, `tick`, `rng`,
+`unscaled`, `time`, `px`, `frames`). Images use each id's tolerance and masks; heatmaps go to
+`<runB>/diff/<IdDir>/r<n>/<artifact>.diff.png`.
+
+## Options
+
+| Option | Default | Meaning |
+|---|---|---|
+| `<runA> <runB>` | required | The two sides. |
+| `Id...` | common ids | Limit to these. |
+
+## Output
+
+<!-- validate: cli/trial-diff -->
+```json
+{"schema_version":1,"command":"trial diff","ok":true,"a":"20261011-143200","b":"20261011-150512","recipes":[{"id":"SlashHit","hash":"same","frames":[46,46],"first_frame":14,"cause":"px","images":[{"file":"window.png","status":"changed","ratio":0.021,"diff":"diff/SlashHit/r1/window.diff.png"}]},{"id":"KnightFalls","hash":"same","frames":[52,52],"first_frame":null,"cause":null,"images":[{"file":"window.png","status":"same","ratio":0,"diff":null}]}],"next_step":"look at diff/SlashHit/r1/window.diff.png"}
+```
+
+## Exit codes
+
+| Code | When |
+|---|---|
+| 0 | Compared (differences do not fail). |
+| 2 | A run or id not found. |
+
+## Errors
+
+| Code | Exit | Cause | Next action |
+|---|---|---|---|
+| `no_match` | 2 | No such run or id. | Use the folder names under `trials.out`. |
+| warning `pairs_missing` | 0 | Some ids exist in only one run. | Listed in `warnings`; select common ids. |
+
+## Examples
+
+### Before and after a graft
+
+```sh
+dotnet scion trial diff 20261011-143200 20261011-143512 SlashHit FireballArea
+```
+
+### Two copies of one run
+
+```sh
+dotnet scion trial diff 20261011-143200/q0 20261011-143200/q3 KnightFalls
+```
+
+## See also
+
+- [A/B comparisons](/scion/evaluation/ab-comparison/)
+- [Image comparison](/scion/trials/image-comparison/)
+- [Verify determinism](/scion/determinism/verify/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# trial eval
+
+`dotnet scion trial eval` sends the images of a run to the evaluators configured in `scion.json` and collects their
+scores. It writes `eval-in.json` with blind items, runs `process` evaluators, or waits for an `eval-out.json` you
+import (agents), and writes `evals.tsv`. Scores never change an exit code or a verdict.
+
+## Synopsis
+
+```text
+dotnet scion trial eval <run> --with <a,b> [--questions <file>] [--dry-run]
+dotnet scion trial eval <run> --import <eval-out.json>
+```
+
+## Description
+
+1. Collects the run's ids and their `window.png`, `context.png`, stills and `metrics.json`.
+2. Shuffles them under blind labels and writes `<run>/eval-in.json` with the questions (default: the questions of the
+   judge heads in `judge.dir`).
+3. For each `process` evaluator: runs its `command` with the two file paths and reads `eval-out.json`.
+4. For `agent` evaluators: stops, with `next_step` telling the agent to answer the file and import it.
+5. Maps labels back to ids and writes `evals.tsv` and the `eval` column of `summary.tsv`.
+
+## Options
+
+| Option | Default | Meaning |
+|---|---|---|
+| `<run>` | required | The run folder. |
+| `--with a,b` | | Evaluators by name. |
+| `--questions <file>` | judge questions | A question file. |
+| `--import <file>` | | Import an answer file. |
+| `--dry-run` | off | Write `eval-in.json` only. |
+
+## Output
+
+<!-- validate: cli/trial-eval -->
+```json
+{"schema_version":1,"command":"trial eval","ok":true,"run":"/Users/alex/orchard/.scion/runs/20261011-150512","evaluators":["agent"],"items":3,"exported":"eval-in.json","imported":null,"evals":"evals.tsv","next_step":"answer eval-in.json into eval-out.json, then: dotnet scion trial eval 20261011-150512 --import eval-out.json"}
+```
+
+## Exit codes
+
+| Code | When |
+|---|---|
+| 0 | Exported, scored or imported. |
+| 1 | A process evaluator failed. |
+| 2 | Unknown evaluator, bad answer file. |
+
+## Errors
+
+| Code | Exit | Cause | Next action |
+|---|---|---|---|
+| `no_match` | 2 | Evaluator not in `scion.json`. | `did_you_mean`. |
+| `bad_value` | 2 | `eval-out.json` does not validate. | Check it against `judge-answer.schema.json`. |
+| `not_supported` | 2 | An evaluator with `gate: true`. | Scores never gate; write an `ITrialCheck`. |
+
+## Examples
+
+### A script evaluator
+
+```sh
+dotnet scion trial eval 20261011-150512 --with contrast-script
+```
+
+### Agent round trip
+
+```sh
+dotnet scion trial eval 20261011-150512 --with agent
+dotnet scion trial eval 20261011-150512 --import eval-out.json
+```
+
+## See also
+
+- [Evaluators](/scion/evaluation/evaluators/)
+- [eval-in.json, eval-out.json, evals.tsv](/scion/reference/files/evals/)
+- [Questions and answers](/scion/judge/questions/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# trial loop
+
+`dotnet scion trial loop` plays one id over and over in a test build: the whole recipe, or a span of turns of a
+captured match. Each pass restores the saved start state and replays; injections made between passes apply on the
+next one. It is the engine of the live loop.
+
+## Synopsis
+
+```text
+dotnet scion trial loop <Id> [--from <file>] [--span a..b] [--passes N] [--window] [--build <path>]
+```
+
+## Description
+
+1. Starts one copy with a control channel (`-scion-control 0`), and `-scion-match <file>` when the id is a match.
+2. Plays to the start of `--span` once and saves the state (`ISaveable`); without `--span`, the recipe start.
+3. Loops: restore, play the span, write `pass<N>/`, apply pending injections, repeat.
+4. Stops on Ctrl-C, after `--passes`, or when a pass changes the hash (an injected graft touched rules).
+
+## Options
+
+| Option | Default | Meaning |
+|---|---|---|
+| `<Id>` | required | A recipe id, usually `CapturedMatch[match=<name>]`. |
+| `--from <file>` | | A `.match.json` or `telemetry.jsonl` to take the window from. |
+| `--span a..b` | whole recipe | Turns to loop, inclusive. |
+| `--passes N` | until stopped | Number of passes. |
+| `--window` | headless | Show the window. |
+| `--build <path>` | discovery | The test build. |
+
+## Output
+
+<!-- validate: cli/trial-loop -->
+```json
+{"schema_version":1,"command":"trial loop","ok":true,"run":"/Users/alex/orchard/.scion/loops/20261012-103000","id":"SlashHit","span":null,"passes":3,"injects":1,"last":{"ok":true,"hash":"9F3A0C11D2E4B5A6","frames":46,"window":"pass3/window.png"},"stopped_by":"passes","next_step":"compare passes: dotnet scion trial diff 20261012-103000/pass1 20261012-103000/pass3"}
+```
+
+`stopped_by` is `passes`, `stop`, `interrupt` or `error`.
+
+## Exit codes
+
+| Code | When |
+|---|---|
+| 0 | Stopped by passes, stop or interrupt. |
+| 1 | A pass failed or changed the hash. |
+| 2 | Bad option. |
+| 3 | The copy failed, or the state cannot be saved. |
+
+## Errors
+
+| Code | Exit | Cause | Next action |
+|---|---|---|---|
+| `not_forkable` | 3 | `--span` needs `ISaveable`. | Implement it, or loop the whole recipe. |
+| `bad_value` | 2 | `--span` outside the match. | Check `turns`. |
+| `interrupted` | 0 | Ctrl-C. | Normal stop. |
+
+## Examples
+
+### Two turns of a match, in a window
+
+```sh
+dotnet scion trial loop "CapturedMatch[match=knight-dies-to-crit]" --span 3..4 --window
+```
+
+### Five passes headless
+
+```sh
+dotnet scion trial loop SlashHit --passes 5
+```
+
+## See also
+
+- [The live loop](/scion/explore/live-loop/)
+- [graft](/scion/cli/graft/)
+- [Turn any match into a recipe](/scion/trials/captured-matches/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# anchor list, anchor show
+
+`dotnet scion anchor list` reads the test build with Mono.Cecil (without starting it) and lists every method that can
+be an anchor: its slot id, its `[Anchor]` id and doc, whether it has a slot in this build, and the promoted grafts on
+it. `dotnet scion anchor show <id>` prints one anchor: the signature, the grafts in run order and a graft declaration
+that binds to it.
+
+## Synopsis
+
+```text
+dotnet scion anchor list [--search <text>] [--type <Type>] [--build <path>]
+dotnet scion anchor show <id> [--build <path>]
+```
+
+## Description
+
+Eligibility follows the weaver's rules ([Anchors](/scion/grafts/anchors/)): methods that cannot be anchors are left
+out. Each eligible method appears twice, once per side (`B__` before, `A__` after).
+
+## anchor list
+
+Lists anchors, sorted by type and method. `--search` matches the type, method, `[Anchor]` id or doc
+(case-insensitive); `--type` limits to one type's full name.
+
+## anchor show
+
+`<id>` is an `[Anchor]` id (`presentation.hit`), a slot id (`A__...`) or `Type.Method`. The output has `example`: a
+complete graft method that compiles against the anchor, with `ref Call<T>` when the target returns a value.
+
+## Options
+
+| Option | Commands | Meaning |
+|---|---|---|
+| `--search <text>` | list | Filter by text. |
+| `--type <Type>` | list | One type. |
+| `--build <path>` | both | The test build. |
+
+## Output
+
+<!-- validate: cli/anchor-show -->
+```json
+{"schema_version":1,"command":"anchor show","ok":true,"anchor":{"id":"A__Orchard_Presentation_HitPresenter__Play__HitEvent","anchor":"presentation.hit","target":"Orchard.Presentation.HitPresenter.Play","signature":"float Play(HitEvent e)","slot":true,"doc":"Plays one hit and returns how long it lasts.","grafts":[{"name":"Orchard.Grafts.HitFlash.After","kind":"after","priority":0,"observe":false,"promoted":true}],"example":"[After(typeof(HitPresenter), nameof(HitPresenter.Play))]\npublic static void After(HitPresenter presenter, HitEvent e, ref Call<float> c) { }"},"next_step":"dotnet scion graft new MyGraft --after Orchard.Presentation.HitPresenter.Play"}
+```
+
+`anchor list` returns `total` and `anchors[]` with `id`, `anchor`, `target`, `signature`, `slot`, `doc` and
+`promoted` ([Anchors](/scion/grafts/anchors/) has an example).
+
+## Exit codes
+
+| Code | When |
+|---|---|
+| 0 | Listed or shown. |
+| 2 | No anchor with that id. |
+| 3 | No build. |
+
+## Errors
+
+| Code | Exit | Cause | Next action |
+|---|---|---|---|
+| `no_match` | 2 | No anchor matches. | `did_you_mean`; `anchor list --search`. |
+| `build_not_found` | 3 | No test build. | `dotnet scion build test`. |
+| warning `name_at_run_time` | 0 | A graft names its target with a string built at run time; it cannot be listed. | Use `nameof` or a literal. |
+
+## Examples
+
+### Every camera anchor
+
+```sh
+dotnet scion anchor list --type Orchard.Presentation.CameraRig
+```
+
+### Show by method name
+
+```sh
+dotnet scion anchor show Orchard.Presentation.Hud.ShowTurn
+```
+
+## See also
+
+- [Anchors](/scion/grafts/anchors/)
+- [graft](/scion/cli/graft/)
+- [Grafts API](/scion/reference/api/grafts/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# graft
+
+The `graft` commands cover a graft's whole life outside Unity: `graft new` writes a draft with the right signature,
+`graft check` runs Roslyn and the weaver rules against the test build, `graft build` compiles drafts into a DLL,
+`graft inject`, `graft restore` and `graft disable` change running copies, `graft promote` moves a draft into the
+game, and `graft watch` repeats build, inject and run on every save.
+
+## Synopsis
+
+```text
+dotnet scion graft new <Name> --after|--before <Type.Method> [--dry-run]
+dotnet scion graft check [files] [--strict] [--hook]
+dotnet scion graft build [files]
+dotnet scion graft inject [--to all|<pid>] [--isolate] [--dll <file>]
+dotnet scion graft restore [--to all|<pid>]
+dotnet scion graft disable <slot> [--to all|<pid>]
+dotnet scion graft promote <Name> [--dry-run]
+dotnet scion graft watch [--recipe <Id>]
+```
+
+## Description
+
+Drafts live in `grafts.staging` (`scion/grafts/`); promoted grafts in `grafts.promoted`. All commands read the test
+build for types and signatures; none starts Unity.
+
+## graft new
+
+Writes `scion/grafts/<Name>.cs`: namespace from the project, `using` lines, a `public static class <Name>` and a
+method `Before` or `After` whose signature binds to the target, with `ref Call<T>` when it returns a value.
+
+## graft check
+
+Compiles the given files (default: every draft, and promoted grafts changed since the build) with the build's
+assemblies, runs the analyzers and the weaver's rules (SCN101 to SCN113), and returns `diagnostics[]`. `--strict`
+treats warnings as errors. `--hook` prints Claude Code hook JSON and only checks files under the grafts folders.
+
+## graft build
+
+Compiles drafts with the test defines against `Managed/*.dll`, generates the dispatchers the weaver would, and writes
+`.scion/grafts/ScionGrafts_<hash>.dll` with the target `build_id` and ABI.
+
+## graft inject
+
+Sends the DLL (building first if drafts changed) to live copies of this build through the control channel. Default
+merges by graft identity; `--isolate` runs only the DLL's grafts on the anchors it touches.
+
+## graft restore
+
+Every slot of the target copies back to the promoted grafts.
+
+## graft disable
+
+Empties one slot (promoted grafts included) in the target copies.
+
+## graft promote
+
+Moves `scion/grafts/<Name>.cs` to the promoted folder (`git mv` when tracked) and stages it. Rebuild to compile it
+into the game.
+
+## graft watch
+
+On every save under the drafts folder: build, inject into all live copies, and, with `--recipe`, run it warm. Prints
+one JSON line per cycle until Ctrl-C, then the summary.
+
+## Options
+
+| Option | Commands | Meaning |
+|---|---|---|
+| `--after`, `--before <Type.Method>` | new | The target and side. |
+| `--strict` | check | Warnings fail. |
+| `--hook` | check | Hook output for agents. |
+| `--to all\|<pid>` | inject, restore, disable | Target copies (default all). |
+| `--isolate` | inject | Replace instead of merge. |
+| `--dll <file>` | inject | A DLL built elsewhere. |
+| `--recipe <Id>` | watch | Run after each injection. |
+| `--dry-run` | new, promote | Change nothing. |
+
+## Output
+
+<!-- validate: cli/graft-check -->
+```json
+{"schema_version":1,"command":"graft check","ok":false,"files":1,"diagnostics":[{"file":"scion/grafts/CritShake.cs","line":7,"code":"SCN103","message":"HitPresenter.Ply does not exist.","hint":"Did you mean 'Play'?","did_you_mean":["Play"]}],"errors":1,"warnings_count":0,"next_step":"fix scion/grafts/CritShake.cs:7, then: dotnet scion graft check scion/grafts/CritShake.cs"}
+```
+
+Each command's fields are in its schema: `cli/graft-new`, `cli/graft-check`, `cli/graft-build`, `cli/graft-inject`,
+`cli/graft-restore`, `cli/graft-disable`, `cli/graft-promote`, `cli/graft-watch` ([JSON Schemas](/scion/reference/schemas/)).
+
+## Exit codes
+
+| Code | When |
+|---|---|
+| 0 | Done; `check` found no errors. |
+| 1 | Diagnostics with errors; an injection with errors in some copy. |
+| 2 | Bad option, unknown target or name. |
+| 3 | No build, no live copies, a copy without `SCION_SLOTS`. |
+
+## Errors
+
+| Code | Exit | Cause | Next action |
+|---|---|---|---|
+| `SCN101`-`SCN113` | 1 | Graft rules. | [Graft diagnostics](/scion/reference/diagnostics/grafts/). |
+| `SCN130`, `SCN131` | 1 | The DLL does not match the copy's build or ABI. | `graft build` again; same Scion version. |
+| `no_copies` | 3 | No live copy. | `dotnet scion trial serve -j 2`. |
+| `not_supported` | 3 | A copy built without `SCION_SLOTS`. | Use the test build. |
+| `no_match` | 2 | Unknown target, draft or slot. | `did_you_mean`. |
+| warning `recycle` | 0 | A copy passed 50 injections. | `trial serve` restarts it at the next boundary. |
+
+## Examples
+
+### The inner loop
+
+```sh
+dotnet scion graft new CritShake --after Orchard.Presentation.HitPresenter.Play
+dotnet scion graft check scion/grafts/CritShake.cs
+dotnet scion graft inject
+dotnet scion trial run --warm SlashHit
+```
+
+### Strict check in CI
+
+```sh
+dotnet scion graft check --strict
+```
+
+## See also
+
+- [From draft to final build](/scion/grafts/lifecycle/)
+- [Live injection](/scion/grafts/injection/)
+- [Hooks](/scion/agents/hooks/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# bisect
+
+`dotnet scion bisect` runs `git bisect` between a good and a bad revision. At each step it builds the test player
+cold, runs one recipe for some rounds and decides good, bad or skip, comparing on the hash, the images or one check.
+It prints the first bad commit and a log of every step.
+
+## Synopsis
+
+```text
+dotnet scion bisect <Id> --good <rev> [--bad <rev>] [--on hash|pixels|check:<id>] [--rounds N]
+```
+
+## Description
+
+1. Requires a clean working tree; records the starting branch to return to.
+2. Runs the recipe at `--good` to record the reference (hash, images or check status).
+3. `git bisect start <bad> <good>` and `git bisect run` with a step that builds, runs and compares.
+4. Each step exits 0 (good), 1 (bad) or 125 (skip: the build failed, the id is missing, rounds disagree).
+5. Returns to the starting branch and prints `first_bad`.
+
+## Options
+
+| Option | Default | Meaning |
+|---|---|---|
+| `<Id>` | required | The recipe id. |
+| `--good <rev>` | required | A good revision. |
+| `--bad <rev>` | `HEAD` | A bad revision. |
+| `--on hash\|pixels\|check:<id>` | `hash` | What decides good or bad. |
+| `--rounds N` | 2 | Rounds per step. |
+
+## Output
+
+<!-- validate: cli/bisect -->
+```json
+{"schema_version":1,"command":"bisect","ok":true,"id":"KnightFalls","good":"3f2a0b1","bad":"HEAD","on":"check:order","steps":4,"skipped":[],"first_bad":{"commit":"9d0c4e2","subject":"Play unit_down before the last hit number","date":"2026-10-10T11:05:00Z"},"log":".scion/bisect/20261012-140000/log.txt","next_step":"git show 9d0c4e2"}
+```
+
+## Exit codes
+
+| Code | When |
+|---|---|
+| 0 | `first_bad` found. |
+| 1 | Too many skips: a range instead of one commit. |
+| 2 | Dirty tree, bad revision, unknown id. |
+| 3 | Build environment errors at the good revision. |
+| 125 | Only from a single step, to `git bisect`: skip this commit. |
+
+## Errors
+
+| Code | Exit | Cause | Next action |
+|---|---|---|---|
+| `usage` | 2 | Uncommitted changes. | Commit or stash. |
+| `bad_value` | 2 | A revision git does not know. | Check the revision. |
+| `no_match` | 2 | The id does not exist at `--good`. | Pass `--recipes` with a DLL that has it. |
+| `interrupted` | 3 | Ctrl-C. | The CLI resets `git bisect` and the branch. |
+
+## Examples
+
+### Pixels between releases
+
+```sh
+dotnet scion bisect SlashHit --good v1.3.0 --bad v1.4.0 --on pixels
+```
+
+### A probe check
+
+```sh
+dotnet scion bisect FireballArea --good 3f2a0b1 --on check:probe:damage
+```
+
+## See also
+
+- [Bisect a regression](/scion/explore/bisect/)
+- [Exit codes](/scion/reference/exit-codes/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# diagnose
+
+`dotnet scion diagnose` reads the determinism scans the weaver writes when Unity compiles
+(`Library/Scion/determinism-<assembly>.json`) and reports the adoption level, counts per SCN301 to SCN307, the
+blockers with file and line, the singletons that block the mosaic, an ordered plan and, with `--adapter`, an adapter
+skeleton for the game.
+
+## Synopsis
+
+```text
+dotnet scion diagnose [--assembly <name>]... [--adapter] [--dry-run]
+```
+
+## Description
+
+Blockers are SCN303 to SCN307 findings in code that runs during recipes, and structural problems (no adapter, global
+state). The plan orders them by how much they unlock. The full report goes to `Library/Scion/diagnose.md`.
+
+With `--adapter`, `diagnose` writes `Assets/<Game>/Trials/GameAdapter.cs`: a `TrialAdapter<GameRecipe>` and a
+`GameRecipe` base, with `Prepare`, `Run`, `Teardown` and `StateHash` stubs naming the game's scenes and the types it
+found (`Battle`, `BattleState`).
+
+## Options
+
+| Option | Default | Meaning |
+|---|---|---|
+| `--assembly <name>` | every scanned assembly | Repeat to scan only some. |
+| `--adapter` | off | Write the adapter skeleton. |
+| `--dry-run` | off | With `--adapter`, print it instead. |
+
+## Output
+
+<!-- validate: cli/diagnose -->
+```json
+{"schema_version":1,"command":"diagnose","ok":true,"adoption_level":2,"assemblies":["Orchard.Core","Orchard.Runtime"],"counts":{"SCN301":14,"SCN302":2,"SCN303":1,"SCN304":0,"SCN305":0,"SCN306":0,"SCN307":0},"blockers":[{"file":"Assets/Orchard/Runtime/TurnTimer.cs","line":31,"code":"SCN303","message":"TurnTimer.Tick reads the wall clock (Stopwatch.GetTimestamp), which is not redirected."}],"singletons":[],"plan":["Use Time in TurnTimer.Tick or mark it [WallClock]."],"adapter_skeleton":null,"report":"Library/Scion/diagnose.md","next_step":"fix Assets/Orchard/Runtime/TurnTimer.cs:31, then: dotnet scion trial run --rounds 2 --check"}
+```
+
+## Exit codes
+
+| Code | When |
+|---|---|
+| 0 | Reported (blockers do not fail). |
+| 2 | Unknown assembly. |
+| 3 | No scan files. |
+
+## Errors
+
+| Code | Exit | Cause | Next action |
+|---|---|---|---|
+| `no_match` | 2 | `--assembly` names an assembly without a scan. | `did_you_mean`. |
+| `out_not_writable` | 3 | `Library/Scion/` cannot be written. | Check permissions. |
+| warning `recipes_unchecked` | 0 | No scan yet. | Open the project in Unity once. |
+
+## Examples
+
+### Write the adapter skeleton
+
+```sh
+dotnet scion diagnose --adapter
+```
+
+### Only the core
+
+```sh
+dotnet scion diagnose --assembly Orchard.Core
+```
+
+## See also
+
+- [Find non-determinism](/scion/determinism/diagnose/)
+- [SCN301-SCN307](/scion/reference/diagnostics/determinism/)
+- [Add Scion to an existing game](/scion/start/existing-project/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# index, guard
+
+`dotnet scion index` prints a project index under 2 KB: the Scion version, the adoption level, the grafts folders,
+anchor categories, recipes and the commands that matter, for an agent's session start. `dotnet scion guard` decides
+whether an agent's action on baselines or generated files is allowed, needs a person, or is denied. Both have a
+`--hook` mode that speaks Claude Code's hook format.
+
+## Synopsis
+
+```text
+dotnet scion index [--hook] [--write <file>]
+dotnet scion guard [--approve] [--hook] [--path <file>] [--command "<cmd>"]
+```
+
+## Description
+
+Both commands are fast (well under a second), read only local files and never start Unity, so agent hooks can call
+them on every session and tool use.
+
+## index
+
+Builds the index from `scion.json`, the manifest (or the build) and the baselines. With `--write <file>`, keeps the
+index and the agent rules between `<!-- scion:begin -->` and `<!-- scion:end -->` in `CLAUDE.md` or `AGENTS.md`,
+leaving the rest of the file alone. With `--hook`, wraps it as `hookSpecificOutput.additionalContext` for
+`SessionStart`.
+
+## guard
+
+| Situation | Decision |
+|---|---|
+| An edit or write under `scion/baselines/` | `deny`: only `trial approve` writes baselines. |
+| An edit of `scion.manifest.json` or `GRAFTS.md` | `deny`: generated by `gen`. |
+| `trial approve` of ids that are only `new` | `allow`. |
+| `trial approve` that would replace a baseline (`--approve`) | `ask`, with what changed and the review command. |
+| Anything else | `allow`. |
+
+With `--hook`, `guard` reads the hook input from stdin (tool name, path, command) and prints
+`hookSpecificOutput.permissionDecision`. Every hook finishes under one second and fails open, except the baselines
+guard, which fails closed.
+
+## Options
+
+| Option | Commands | Meaning |
+|---|---|---|
+| `--hook` | both | Claude Code hook input and output. |
+| `--write <file>` | index | Maintain the block in an instructions file. |
+| `--approve` | guard | Check a `trial approve` command. |
+| `--path <file>` | guard | Check an edit of this path (without `--hook`). |
+| `--command "<cmd>"` | guard | Check this command (without `--hook`). |
+
+## Output
+
+<!-- validate: cli/index -->
+```json
+{"schema_version":1,"command":"index","ok":true,"text":"This project uses Scion 1.0.0 (adoption level 3). Grafts: Assets/Orchard/Grafts (promoted), scion/grafts (drafts). Recipes: SlashHit, FireballArea, KnightFalls, CoopTurn (4 players), HudStates, UnitGallery. Approve only new baselines.","bytes":214,"block":null,"next_step":"none"}
+```
+
+<!-- validate: cli/guard -->
+```json
+{"schema_version":1,"command":"guard","ok":true,"decision":"ask","reason":"This approves SlashHit (changed: image) and replaces a baseline a person approved.","path":null,"approve":"SlashHit","next_step":"a person reviews: dotnet scion trial show SlashHit --grid"}
+```
+
+## Exit codes
+
+| Code | When |
+|---|---|
+| 0 | Printed (a `deny` is still exit 0 in hook mode; the decision is in the JSON). |
+| 2 | Bad option. |
+
+## Errors
+
+| Code | Exit | Cause | Next action |
+|---|---|---|---|
+| `config_not_found` | 0 in hook mode | Not a Scion project. | The hooks do nothing outside Scion projects. |
+| `usage` | 2 | `guard` without `--hook`, `--path` or `--command`. | Pass one. |
+
+## Examples
+
+### Keep CLAUDE.md current
+
+```sh
+dotnet scion index --write CLAUDE.md
+```
+
+### Test the guard by hand
+
+```sh
+dotnet scion guard --command "dotnet scion trial approve --changed --reason x"
+```
+
+## See also
+
+- [Hooks](/scion/agents/hooks/)
+- [Project index and manifest](/scion/agents/project-index/)
+- [Baselines and approval](/scion/trials/baselines/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# gen
+
+`dotnet scion gen` reads the project's code and writes two generated files at the project root:
+`scion.manifest.json` (every anchor, graft, tunable, recipe and probe, for tools and agents) and `GRAFTS.md` (the
+same data as tables, for people and pull requests). `--list` prints one kind of item without writing. Run it after
+changing attributes; CI checks the files are current.
+
+## Synopsis
+
+```text
+dotnet scion gen [--check] [--dry-run]
+dotnet scion gen --list anchors|grafts|tunables|recipes|probes [--search <text>]
+```
+
+## Description
+
+Sources, in order: the test build's DLLs (Mono.Cecil) when they are newer than the sources; otherwise the C# sources
+(Roslyn). Output is sorted and stable, so the same code always gives the same bytes.
+
+## Options
+
+| Option | Default | Meaning |
+|---|---|---|
+| `--check` | off | Write nothing; exit 1 if the files are not current. |
+| `--list <kind>` | | Print items of one kind. |
+| `--search <text>` | | Filter `--list`. |
+| `--dry-run` | off | Print what would change. |
+
+## Output
+
+<!-- validate: cli/gen -->
+```json
+{"schema_version":1,"command":"gen","ok":true,"manifest":"scion.manifest.json","grafts_md":"GRAFTS.md","anchors":26,"grafts":4,"tunables":9,"changed":true,"next_step":"git add scion.manifest.json GRAFTS.md"}
+```
+
+With `--list tunables`, `items[]` holds `key`, `type`, `min`, `max`, `value`, `layer` (`visual` or `rule`) and `doc`.
+
+## Exit codes
+
+| Code | When |
+|---|---|
+| 0 | Written, listed, or current. |
+| 1 | `--check` and the files are out of date. |
+| 2 | Unknown `--list` kind. |
+
+## Errors
+
+| Code | Exit | Cause | Next action |
+|---|---|---|---|
+| `bad_value` | 2 | Unknown kind. | `anchors`, `grafts`, `tunables`, `recipes`, `probes`. |
+| warning `name_at_run_time` | 0 | A target named by a computed string. | Use `nameof` or a literal. |
+
+## Examples
+
+### Check in CI
+
+```sh
+dotnet scion gen --check
+```
+
+### Every rule tunable
+
+```sh
+dotnet scion gen --list tunables --search Balance
+```
+
+## See also
+
+- [Project index and manifest](/scion/agents/project-index/)
+- [scion.manifest.json and GRAFTS.md](/scion/reference/files/manifest/)
+- [Tunables and presets](/scion/grafts/tunables/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# judge
+
+The `judge` commands manage the Scion Judge: `judge list` and `judge show` describe heads, `judge new` creates one
+from a question file, `judge vote` opens a local page for blind duels and labels, `judge train` trains and promotes a
+new head version, and `judge run` scores a run's captures. Heads, questions and votes live in `judge.dir`
+(`scion/judge/`); embeddings in `judge.cache`.
+
+## Synopsis
+
+```text
+dotnet scion judge list
+dotnet scion judge show <head>
+dotnet scion judge new <head> --question <file> [--view full|hud|corners|actor] [--sequence]
+dotnet scion judge vote [--run <run>] [--head <head>] [--synthetic N] [--gold <set> --count N] [--regold] [--top N]
+dotnet scion judge train <head>
+dotnet scion judge run <run> [--heads a,b] [--references N] [--pairs <run>]
+```
+
+## Description
+
+The judge never changes a verdict or an exit code of trials. It runs locally with the eye model in `judge.eyes`.
+
+## judge list
+
+Every head with its version, type, vote count and gold agreement.
+
+## judge show
+
+One head: question, view, eyes, training history, calibration, and where it disagrees most with people.
+
+## judge new
+
+Creates `scion/judge/heads/<head>.json` from a question file. `--sequence` makes a motion head that also reads
+`metrics.json`.
+
+## judge vote
+
+Starts a local page at `http://localhost:<port>/` and opens it. Pairs come from `--run` (or the latest runs), blind
+and in both orders; the judge picks the most informative pairs first. `--synthetic N` adds N agent-made pairs
+(degradations, fabricated bugs). `--gold <set> --count N` collects gold votes (people only). `--regold` re-asks a
+sample of gold votes to measure the ceiling. `--top N` shows only the N best variants per id.
+
+## judge train
+
+Trains a new version with cross-validation and promotes it only if it agrees more with the gold set.
+
+## judge run
+
+Scores every capture of a run with the given heads (default: all), writes `<run>/judge.json` and `escalate`.
+`--references N` adds the N most similar reference screens per capture; `--pairs <run>` compares each id with the
+same id in another run.
+
+## Options
+
+| Option | Commands | Meaning |
+|---|---|---|
+| `--question <file>` | new | The question. |
+| `--view <view>` | new | `full`, `hud`, `corners`, `actor`. |
+| `--sequence` | new | A motion head. |
+| `--run`, `--head` | vote | Where pairs come from; which head. |
+| `--synthetic N`, `--gold <set>`, `--count N`, `--regold`, `--top N` | vote | See above. |
+| `--heads a,b`, `--references N`, `--pairs <run>` | run | See above. |
+
+## Output
+
+<!-- validate: cli/judge -->
+```json
+{"schema_version":1,"command":"judge run","ok":true,"results":".scion/runs/20261011-150512/judge.json","escalate":["HudStates/turn-banner.720p.png"],"next_step":"look at the escalated captures, or ask an evaluator: dotnet scion trial eval 20261011-150512 --with agent"}
+```
+
+`judge list` returns `heads[]`; `judge show` and `judge train` return `head` (and `training`); `judge vote` returns
+`url` and `votes`.
+
+## Exit codes
+
+| Code | When |
+|---|---|
+| 0 | Done. |
+| 2 | Unknown head, bad question file. |
+| 3 | The eye model is missing. |
+
+## Errors
+
+| Code | Exit | Cause | Next action |
+|---|---|---|---|
+| `model_missing` | 3 | The eye model is not downloaded. | Run the command in `hint` (also in `doctor --level 3`). |
+| `no_match` | 2 | Unknown head. | `judge list`. |
+| `bad_value` | 2 | The question file does not validate. | Check it against `judge-question.schema.json`. |
+| `not_supported` | 2 | `judge vote` without a browser (an agent). | Votes are for people; agents use `trial eval`. |
+
+## Examples
+
+### Score a run with two heads
+
+```sh
+dotnet scion judge run 20261011-150512 --heads readability,has_glitch
+```
+
+### Ten minutes of votes
+
+```sh
+dotnet scion judge vote --head hit_weight
+```
+
+## See also
+
+- [The Judge](/scion/judge/overview/)
+- [Train a head](/scion/judge/training/)
+- [Judge data files](/scion/reference/files/judge-data/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# multiverse
+
+`dotnet scion multiverse run` replays a captured match on the core simulator up to a turn, forks it, plays each
+variant to the end and reports, per variant, whether the rules diverged, the first turn and the first field.
+`dotnet scion multiverse show` prints a past result. With `--mosaic`, the test build replays the variants side by
+side.
+
+## Synopsis
+
+```text
+dotnet scion multiverse run <match|Id> --at-turn <N> --variants <list|file> [--mosaic]
+dotnet scion multiverse show <run>
+```
+
+## Description
+
+Everything except `--mosaic` runs in plain .NET on the registered `ISimulation`, in parallel, without Unity.
+
+## multiverse run
+
+`<match>` is a captured match name (`knight-dies-to-crit`), its file, or a `CapturedMatch[...]` id. Variants: preset
+names or blends, `tunable:<Key>=<value>`, `grafts:<dll>`, `bot:<name>`, comma-separated, or a JSON file with a list of
+`{name, kind, value}`. Results go to `.scion/multiverse/<yyyyMMdd-HHmmss>/multiverse.json`.
+
+## multiverse show
+
+Prints the envelope of a past run from its `multiverse.json`.
+
+## Options
+
+| Option | Commands | Meaning |
+|---|---|---|
+| `--at-turn <N>` | run | Fork after turn N (0 = the start). |
+| `--variants <list\|file>` | run | The variants. |
+| `--mosaic` | run | Also replay in the test build and write `mosaic.png`. |
+
+## Output
+
+<!-- validate: cli/multiverse -->
+```json
+{"schema_version":1,"command":"multiverse show","ok":true,"run":"/Users/alex/orchard/.scion/multiverse/20261012-101500","match":"knight-dies-to-crit","at_turn":2,"variants":[{"name":"base","diverged":false,"first_turn":null,"field":null},{"name":"crit-1200","diverged":true,"first_turn":3,"field":"units[0].hp"}],"report":"multiverse.json","mosaic":"mosaic.png","next_step":"open mosaic.png"}
+```
+
+## Exit codes
+
+| Code | When |
+|---|---|
+| 0 | Done. Divergence of tunable or preset variants is information, not failure. |
+| 1 | A `grafts:` variant diverged (grafts must be visual). |
+| 2 | Unknown match, variant or turn. |
+| 3 | No simulation, or the state cannot be saved. |
+
+## Errors
+
+| Code | Exit | Cause | Next action |
+|---|---|---|---|
+| `no_simulation` | 3 | No `[assembly: Simulation]`. | Register an `ISimulation`. |
+| `not_forkable` | 3 | No `ISaveable`. | Implement `Save` and `Load`. |
+| `mosaic_unsupported` | 3 | `--mosaic` without `IMosaicAdapter`. | Implement it or drop `--mosaic`. |
+| `no_match` | 2 | Unknown match or preset. | `trial list`; `scion/presets/`. |
+
+## Examples
+
+### Prove a draft is visual
+
+```sh
+dotnet scion multiverse run knight-dies-to-crit --at-turn 0 --variants base,grafts:.scion/grafts/ScionGrafts_51c2.dll
+```
+
+### See variants side by side
+
+```sh
+dotnet scion multiverse run knight-dies-to-crit --at-turn 2 --variants base,heavy --mosaic
+```
+
+## See also
+
+- [The multiverse](/scion/explore/multiverse/)
+- [Turn any match into a recipe](/scion/trials/captured-matches/)
+- [Mosaic](/scion/trials/mosaic/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# hunt, search
+
+Two exploration commands. `dotnet scion hunt run` plays matches on the core simulator with mutated commands, keeps
+those that reach new features and saves each find as a match in `scion/recipes/found/`. `dotnet scion search run`
+explores tunables with paired Bayesian optimization, keeps a MAP-Elites gallery, filters with the spec and the judge
+and asks a person the deciding duels.
+
+## Synopsis
+
+```text
+dotnet scion hunt run <Id|Spec> [--budget <minutes>] [--seed <n>] [--save]
+dotnet scion search run <Spec> [--tunables a,b] [--budget <n>] [--duels <n>] [--niches a,b]
+```
+
+## Description
+
+Both are long-running: they report progress, stop cleanly on Ctrl-C and keep what they found so far.
+
+## hunt run
+
+Runs for `--budget` minutes (default 5) on the `ISimulation`, from the recipe's setup or the spec's balance setup.
+Each new feature reported by `ISimulation.Features` produces one find, minimized to the fewest turns. Finds go to
+`scion/recipes/found/<feature>-<n>.match.json` with `source: hunt`.
+
+## search run
+
+Evaluates `--budget` variants (default 40) of the selected tunables as recipe variants in the test build (or on the
+simulator for balance-only specs), drops those failing the spec, ranks with the judge, keeps the best per niche in
+`search.json`, and asks up to `--duels` blind duels (default 10).
+
+## Options
+
+| Option | Commands | Meaning |
+|---|---|---|
+| `--budget` | both | Minutes (hunt) or variants (search). |
+| `--seed <n>` | hunt | Repeatable hunts. |
+| `--save` | hunt | Save finds (default on; `--save false` to only report). |
+| `--tunables a,b` | search | What to tune. |
+| `--duels <n>` | search | Maximum duels for a person (0 = none). |
+| `--niches a,b` | search | Metrics that define the gallery's niches. |
+
+## Output
+
+<!-- validate: cli/hunt-run -->
+```json
+{"schema_version":1,"command":"hunt run","ok":true,"target":"CoopTurn","budget_s":300,"states":91540,"features":33,"finds":[{"name":"multi_kill-0003","file":"scion/recipes/found/multi_kill-0003.match.json","feature":"multi_kill"}],"next_step":"dotnet scion trial run \"CapturedMatch[match=multi_kill-0003]\""}
+```
+
+<!-- validate: cli/search-run -->
+```json
+{"schema_version":1,"command":"search run","ok":true,"spec":"StrongerCrits","tunables":["CritShake.Strength","CritShake.Stop"],"evaluated":40,"duels":8,"gallery":".scion/search/20261012-120000/search.json","best":[{"name":"g03","values":{"CritShake.Strength":0.55,"CritShake.Stop":0.07},"score":0.79}],"next_step":"save g03 as a preset in scion/presets/"}
+```
+
+## Exit codes
+
+| Code | When |
+|---|---|
+| 0 | Done (no finds is still 0). |
+| 2 | Unknown target, spec or tunable. |
+| 3 | No simulation; judge model missing. |
+
+## Errors
+
+| Code | Exit | Cause | Next action |
+|---|---|---|---|
+| `no_simulation` | 3 | No `ISimulation`. | Register one. |
+| `model_missing` | 3 | The spec uses a judge head and the eyes are missing. | `doctor --level 3`. |
+| `bad_value` | 2 | A tunable without a range. | `[Tunable(min, max)]`. |
+| `no_match` | 2 | Unknown spec or recipe. | `did_you_mean`. |
+
+## Examples
+
+### A ten-minute hunt
+
+```sh
+dotnet scion hunt run CoopTurn --budget 10
+```
+
+### A search without people
+
+```sh
+dotnet scion search run StrongerCrits --tunables CritShake.Strength,CritShake.Stop --duels 0
+```
+
+## See also
+
+- [Rare-moment hunter](/scion/explore/rare-moments/)
+- [Guided search](/scion/explore/guided-search/)
+- [Turn any match into a recipe](/scion/trials/captured-matches/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# mcp
+
+`dotnet scion mcp` starts a Model Context Protocol server on stdin and stdout. Agents that speak MCP call Scion's
+commands as tools (`scion_<noun>_<verb>`, with the same arguments and the same JSON envelope as structured content)
+and read the documentation of the installed version with `docs_search` and `docs_read`. The server is started by the
+agent's client, not by you.
+
+## Synopsis
+
+```text
+dotnet scion mcp [--root <path>] [--log <file>]
+```
+
+## Description
+
+The server implements MCP over stdio: `initialize`, `tools/list`, `tools/call`, progress notifications and
+cancellation. Every tool runs the corresponding command in-process from the project root and returns its envelope as
+`structuredContent`, with `isError` true for exit codes 2 and 3. Commands that need a person or never end have no
+tool. The full tool list is on [MCP server](/scion/agents/mcp/).
+
+## Options
+
+| Option | Default | Meaning |
+|---|---|---|
+| `--root <path>` | the nearest `scion.json` from the working directory | The project root. |
+| `--log <file>` | none | Write a log of requests (never to stdout). |
+
+## Output
+
+The server writes only MCP messages to stdout. A `tools/call` result:
+
+```json
+{"structuredContent":{"schema_version":1,"command":"anchor list","ok":true,"total":26,"anchors":[],"next_step":"dotnet scion anchor show presentation.hit"},"isError":false}
+```
+
+## Exit codes
+
+| Code | When |
+|---|---|
+| 0 | The client closed stdin. |
+| 2 | Bad option. |
+| 3 | No project root. |
+
+## Errors
+
+| Code | Exit | Cause | Next action |
+|---|---|---|---|
+| `config_not_found` | 3 | No `scion.json` from the working directory or `--root`. | Set `--root` in the client config. |
+| `busy` | tool error | Another long command is running. | The server queues calls; wait for the first. |
+
+## Examples
+
+### Claude Code project config
+
+```json
+{"mcpServers":{"scion":{"command":"dotnet","args":["scion","mcp"]}}}
+```
+
+### Debug with a log
+
+```sh
+dotnet scion mcp --log /tmp/scion-mcp.log
+```
+
+## See also
+
+- [MCP server](/scion/agents/mcp/)
+- [Set up your agent](/scion/agents/setup/)

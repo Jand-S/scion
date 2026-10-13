@@ -1,0 +1,603 @@
+# Scion 1.0.0 documentation: Judge
+
+> Every page below is also at its own URL plus `.md`. Index: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# The Judge
+
+The Scion Judge answers taste questions about captures in milliseconds: is this HUD readable, is there a visual
+glitch, does this hit feel heavy, does this screen look like our game. It has two parts: frozen **eyes** (a
+pre-trained vision encoder) that turn each image into an embedding once, and small **heads** trained on your own
+votes in seconds, one per question. The judge filters and orders; it never approves anything.
+
+## How it works
+
+```text
+capture -> eyes (frozen, e.g. SigLIP 2) -> embedding, computed once and cached
+                                              |-> head "has_glitch"   (noul)
+                                              |-> head "readability"  (score)
+                                              |-> head "main_issue"   (choice)
+                                              '-> head "hit_weight"   (score)
+```
+
+### Eyes once, heads many
+
+Computing an embedding is the expensive part, and it does not depend on the question. Scion computes it once per
+image (and per view: full frame, HUD crop, corners, actor crop) and caches it under `judge.cache`. A new question is
+a new head: a small classifier over the cached embeddings, trained in seconds. The cost of a question is in its
+labels, not in its training.
+
+### Why not ask a large model every time
+
+A general vision-language model can review a screen, but it re-reads the whole context for every image, takes
+seconds per item and does not know your taste. The judge answers in 10 to 50 ms per image, 100 captures in seconds,
+a 30-frame sequence in under a second, on a laptop, and its answers are calibrated against your own gold set.
+Large models are still useful: as agent evaluators on the few items the judge escalates.
+
+### Where it sits
+
+The judge is stage 3 of the [evaluation funnel](/scion/evaluation/overview/): after the state oracle and the gates,
+before a person. It sorts variants, picks which pairs a person should see, and escalates items it is unsure about.
+
+### Pixel art
+
+Downscaling erases one-pixel detail. For pixel art, views crop instead of scaling, or upscale 2x with nearest
+neighbor, before the eyes see the image.
+
+## Key terms
+
+| Term | Meaning |
+|---|---|
+| Eyes | The frozen vision encoder (`judge.eyes` in `scion.json`). |
+| Embedding | The vector the eyes produce for one image and view; cached. |
+| Head | A small model trained on embeddings and votes; answers one question. |
+| View | Which part of the image the eyes see: `full`, `hud`, `corners`, `actor`. |
+| Vote | One person's (or agent's) answer: a duel winner, a score or a choice. |
+| Gold set | Votes by the project's people, never used for training, used to measure a head. |
+| Escalate | A question whose answer had low confidence; sent to a person or an agent evaluator. |
+
+## Guarantees and limits
+
+- The judge never changes an exit code or approves a baseline.
+- A head predicts the taste of the people who voted; with few votes it is noisy, and `judge show` says so.
+- Confidence is not accuracy: accuracy is measured on the gold set and reported as `calibration.agreement`.
+- Studio data (captures, votes, heads) stays on your machines; nothing is sent anywhere.
+- Model licenses vary by model card; check them before shipping heads ([Models and licenses](/scion/judge/models/)).
+
+## See also
+
+- [Questions and answers](/scion/judge/questions/)
+- [Train a head](/scion/judge/training/)
+- [Review a UI with the judge](/scion/judge/ui-review/)
+- [judge (CLI)](/scion/cli/judge/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# Questions and answers
+
+Every head answers one question, and every evaluator receives and returns the same shapes. A question has a type
+(`noul`, `score` or `choice`), instructions and criteria; an answer has the value, the probabilities, a confidence
+and a short legend, plus Scion's fields: evidence (frame and region), whether to escalate, the head version and its
+calibration against the gold set.
+
+## Question types
+
+| Type | Asks | Answer value |
+|---|---|---|
+| `noul` | Yes or no (`has_glitch`). | `noul`: probability of yes, 0 to 1. |
+| `score` | A level from 2 to 10 levels, each with what it means and examples. | `score`: the probability-weighted mean of the levels. |
+| `choice` | One of up to 255 options, each with a description (`main_issue`). | `choice`: the option id. |
+
+## Question file
+
+`scion/judge/questions/readability.json`, the input of `judge new`:
+
+<!-- validate: judge-question -->
+```json
+{"schema_version":1,"run":null,"blind":true,"orders":2,"questions":{"readability":{"type":"score","instructions":"How easy is the HUD to read at 1x on a laptop screen?","criteria":["text size","contrast","hierarchy"],"levels":[{"what":"Hard to read","examples":["scion/judge/examples/read-0.png"]},{"what":"Readable with effort","examples":[]},{"what":"Effortless","examples":["scion/judge/examples/read-2.png"]}]}},"items":[]}
+```
+
+The same shape, with `items` filled, is `eval-in.json` for evaluators.
+
+## Answer
+
+<!-- validate: judge-answer -->
+```json
+{"schema_version":1,"model":"siglip2-so400m","head_version":"readability@3","items":{"X":{"answers":{"readability":{"type":"score","score":1.2,"confidence":0.41,"probabilities":{"0":0.12,"1":0.56,"2":0.32},"legend":"small turn counter","evidence":{"frame":3,"region":[1100,20,160,40]}},"has_glitch":{"type":"noul","noul":0.04,"confidence":0.92}},"escalate":["readability"]}},"preferences":[],"calibration":{"gold_set":"ui_v1","agreement":0.78}}
+```
+
+## Answer fields
+
+| Field | Meaning |
+|---|---|
+| `model` | The eyes (or the evaluator's model). |
+| `head_version` | `<head>@<version>`. |
+| `items.<label>.answers.<question>` | One answer per question. |
+| `type` | The question type. |
+| `noul`, `score`, `choice` | The value, by type. |
+| `probabilities` | Per level or option. |
+| `confidence` | 0 to 1: how concentrated the probabilities are. Not accuracy. |
+| `legend` | A few words on why (from the nearest labeled examples). |
+| `evidence` | `frame` and `region` (pixels, top-left origin) the answer is about. |
+| `escalate` | Questions whose confidence fell under the head's threshold. |
+| `preferences` | For duels: `pair`, `winner`, `strength` (1 slight, 2 clear). |
+| `calibration` | `gold_set` and `agreement` with the people's gold votes. |
+
+## Writing good questions
+
+- Ask something concrete. "Is it beautiful?" is too vague to learn; "Does the palette stay cohesive?", "Does it look
+  like these five approved screens?", "Is the selected state obvious?" work.
+- Give every score level a description and examples.
+- Prefer duels for feel ("which hit is heavier?"): people agree more on comparisons than on absolute scores.
+
+## See also
+
+- [The Judge](/scion/judge/overview/)
+- [eval-in.json, eval-out.json, evals.tsv](/scion/reference/files/evals/)
+- [Judge data files](/scion/reference/files/judge-data/)
+- [Evaluators](/scion/evaluation/evaluators/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# Train a head
+
+A head learns one question from votes. This guide creates a head, collects votes with `judge vote` (blind duels in
+the browser), adds synthetic examples (degraded versions and fabricated bugs), keeps a gold set that never enters
+training, trains with `judge train` (cross-validated, seconds) and promotes the new version only when it agrees
+more with the people's gold votes than the previous one.
+
+## When to use
+
+- Train a head when the same taste question comes up on every change (HUD readability, hit weight, glitches).
+- Start with three heads: UI readability, visual glitch, and "looks like our game".
+
+## Before you begin
+
+- The judge configured in `scion.json` (`judge.dir`, `judge.eyes`, `judge.cache`); `dotnet scion doctor` checks that
+  the eye model is present.
+- A few runs with captures of the thing to judge.
+
+## Steps
+
+### 1. Create the head
+
+```sh
+dotnet scion judge new readability --question scion/judge/questions/readability.json --view hud
+```
+
+### 2. Vote
+
+```sh
+dotnet scion judge vote --run 20261011-150512 --head readability
+```
+
+A local page opens with blind pairs (X and Y), each asked in both orders. Ten minutes gives about 60 duels. Votes go
+to `scion/judge/votes/readability.jsonl`.
+
+### 3. Add synthetic examples
+
+```sh
+dotnet scion judge vote --head readability --synthetic 200
+```
+
+Scion degrades approved captures (lower contrast, 1 px misalignment, clutter, off-palette color, overflowing text)
+and fabricates bugs (missing-shader magenta, floating props, z-fighting). Each pair "original beats degraded" is a
+vote with `source: agent` and the degradation as its tag.
+
+### 4. Set the gold set apart
+
+```sh
+dotnet scion judge vote --head readability --gold ui_v1 --count 150
+```
+
+Gold votes come only from people, never from agents, and never enter training. A week later, re-vote 30 to 50 of
+them (`--regold`) to measure how much people agree with themselves: that is the ceiling a head can reach.
+
+### 5. Train
+
+```sh
+dotnet scion judge train readability
+```
+
+<!-- validate: cli/judge -->
+```json
+{"schema_version":1,"command":"judge train","ok":true,"head":{"schema_version":1,"name":"readability","version":4,"eyes":"siglip2-so400m","view":"hud","question":{"type":"score","instructions":"How easy is the HUD to read at 1x on a laptop screen?"},"trained_at":"2026-10-12T08:10:00Z","votes":412,"calibration":{"gold_set":"ui_v1","agreement":0.81,"ceiling":0.86}},"training":{"folds":5,"accuracy":0.83,"gold_agreement":0.81,"previous":0.78,"promoted":true},"next_step":"dotnet scion judge run <run> --heads readability"}
+```
+
+### 6. Use it
+
+```sh
+dotnet scion judge run 20261011-150512 --heads readability,has_glitch
+```
+
+## Reference
+
+### Promotion rule
+
+A new version replaces the current head only when its agreement with the gold set is higher than the previous
+version's. Otherwise it is kept as `readability@4-rejected` for inspection, and `promoted` is false.
+
+### What makes votes useful
+
+| Do | Because |
+|---|---|
+| Include near-misses: pairs almost equal where one is worse | They teach the boundary. |
+| Mix sources: old versions of the game (git), degradations, fabricated bugs, real variants | One source teaches its own artifacts. |
+| Vote in both orders | Position bias cancels out. |
+| Let the judge pick the next duels (`judge vote` does by default) | It asks where it is least sure. |
+
+### Agents in the loop
+
+Agents may generate synthetic pairs, label pairs in batch as `source: agent`, pick the most informative screens for a
+person, and explain disagreements ("it learned that dark means bad"). They never vote in the gold set, and a head is
+promoted only by agreement with people.
+
+## Errors
+
+| Code | Exit | Cause | Next action |
+|---|---|---|---|
+| `model_missing` | 3 | The eye model is not downloaded. | `dotnet scion doctor` prints the download command. |
+| `no_match` | 2 | No head with that name. | `dotnet scion judge list`. |
+| training `promoted: false` | 0 | The new version does not beat the old one on gold. | Add near-miss votes; check `judge show` for where it errs. |
+
+## Examples
+
+### Inspect a head
+
+```sh
+dotnet scion judge show readability
+```
+
+### A duel head for feel
+
+```sh
+dotnet scion judge new hit_weight --question scion/judge/questions/hit_weight.json --view actor --sequence
+```
+
+## See also
+
+- [Questions and answers](/scion/judge/questions/)
+- [judge (CLI)](/scion/cli/judge/)
+- [Judge data files](/scion/reference/files/judge-data/)
+- [Judge motion](/scion/judge/motion/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# Judge motion
+
+Feel lives in motion: how long the hit-stop lasts, how the shake decays, when the flash peaks. A **sequence head**
+combines two inputs: the numbers of the motion pack (`metrics.json`) and the embeddings of each frame of the cut. A
+small tree model learns the taste over the numbers from few examples and explains its answer; the frame embeddings
+add style. This guide creates and uses a sequence head.
+
+## When to use
+
+- Use a sequence head for feel questions: "which hit is heavier?", "is the anticipation visible?", "too much juice?".
+- Use an image head for anything that one frame shows.
+
+## Before you begin
+
+- Runs made with `--motion`, so `metrics.json` exists for each recipe.
+- The gates still run first: a sequence that fails photosensitivity is never ranked.
+
+## Steps
+
+### 1. Create a sequence head
+
+```sh
+dotnet scion judge new hit_weight --question scion/judge/questions/hit_weight.json --view actor --sequence
+```
+
+### 2. Collect duels on sequences
+
+```sh
+dotnet scion trial run SlashHit --variants base,heavy,snappy --motion
+dotnet scion judge vote --run 20261012-091500 --head hit_weight
+```
+
+Duels show the two `preview.gif` side by side, aligned on the impact.
+
+### 3. Train and run
+
+```sh
+dotnet scion judge train hit_weight
+dotnet scion judge run 20261012-091500 --heads hit_weight
+```
+
+## Reference
+
+### Inputs
+
+| Input | From | Used for |
+|---|---|---|
+| Motion metrics | `metrics.json`: hit-stop, shake, flash, anticipation, numbers | The tree model: explainable, works with 50 votes |
+| Frame embeddings | The eyes on each frame of `window.png`, `actor` view | Style: does the motion look like our approved hits |
+
+### Output
+
+A sequence head answers like any head, and its `legend` names the metrics that weighed most:
+
+```text
+hit_weight 0.74 (heavier): hit_stop.ms 100 (+), shake.peak_px 9 (+), flash.ms 80 (-)
+```
+
+### Speed
+
+A 30-frame sequence takes under a second: metrics are already computed, and frame embeddings are cached like any
+image.
+
+## Errors
+
+| Code | Exit | Cause | Next action |
+|---|---|---|---|
+| `bad_value` | 2 | The run has no `metrics.json`. | Run with `--motion`. |
+| `model_missing` | 3 | The eyes are not installed. | `dotnet scion doctor`. |
+
+## Examples
+
+### Too much or too little juice
+
+```json
+{"schema_version":1,"run":null,"blind":true,"orders":2,"questions":{"juice":{"type":"choice","instructions":"How much juice does the hit have?","options":[{"id":"too_little","description":"Flat"},{"id":"right","description":"Right"},{"id":"too_much","description":"Noisy"}]}},"items":[]}
+```
+
+### Rank presets
+
+```sh
+dotnet scion judge run 20261012-091500 --heads hit_weight,juice
+```
+
+## See also
+
+- [The motion pack](/scion/evaluation/motion-pack/)
+- [Train a head](/scion/judge/training/)
+- [Tune a hit effect](/scion/cookbook/tune-hit-feel/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# Taste heads and feel presets
+
+Taste is not one thing. A head trained on the studio's votes predicts the studio; a head trained on playtesters
+predicts casual players; an accessibility head favors contrast and calm motion. Heads are swappable per audience.
+Feel works the same way: named **presets** of tunable values (`heavy`, `snappy`) that blend with weights, so an agent
+turns two or three knobs instead of fifteen numbers.
+
+## When to use
+
+- Use audience heads when the team and the players disagree, or for accessibility reviews.
+- Use presets to name a feel once and reuse it across effects and recipes.
+
+## Steps
+
+### 1. Train a head per audience
+
+```sh
+dotnet scion judge new hit_weight.casual --question scion/judge/questions/hit_weight.json --view actor --sequence
+dotnet scion judge vote --head hit_weight.casual --run 20261012-091500
+```
+
+Head names may have a suffix after a dot; `judge run --heads hit_weight.casual` picks that one.
+
+### 2. Save presets
+
+`scion/presets/snappy.json`:
+
+<!-- validate: preset -->
+```json
+{"schema_version":1,"name":"snappy","description":"Short, crisp hits.","tunables":{"CritShake.Strength":0.2,"CritShake.Stop":0.03,"HitFlash.Seconds":0.05}}
+```
+
+### 3. Blend and compare
+
+```sh
+dotnet scion trial run SlashHit --variants base,heavy,snappy,"base + 0.7 heavy + 0.3 snappy" --motion
+dotnet scion judge run <run> --heads hit_weight,hit_weight.casual
+```
+
+## Reference
+
+### The cycle
+
+1. Generate many variants (presets, blends, guided search).
+2. The judge orders them per audience.
+3. A person picks between the top two.
+4. The vote trains the head; a winning blend can become a preset.
+
+### Where art-style variations come from
+
+Scion varies what code and numbers control: grafts, tunables, presets. New art in the game's style (sprites, icons)
+comes from your art pipeline or image tools, outside Scion; once in the project, trials capture it and the judge
+ranks it like anything else.
+
+### Blend syntax
+
+`base + 0.7 heavy + 0.3 snappy`: weights are decimals, presets are names in `scion/presets/`, `base` is the initial
+values. See [Tunables and presets](/scion/grafts/tunables/).
+
+## Errors
+
+| Code | Exit | Cause | Next action |
+|---|---|---|---|
+| `no_match` | 2 | A preset or head name does not exist. | List `scion/presets/` or `judge list`. |
+| `bad_value` | 2 | A blend does not parse. | Use `name`, `+` and decimal weights. |
+
+## Examples
+
+### An accessibility head
+
+```sh
+dotnet scion judge new calm_motion.access --question scion/judge/questions/calm_motion.json --sequence
+```
+
+### Use a blend in a spec run
+
+```sh
+dotnet scion trial run --spec StrongerCrits --variants base,"base + 0.7 heavy + 0.3 snappy"
+```
+
+## See also
+
+- [Tunables and presets](/scion/grafts/tunables/)
+- [Train a head](/scion/judge/training/)
+- [Guided search](/scion/explore/guided-search/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# Review a UI with the judge
+
+This tutorial reviews Orchard's battle HUD in about 30 to 45 minutes instead of hours. Scion captures 20 HUD states
+at two resolutions, the gates catch objective problems, the judge scores and ranks every capture, an agent reviews
+only the worst and the uncertain ones next to reference screens, makes variations, the judge compares them in
+pairs, and a person picks between the final two. The vote trains the judge for next time.
+
+## Before you begin
+
+- The `HudStates` static trial ([Capture every HUD state](/scion/cookbook/hud-states/)).
+- Trained heads `readability`, `has_glitch` and `looks_like_orchard` ([Train a head](/scion/judge/training/)).
+- Optional: a reference library of screens from other games, indexed by the judge (`scion/judge/references/`).
+
+## Steps
+
+### 1. Capture (about 1 minute)
+
+```sh
+dotnet scion trial run HudStates --mode 360p
+dotnet scion trial run HudStates --mode 720p
+```
+
+40 stills, two sheets.
+
+### 2. Gates (seconds)
+
+`HudStates` enables `TextOverflow`, `TextContrast` and `UiGrid`. Failures come first in `trial show --failed`.
+
+### 3. Judge (seconds)
+
+```sh
+dotnet scion judge run <run> --heads readability,has_glitch,looks_like_orchard
+```
+
+Every capture gets a score per head; low-confidence answers are listed under `escalate`.
+
+### 4. References (milliseconds)
+
+```sh
+dotnet scion judge run <run> --references 5
+```
+
+For each capture, the five most similar reference screens and their notes.
+
+### 5. Agent review of the worst (5 to 10 minutes)
+
+The agent reads only the 10 to 15 lowest-scored and escalated captures, each next to its references, and writes a
+short list of problems with evidence (state, region).
+
+### 6. Variations (5 to 15 minutes)
+
+The agent writes graft or theme changes for the problems (spacing, contrast, icon size) as drafts and runs the
+states again with `--grafts`.
+
+### 7. Re-judge in pairs (3 to 5 minutes)
+
+```sh
+dotnet scion trial diff <before> <after> HudStates
+dotnet scion judge run <after> --heads readability --pairs <before>
+```
+
+### 8. A person picks (about 5 minutes)
+
+```sh
+dotnet scion judge vote --run <after> --head readability --top 2
+```
+
+The person sees the top two variants per state, blind, and picks.
+
+### 9. The vote trains
+
+```sh
+dotnet scion judge train readability
+```
+
+## Check the result
+
+- `trial show HudStates --failed` lists no gate failures.
+- `judge run` scores the winning variant above the original on `readability` for most states.
+- `judge show readability` reports a new version, promoted, with agreement on the gold set equal or higher.
+
+## Next steps
+
+- Promote the winning grafts and approve the new stills ([From draft to final build](/scion/grafts/lifecycle/)).
+- Add the HUD review to CI with only steps 1 and 2 ([Run Scion in CI](/scion/cookbook/ci/)).
+- Train an audience head for accessibility ([Taste heads and feel presets](/scion/judge/presets/)).
+
+## See also
+
+- [Capture every HUD state](/scion/cookbook/hud-states/)
+- [Gates](/scion/evaluation/gates/)
+- [Train a head](/scion/judge/training/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# Models and licenses
+
+The judge's eyes are pre-trained vision encoders that run locally. Scion does not ship model weights: `dotnet scion
+doctor` checks the configured model and prints the command that downloads it into the local model cache. This page
+lists the supported models, their cost, where the judge keeps its data and what to check in each license.
+
+## Supported eyes
+
+| `judge.eyes` | Model | Good at | Embedding | Time per image (Apple M5) |
+|---|---|---|---|---|
+| `siglip2-so400m` (default) | SigLIP 2 So400m, patch 14, 384 px | General images, UI with text | 1152 | about 25 ms |
+| `siglip2-base` | SigLIP 2 Base, patch 16, 256 px | Fast first passes | 768 | about 8 ms |
+| `dinov2-base` | DINOv2 Base, patch 14 | Shapes, layout, art style without text | 768 | about 15 ms |
+| `uiclip` | UIClip | Web and app UI conventions | 512 | about 10 ms |
+
+Switching eyes recomputes embeddings (10,000 images take about 5 to 10 minutes) and retrains heads (seconds each).
+
+## Hardware
+
+| Machine | Works |
+|---|---|
+| Apple silicon (M1 or later) | Yes, on the GPU through Metal. |
+| Windows or Linux with an NVIDIA GPU (8 GB) | Yes, through CUDA. |
+| CPU only | Yes, about 5 to 10 times slower. |
+
+## Where the data lives
+
+| Data | Path | In git |
+|---|---|---|
+| Questions, heads, votes, gold sets | `judge.dir` (`scion/judge/`) | Yes (small JSON and JSONL) |
+| Embeddings cache | `judge.cache` (`.scion/judge/`) | No |
+| Model weights | the local model cache (`~/.cache/scion/models/`) | No |
+
+Nothing leaves the machine: the judge makes no network calls after the model is downloaded.
+
+## Licenses
+
+- Check the model card of the eyes you use; SigLIP 2 and DINOv2 are published under Apache-2.0 at the time of
+  writing, UIClip under its own terms.
+- Heads trained on your votes are yours. Heads trained on third-party images (store screenshots, glitch datasets)
+  are for internal use: do not ship their weights.
+- If you use an agent to label pairs, follow the model provider's terms on using outputs for training.
+
+## See also
+
+- [The Judge](/scion/judge/overview/)
+- [Judge data files](/scion/reference/files/judge-data/)
+- [License](/scion/help/license/)

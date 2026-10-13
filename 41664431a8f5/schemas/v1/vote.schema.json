@@ -1,0 +1,99 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jand-s.github.io/scion/schemas/v1/vote.schema.json",
+  "title": "Judge vote",
+  "description": "One line of scion/judge/votes/<head>.jsonl: a person or a filtered agent vote on one duel or one image.",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "description": "Format version of this file. Always 1 in Scion 1.x."
+    },
+    "head": {
+      "type": "string",
+      "description": "Head name."
+    },
+    "at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "UTC."
+    },
+    "by": {
+      "type": "string",
+      "description": "Who voted."
+    },
+    "source": {
+      "enum": [
+        "person",
+        "agent"
+      ],
+      "description": "Agent votes enter training only when filtered."
+    },
+    "a": {
+      "type": "string",
+      "description": "Image A (path or sha256)."
+    },
+    "b": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Image B for duels, or null."
+    },
+    "winner": {
+      "enum": [
+        "a",
+        "b",
+        "tie",
+        null
+      ]
+    },
+    "strength": {
+      "enum": [
+        1,
+        2
+      ]
+    },
+    "value": {
+      "type": [
+        "number",
+        "string",
+        "null"
+      ],
+      "description": "Single-image answer (score level or option)."
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "What decided it: color, light, style, layout, legibility, detail."
+    }
+  },
+  "required": [
+    "schema_version",
+    "head",
+    "at",
+    "by",
+    "source",
+    "a"
+  ],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "schema_version": 1,
+      "head": "readability",
+      "at": "2026-10-11T18:20:00Z",
+      "by": "alex",
+      "source": "person",
+      "a": "scion/judge/images/3f2a.png",
+      "b": "scion/judge/images/91c0.png",
+      "winner": "b",
+      "strength": 2,
+      "value": null,
+      "tags": [
+        "legibility"
+      ]
+    }
+  ]
+}

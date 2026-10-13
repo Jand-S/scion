@@ -1,0 +1,2062 @@
+# Scion 1.0.0 documentation: Trials
+
+> Every page below is also at its own URL plus `.md`. Index: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# How trials work
+
+Trials are Scion's automated test lab. A **recipe** describes one situation to play (a slash at 3 tiles, a co-op
+turn, a HUD state); the game's **adapter** knows how to play it; the **test build** of the game plays a queue of
+recipes headless and writes captures, telemetry and a verdict for each. The CLI launches N copies of that one build
+in parallel, splits the queue between them and compares every result with the approved **baseline**.
+
+## How it works
+
+![Diagram: dotnet scion trial run starts three copies of the test build; each plays its shard of the queue and writes its folder; the CLI compares the results with scion/baselines and writes summary.json.](../../../assets/diagrams/run-flow.svg)
+
+### One build, many copies
+
+There is no special test scene and no test runner: the test build is the game, compiled with `SCION_SLOTS` and
+`SCION_TRIALS`. Started with `-scion-trials`, it creates a `TrialSession`, discovers every `TrialRecipe` class,
+picks an adapter for each, plays the queue and, with `-scion-quit`, exits with a code (0 ok, 1 a recipe failed,
+2 usage, 3 environment).
+
+`dotnet scion trial run` does the orchestration:
+
+1. reads `scion.json`, finds the test build and checks it was built in the right mode;
+2. starts `-j N` copies (default: the `doctor` suggestion from cores and free memory), each with `-scion-shard i/N`
+   and its own `q<i>/` folder;
+3. waits for them, with a watchdog for copies that stop making progress;
+4. compares each (recipe, round) with `scion/baselines/` and writes `summary.json`, `summary.tsv` and `compare.json`;
+5. prints a short JSON with the counts, the failures, the changes and the `next_step`.
+
+### Recipes, rounds and shards
+
+Each recipe expands into one or more **ids** (variants, modes and seeds). The queue is every (id, round) pair; a
+shard `i/n` plays exactly the pairs assigned to it, round-robin over (round, id). Rounds of the same id in one
+process are compared with each other: the same state hash every round is the first determinism check.
+
+### Captures
+
+During a recipe the adapter marks a **cut** (`BeginCut`/`EndCut`): every frame rendered in the cut is hashed and
+can be saved. The session writes `window.png` (up to 12 frames around the impact), `context.png` (6 frames across
+the cut), named stills and, for static trials, `sheet.png`. Capture is offscreen and works in `-batchmode`; time is
+virtual, so the same recipe gives the same frames on any machine.
+
+### Verdicts
+
+| Verdict | Meaning | Exit |
+|---|---|---|
+| `same` | Hash, frame count and images match the baseline. | 0 |
+| `within` | Images differ but inside the tolerance. | 0 |
+| `px_changed` | Hash and frames match; pixel hashes differ and the recipe compares no images. Informative. | 0 |
+| `changed` | Hash, frame count (beyond ±1) or images outside the tolerance differ. | 0 (it is a review signal, not a failure) |
+| `new` | No `baseline.json` for this id. | 0 |
+| `stale` | The baseline is for another platform, fps, Unity or player args; images are suspended, the hash still counts. | 0 |
+
+A recipe that fails (timeout, `Fail`, a check, an error in the log, a graft that threw) exits 1 whatever its verdict.
+
+### The adapter is the only game-specific code
+
+Everything above is generic. The game writes recipes (data) and one or more adapters (how to load a scene, start a
+battle, issue a command, read a state hash). The more the game follows the [Scion Standard](/scion/standard/overview/),
+the thinner the adapter.
+
+## Key terms
+
+| Term | Meaning |
+|---|---|
+| Recipe | A `TrialRecipe` subclass: the data of one situation. |
+| Id | One concrete instance of a recipe: `SlashHit`, `SlashHit[Distance=3]@360p#7`. |
+| Adapter | The game's `TrialAdapter<TRecipe>` that plays recipes of a type. |
+| Round | One play of an id; `--rounds 2` plays every id twice. |
+| Copy | One process of the test build. |
+| Shard | The share `i/n` of the queue one copy plays. |
+| Group | The copies that play one co-op recipe together (a host and its clients). |
+| Run | One `trial run`: a folder under `trials.out` named by its start time. |
+| Cut | The frames between `BeginCut` and `EndCut`. |
+| Baseline | The approved hash, frames and images of an id, in `scion/baselines/`. |
+
+## Guarantees and limits
+
+- The same build, recipe and seed give the same state hash on every machine and every round; frame counts may differ
+  by one until the Netcode clock is virtual ([Netcode clock](/scion/determinism/netclock/)).
+- Copies never write into each other's folders; the CLI never writes inside a copy's folder.
+- Images are compared per platform (OS, graphics API, size, capture); the hash is compared everywhere.
+- A copy that makes no progress for 120 seconds of real time is ended (`watchdog`, exit 3).
+- Runs beyond `trials.keep_runs` (default 10) are deleted at the start of the next run.
+
+## See also
+
+- [Quickstart](/scion/start/quickstart/)
+- [Write a recipe](/scion/trials/recipes/)
+- [Write an adapter](/scion/trials/adapters/)
+- [Baselines and approval](/scion/trials/baselines/)
+- [trial run](/scion/cli/trial-run/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# Write a recipe
+
+A recipe is data: a `TrialRecipe` subclass whose constructor sets what to play and how to capture it. The session
+creates one instance of every concrete recipe class through its public parameterless constructor (SCN201). This
+guide covers the members (`Name`, `Id`, `Variant`, `Tags`, `Description`, `Seed`, `Fps`, `TailSeconds`,
+`TimeoutSeconds`, `Players`, `Explicit`, `Control`, `Tolerance`), the overrides (`Checks`, `Setup`, `Variants`,
+`Mask`), cutting the capture by event, and recipes compiled outside Unity with `--recipes`.
+
+## When to use
+
+- Write one recipe per situation a person would want to look at after a change: one hit, one ability, one turn,
+  one screen.
+- Keep recipes short (a few seconds of game time): many short recipes parallelize better than one long one.
+- Put the fields every recipe of the game shares in one base class, played by one adapter.
+
+## Before you begin
+
+- An assembly for trials code with `defineConstraints: ["SCION_TRIALS"]`, so it only compiles into test builds
+  (`Orchard.Trials`), or `#if SCION_TRIALS` around the code.
+- An adapter for the recipe's base type ([Write an adapter](/scion/trials/adapters/)).
+
+## Steps
+
+### 1. A base type with the game's fields
+
+```csharp
+using Scion.Trials;
+
+namespace Orchard.Trials
+{
+    public abstract class OrchardRecipe : TrialRecipe
+    {
+        public string Attacker = "knight";
+        public string Defender = "skeleton";
+        public int DefenderHp = 20;
+        public int Distance = 1;
+        public string Ability = "slash";
+    }
+}
+```
+
+### 2. One recipe
+
+```csharp
+namespace Orchard.Trials
+{
+    public sealed class SlashHit : OrchardRecipe
+    {
+        public SlashHit()
+        {
+            Description = "The knight slashes a skeleton next to it.";
+            Tags = new[] { "combat", "melee" };
+            Seed = 7;
+            TailSeconds = 1f;
+        }
+
+        protected override void Checks(TrialChecks c) =>
+            c.Marked("IMPACT").Frames(20, 90).ProbeIs("damage", d => d > 0, "the slash deals damage");
+    }
+}
+```
+
+### 3. Cut the capture around the action
+
+The adapter decides when the interesting part starts and ends:
+
+```csharp
+session.BeginCut();                 // frames from here on are captured
+battle.Issue(Command.Attack(recipe.Ability, target));
+yield return session.WaitUntil(() => battle.Idle, "attack finished");
+yield return session.WaitSeconds(recipe.TailSeconds);
+session.EndCut();
+```
+
+The moment that matters is marked from a trials-only observer graft, so `window.png` centers on it:
+
+```csharp
+[Before(typeof(HitPresenter), nameof(HitPresenter.Play), Observe = true)]
+public static void Before(HitPresenter presenter, HitEvent e) => TrialSession.Current?.MarkImpact();
+```
+
+### 4. List and run it
+
+```sh
+dotnet scion trial list
+dotnet scion trial run SlashHit --rounds 2
+```
+
+## Reference
+
+### Members
+
+| Member | Type | Default | Meaning |
+|---|---|---|---|
+| `Name` | `string`, virtual get | class name | What `--only` patterns match; the base of `Id`. |
+| `Id` | `string`, set by the session | `Name` | The instance id, with variant, mode and seed: `SlashHit[Distance=3]@360p#7`. |
+| `Variant` | `string`, set by the session | `null` | The variant arguments, `Distance=3`. |
+| `Mode` | `string`, set by the session | `null` | The mode, `360p`. |
+| `Tags` | `IReadOnlyList<string>`, protected set | empty | Labels for `--tag` filters. |
+| `Description` | `string`, protected set | `null` | One line: what the recipe shows. |
+| `Seed` | `int`, protected set | 1 | Seeds `UnityEngine.Random` and `SeededRandom` at the start of the recipe. |
+| `Fps` | `int`, protected set | 30 | Capture rate; game time advances exactly `1/Fps` per frame. |
+| `TailSeconds` | `float`, protected set | 0.5 | Game seconds to keep capturing after the action; the adapter uses it. |
+| `TimeoutSeconds` | `float`, protected set | 30 | Limit for `Run`, in game seconds. |
+| `Players` | `int`, protected set | 1 | 1 to 4; co-op recipes run in groups ([Co-op trials](/scion/trials/coop/)). |
+| `Explicit` | `bool`, protected set | `false` | Runs only when a pattern names its exact `Id` or `Name`. |
+| `Control` | `DeterminismControl`, protected set | `All` | What the session makes deterministic ([Particles, animators, UI and physics](/scion/determinism/control/)). |
+| `Tolerance` | `ImageTolerance`, protected set | `ImageTolerance.Default` | Image comparison; `null` compares no images ([Image comparison](/scion/trials/image-comparison/)). |
+| `Checks(TrialChecks c)` | protected virtual | none | Declares checks ([Checks](/scion/trials/checks/)). |
+| `Setup()` | protected virtual | none | Runs after variant arguments are applied. |
+| `Variants()` | protected virtual | `null` | Yields `TrialArgs`, one per variant ([Variants, modes and seeds](/scion/trials/variants/)). |
+| `Mask(artifact, rect, why)` | protected | | A region image comparison ignores, in normalized coordinates. |
+
+`Seed` is per recipe; `TrialSession.RunSeed` (`--seed`) is per run, and the adapter maps it to the game's world
+seed, so another run seed tries another world with the same recipes.
+
+### Recipes from a DLL
+
+Recipes compiled outside Unity load at startup:
+
+```sh
+dotnet scion trial run --recipes scion/recipes/bin/Orchard.Recipes.dll
+```
+
+The DLL references the game's assemblies from the build's `Managed/` folder. A recipe whose `Name` equals a
+built-in one replaces it, so a new or changed recipe never needs a game rebuild. `trial list` also lists the
+sources in `scion/recipes/` (`trials.recipes_staging`).
+
+### Recipes that must not run by default
+
+Set `Explicit = true` for recipes that fail on purpose (to test a check), take minutes, or need a special machine.
+They run only when named: `dotnet scion trial run KnightFallsSlow`.
+
+## Errors
+
+| Code | Exit | Cause | Next action |
+|---|---|---|---|
+| `SCN201` | 1 (selected) or log warning | The recipe has no public parameterless constructor. | Add `public SlashHit() { ... }`. |
+| `no_match` | 2 | No recipe matches the pattern. | Use `did_you_mean`, or `trial list`. |
+| recipe error `timeout (30s): <what>` | 1 | `Run` passed `TimeoutSeconds`. | Read the `what`; raise the timeout only if the game really needs it. |
+
+## Examples
+
+### Three attackers
+
+```csharp
+public sealed class FireballArea : OrchardRecipe
+{
+    public FireballArea()
+    {
+        Attacker = "mage"; Ability = "fireball"; Distance = 4;
+        Description = "A fireball hits three skeletons in an area.";
+        Tags = new[] { "combat", "area" };
+    }
+    protected override void Checks(TrialChecks c) => c.Marked("IMPACT", atLeast: 3);
+}
+```
+
+### A unit going down
+
+```csharp
+public sealed class KnightFalls : OrchardRecipe
+{
+    public KnightFalls()
+    {
+        Attacker = "skeleton"; Defender = "knight"; DefenderHp = 3;
+        Description = "A skeleton finishes a wounded knight.";
+    }
+    protected override void Checks(TrialChecks c) => c.Order("IMPACT", "unit_down").ProbeIs("defender_hp", hp => hp == 0, "the knight falls");
+}
+```
+
+## See also
+
+- [Write an adapter](/scion/trials/adapters/)
+- [TrialSession](/scion/trials/session/)
+- [Checks](/scion/trials/checks/)
+- [Recipes API](/scion/reference/api/recipes/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# Write an adapter
+
+The adapter is the game's only Trials-specific code: it prepares the game once, plays each recipe (load, set up,
+act, wait), cleans up and reports a hash of the rules state. Derive from `TrialAdapter<TRecipe>` and register it with
+`[assembly: TrialAdapter(typeof(...))]`. This guide covers `Prepare`, `Run`, `Teardown`, `StateHash`, how a recipe
+picks its adapter, the coroutine rules, and the reset and seeding every adapter must do. Errors: SCN202, SCN203.
+
+## When to use
+
+- Write one adapter per family of recipes that start the same way: battles, HUD screens, menus.
+- Use `ITrialAdapter` directly only when the choice depends on something other than the recipe's type.
+- For screens and items that need no action, derive recipes from `StaticTrial<TItem>` and skip the adapter
+  entirely ([Static trials](/scion/trials/static-trials/)).
+
+## Steps
+
+### 1. Write the adapter
+
+```csharp
+using System.Collections;
+using Orchard.Core;
+using Orchard.Runtime;
+using Scion.Trials;
+
+[assembly: TrialAdapter(typeof(Orchard.Trials.OrchardAdapter))]
+
+namespace Orchard.Trials
+{
+    public sealed class OrchardAdapter : TrialAdapter<OrchardRecipe>
+    {
+        string hash;
+        public override string StateHash => hash;
+
+        public override IEnumerator Prepare(TrialSession s)
+        {
+            s.Sensor("state", () => Battle.Current?.State.Hash64 ?? 0L);
+            s.Sensor("tick", () => Battle.Current?.State.Tick ?? 0L);
+            yield return s.WaitUntil(() => Boot.Ready, "boot scene loaded");
+        }
+
+        protected override IEnumerator Run(OrchardRecipe r, TrialSession s)
+        {
+            hash = null;
+            var battle = Battle.Start(new BattleSetup(r.Attacker, r.Defender, r.DefenderHp, r.Distance, seed: s.RunSeed));
+            yield return s.WaitUntil(() => battle.Ready, "battle ready");
+            s.Still("before");
+            yield return null;
+
+            int hp = battle.State.Unit(1).Hp;
+            s.BeginCut();
+            battle.Issue(Command.Ability(r.Ability, attacker: 0, target: 1));
+            yield return s.WaitUntil(() => battle.Idle, "ability resolved");
+            yield return s.WaitSeconds(r.TailSeconds);
+            s.EndCut();
+
+            s.Probe("damage", hp - battle.State.Unit(1).Hp);
+            s.Probe("defender_hp", battle.State.Unit(1).Hp);
+            hash = battle.State.Hash64.ToString("X16");
+        }
+
+        protected override IEnumerator Teardown(OrchardRecipe r, TrialSession s)
+        {
+            Battle.End();
+            yield return s.WaitUntil(() => Battle.Current == null, "battle cleared");
+        }
+    }
+}
+```
+
+### 2. Reset global state between recipes
+
+Every recipe must start from the same state, whatever ran before it in the queue:
+
+- end and unload what `Run` created in `Teardown`;
+- reset statics and singletons the game keeps (`Time.timeScale`, caches, pools) in `Teardown` or on
+  `TrialSession.Boundary`;
+- seed every random source from the recipe: `UnityEngine.Random` and `new System.Random()` are seeded by the
+  session; seed the game's own generators from `s.RunSeed` and the recipe's `Seed`.
+
+```csharp
+TrialSession.Boundary += () => { UnityEngine.Time.timeScale = 1f; DamageNumbers.Pool.Clear(); };
+```
+
+### 3. Run it twice
+
+```sh
+dotnet scion trial run --rounds 2
+```
+
+With two rounds, the `determinism` check fails any recipe whose `StateHash` differs between rounds.
+
+## Reference
+
+### Members
+
+| Member | Default | Called |
+|---|---|---|
+| `public virtual IEnumerator Prepare(TrialSession s)` | nothing | Once per process, before the first recipe this adapter gets. With warm copies, at startup. |
+| `protected abstract IEnumerator Run(TRecipe r, TrialSession s)` | | Per (recipe, round): set up, act, cut, probe. |
+| `protected virtual IEnumerator Teardown(TRecipe r, TrialSession s)` | nothing | After `Run`, even when it failed. |
+| `public virtual string StateHash { get; }` | `null` | Read after `Run`, before `Teardown`. A deterministic hash of the rules state, or null. |
+
+`TrialAdapter<TRecipe>` is a `MonoBehaviour`: the session gives it its own GameObject that survives scene loads.
+A plain `ITrialAdapter` (with `Accepts`) needs a public parameterless constructor.
+
+### Which adapter plays a recipe
+
+1. Only adapters whose recipe type is the recipe's class or a base of it, and whose `Accepts(recipe)` is true, count.
+   A plain `ITrialAdapter` handles `TrialRecipe`, the least specific type.
+2. The adapter with the most derived recipe type wins. `TrialAdapter<HudStates>` beats the package's
+   `StaticTrialAdapter : TrialAdapter<StaticTrial>` for `HudStates`.
+3. Two adapters for the same type are SCN203. Registration order decides nothing.
+
+A selected recipe no adapter accepts fails alone, naming the registered adapters.
+
+### Coroutine rules
+
+- Everything is a coroutine: wait with `yield return s.WaitUntil(...)`, `s.WaitSeconds(...)` or `null`, never with
+  sleeps.
+- A throw, a timeout or `s.Fail` in `Run` fails the current recipe and stops `Run` at its next `yield`; `Teardown`
+  still runs (limit 15 game seconds).
+- In `Prepare`, any of them stops the queue with exit 3 (`prepare_failed`). `Prepare` has a limit of 60 seconds of
+  real time.
+- Split steps into methods and `yield return Step();` so the guards reach them. A coroutine started with
+  `StartCoroutine` runs outside the guards.
+
+### What makes a good StateHash
+
+- Only rules state: unit positions, HP, turn, RNG state of the core. Never presentation (animations, particles).
+- Stable across machines: integers, ordered collections, no `GetHashCode` of strings.
+- The same value the multiverse and co-op telemetry use, so one function serves all three.
+
+## Errors
+
+| Code | Exit | Cause | Next action |
+|---|---|---|---|
+| `SCN202` | 3 | A registered type is not a valid adapter. | Derive from `TrialAdapter<TRecipe>` with a public parameterless constructor. |
+| `SCN203` | 3 | Two adapters handle the same recipe type. | Keep one per type; make one more specific. |
+| `no_adapter` | 3 | No `[assembly: TrialAdapter]` in the build. | Register the adapter; `dotnet scion diagnose` writes a skeleton. |
+| `prepare_failed` | 3 | `Prepare` threw, timed out or called `Fail`. | Read `player.log` of the copy. |
+
+## Examples
+
+### A HUD adapter for static trials
+
+```csharp
+[assembly: TrialAdapter(typeof(Orchard.Trials.HudAdapter))]
+
+public sealed class HudAdapter : TrialAdapter<HudStates>
+{
+    protected override IEnumerator Run(HudStates r, TrialSession s)
+    {
+        yield return SceneLoader.Load("HudPreview");
+        yield return r.Play(s);
+    }
+}
+```
+
+### Map the run seed to the world
+
+```csharp
+var battle = Battle.Start(setup with { MapSeed = s.RunSeed * 7919 + r.Seed });
+```
+
+## See also
+
+- [Write a recipe](/scion/trials/recipes/)
+- [TrialSession](/scion/trials/session/)
+- [Adapters API](/scion/reference/api/adapters/)
+- [SCN201-SCN203](/scion/reference/diagnostics/trials/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# TrialSession
+
+`TrialSession` is the object adapters, grafts and checks talk to during a run. The player creates it when started
+with `-scion-trials` (`TrialSession.Current`); adapters receive it in every call. Call its methods on the main thread:
+a call from another thread does nothing and logs an error, which fails the recipe through the `log` check.
+
+## Properties
+
+| Member | Meaning |
+|---|---|
+| `static TrialSession Current` | The running session, or null without `-scion-trials`. |
+| `static event Action Boundary` | Raised on the main thread after each recipe and once after the queue. Reset leaking state here. |
+| `string OutputRoot` | The queue's output folder (`-scion-out`, or the folder of the last `RunQueue`). |
+| `TrialRecipe Recipe` | The recipe running now, or null between recipes. |
+| `string RecipeDir` | `<OutputRoot>/<IdDir>/r<Round>`. |
+| `int Round` | The round being played, from 1. |
+| `bool InRecipe` | True from the start of a recipe until its outputs are written. |
+| `int RunSeed` | `-scion-seed` (`--seed`), 1 by default. |
+| `IReadOnlyList<TrialRecipe> Recipes` | Every recipe found and expanded into ids, before filters. |
+| `TrialRole Role` | `host` or `client:i` in co-op groups; `host` alone. |
+
+## Capture
+
+| Method | What it does |
+|---|---|
+| `BeginCut()` | Starts capturing every rendered frame. Call it right before the action. |
+| `EndCut()` | Stops capturing. The session also calls it when `Run` ends. |
+| `Mark(string label)` | Labels the current frame (`frames.tsv`, `report.md`, `Marked` and `Order` checks, `context.png`). Ignored outside a cut. Labels may not contain a comma, `=`, tab or line break. |
+| `MarkImpact()` | Marks the moment that matters: `window.png` centers on the first call; each call adds the label `IMPACT`. |
+| `Still(string name)` | Saves the next rendered frame as `<name>.png`, inside or outside a cut. Names: up to 64 of `A-Za-z0-9_-.`; not `window`, `context`, `sheet`, `unstable`. Let a frame render after it. |
+| `MaskRect(Rect screenPixels, string why)` | A region image comparison ignores in this recipe, in screen pixels, origin at the bottom left. |
+
+## Verdict
+
+| Method | What it does |
+|---|---|
+| `Fail(string reason)` | Fails the recipe and stops `Run` (or `Prepare`) at its next `yield`. `Teardown`, outputs and checks still run. The first reason is kept. Between recipes it fails the next one; after the last, the queue. |
+| `Check(bool ok, string what)` | A soft check (id `assert`): when false, the recipe keeps running and fails at its end with `what`. |
+| `Note(string line)` | A line in the recipe's `report.md`, stamped with game time, and in the log with `[Scion]`. |
+
+## Data
+
+| Method | What it does |
+|---|---|
+| `Probe(string key, double value)` | A number. The last value per key goes to `result.json` (`probes`) and is what `ProbeIs` tests; every call goes to `telemetry.jsonl`. |
+| `Sensor(string name, Func<long> read)` | A `frames.tsv` column read once per captured frame. Lasts for the process: register in `Prepare`. Names `[a-z0-9_]+`. Keep `read` cheap and allocation-free. |
+| `Event(string name, params (string Key, object Value)[] fields)` | A `"kind":"event"` line in `telemetry.jsonl`. Co-op uses `Event("turn", ("turn", n), ("hash", h))`. |
+
+## Waiting
+
+| Method | What it does |
+|---|---|
+| `IEnumerator WaitUntil(Func<bool> cond, string what)` | Checks now, then every frame. On timeout: `timeout (30s): <what>`. |
+| `IEnumerator WaitSeconds(float gameSeconds)` | Waits game time on the recipe's clock: `0.5f` is 15 frames at 30 fps on any machine. |
+
+## Queues
+
+```csharp
+IEnumerator RunQueue(string only, int rounds, string outDir, Action<int> done = null)
+```
+
+Plays another queue in the same process without restarting the game; adapters already prepared skip `Prepare`.
+`only` is a comma-separated pattern list (null = every non-`Explicit` recipe); `outDir` gets its own `run.json`,
+`results.tsv` and recipe folders. `done` receives the exit code. Warm copies run every queue this way (op `run` of
+the [control protocol](/scion/reference/control-protocol/)). Throws `InvalidOperationException` when a queue is
+already playing.
+
+## Order of one recipe
+
+| Moment | What happens |
+|---|---|
+| Start | `Recipe`, `Round`, `RecipeDir` set; `Random.InitState(Seed)`; `captureFramerate = Fps`; `Clock.Begin(1000)`; `SeededRandom.Reset(Seed)`; determinism controls on; checks `Begin`. |
+| Run | `adapter.Run`, guarded; timeout = `TimeoutSeconds` of game time. |
+| End | `EndCut`; `StateHash` read; PNG encoding starts; `Teardown`; PNGs awaited; checks `End`; then `frames.tsv`, `telemetry.jsonl`, `log.txt`, `result.json`, `report.md`; a line in `results.tsv`; `Boundary`. |
+
+## See also
+
+- [Write an adapter](/scion/trials/adapters/)
+- [Checks](/scion/trials/checks/)
+- [Session API](/scion/reference/api/session/)
+- [Telemetry, probes and sensors](/scion/evaluation/telemetry/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# Checks
+
+A check is a rule a recipe must pass. Built-in checks run on every recipe (no errors in the log, no blank or magenta
+frames, the same hash every round); a recipe declares more in `Checks(TrialChecks c)`; the adapter adds soft checks
+with `session.Check`; the game adds checks for every recipe with `ITrialCheck`. A failed check fails the recipe at
+its end, without stopping it, and its id and reason go to `result.json` and `results.tsv`.
+
+## When to use
+
+- Use `Fail` when going on makes no sense (the battle never started); use `Check` or declared checks for everything
+  else, so one run reports every problem.
+- Use `ProbeIs` for numbers the rules produce (damage, HP, turns).
+- Use an `ITrialCheck` for a rule about every frame of every recipe (no black frames, a HUD element always visible).
+
+## Steps
+
+### 1. Declare checks in the recipe
+
+```csharp
+protected override void Checks(TrialChecks c) =>
+    c.Marked("IMPACT")
+     .Order("IMPACT", "unit_down")
+     .Frames(20, 90)
+     .ProbeIs("damage", d => d >= 10, "a critical slash deals at least 10")
+     .NoErrors("^Shader warning in 'Orchard/Water'")
+     .Skip("px", "leaf particles drift between rounds");
+```
+
+### 2. Add soft checks in the adapter
+
+```csharp
+s.Check(battle.State.Unit(1).Hp < hp, "the slash lowers the defender's HP");
+```
+
+### 3. Allow known errors for the whole project
+
+`scion.json`:
+
+```json
+{"schema_version":1,"log_allow":["^The referenced script \\(Unknown\\) on this Behaviour is missing"]}
+```
+
+The CLI passes them to every copy with `-scion-log-allow <file>`.
+
+## Reference
+
+### Built-in checks
+
+| Id | Fails when |
+|---|---|
+| `log` | An Error, Exception or Assert is logged between the start of `Run` and the end of the recipe. `[Scion]` lines never count. |
+| `assert` | `TrialSession.Check(false, ...)` was called. |
+| `blank` | Every frame of the cut is one color (99 % or more). Some blank frames only warn. |
+| `magenta` | A frame has 0.2 % or more of Unity's missing-shader magenta. |
+| `determinism` | With 2 or more rounds in the process: the state hash differs (fails), or the frame count differs by one (warns) or more (fails). |
+| `px` | With 2 or more rounds: the pixel hash differs (fails; set `Deterministic(pixels: false)` to warn only). |
+| `gate:<id>` | An enabled gate fails ([Gates](/scion/evaluation/gates/)). |
+
+### TrialChecks
+
+| Method | Check id | Meaning |
+|---|---|---|
+| `NoErrors(params string[] allowRegex)` | `log` | Each .NET regex allows matching errors. Calls add up. |
+| `Deterministic(bool frames = false, bool pixels = true)` | `determinism`, `px` | Round comparison with any number of rounds; `frames: true` fails on one frame of difference. |
+| `Marked(string label, int atLeast = 1)` | `marked:<label>` | The label was marked at least `atLeast` times in the cut. |
+| `Order(params string[] labels)` | `order` | The labels were marked in this order (same frame or later). |
+| `Frames(int min, int max)` | `frames` | The cut has `min` to `max` frames. |
+| `ProbeIs(string key, Func<double, bool> ok, string why)` | `probe:<key>` | The last value of the probe passes `ok`. A key never probed fails. |
+| `Gate(string id, params (string, object)[] options)` | `gate:<id>` | Enables a gate for this recipe. |
+| `Skip(string checkId, string why)` | | Turns a check off for this recipe; shown as `skipped` with `why`. |
+
+When a base recipe declares checks and a subclass adds more, call `base.Checks(c)`.
+
+### ITrialCheck
+
+```csharp
+[assembly: TrialCheck(typeof(Orchard.Trials.HudAlwaysVisible))]
+
+public sealed class HudAlwaysVisible : ITrialCheck
+{
+    int missing;
+    public string Id => "hud-visible";
+    public void Begin(TrialRecipe recipe, TrialSession session) => missing = -1;
+    public void OnFrame(in FrameView frame)
+    {
+        if (missing < 0 && !Hud.Current.IsVisible) missing = frame.Index;
+    }
+    public void OnLog(string message, string stack, LogType type) { }
+    public CheckResult End() => missing < 0 ? CheckResult.Pass() : CheckResult.Fail("HUD hidden", missing);
+}
+```
+
+- One instance per process; `Begin` for each (recipe, round), then `OnFrame` per captured frame and `OnLog` per log
+  line, then `End`. All on the main thread.
+- `Id`: unique, no spaces, commas or `=`, not a built-in id.
+- `FrameView`: `Index`, `Width`, `Height`, `Pixels` (bottom row first), `Layout`, `Px`, `GameMs`. Valid only during
+  the call; keep `OnFrame` allocation-free.
+- `CheckResult.Pass()`, `Warn(reason, frame, region)`, `Fail(reason, frame, region)`; `Region` in pixels, origin at
+  the bottom left. `CheckStatus` is `Pass`, `Warn`, `Fail` or `Skipped`.
+
+## Errors
+
+| Code | Exit | Cause | Next action |
+|---|---|---|---|
+| check `fail` | 1 | A check failed. | Read `checks[]` in `result.json`: `id`, `reason`, `frame`, `region`. |
+| invalid check | 3 | An `ITrialCheck` type or id is invalid. | Fix the id or the constructor. |
+
+## Examples
+
+### Every recipe ends with no unit stuck mid-animation
+
+```csharp
+public CheckResult End() => UnitView.AnyAnimating ? CheckResult.Warn("a unit is still animating") : CheckResult.Pass();
+```
+
+### A recipe that must fail, for testing the checks
+
+```csharp
+public sealed class SlashMisses : OrchardRecipe
+{
+    public SlashMisses() { Explicit = true; Distance = 5; }
+    protected override void Checks(TrialChecks c) => c.ProbeIs("damage", d => d > 0, "expected to fail: out of range");
+}
+```
+
+## See also
+
+- [TrialSession](/scion/trials/session/)
+- [Gates](/scion/evaluation/gates/)
+- [Checks API](/scion/reference/api/checks/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# Variants, modes and seeds
+
+One recipe class can stand for many situations. `[Vary]` fields and `Variants()` expand it into **variants**
+(`SlashHit[Attacker=mage,Distance=3]`); `[assembly: TrialModes]` adds **modes** such as resolutions (`@360p`); a seed
+range repeats the selection per seed (`#7`). Each combination is an **id** with its own folder, baseline and verdict.
+This guide covers the id grammar, `TrialArgs`, `Setup()`, modes, tags, patterns and `trial list --ids`.
+
+## When to use
+
+- Use `[Vary]` for a small grid of values (3 attackers x 3 distances).
+- Use `Variants()` when combinations are not a full grid, or values are computed.
+- Use modes for capture settings that apply to every recipe (resolutions, a color-blind filter).
+- Use seed ranges to search for rare failures, not for baselines: each seed is its own id.
+
+## Steps
+
+### 1. Vary fields
+
+```csharp
+public sealed class SlashHit : OrchardRecipe
+{
+    [Vary("knight", "mage", "rogue")] public new string Attacker = "knight";
+    [Vary(1, 3)] public new int Distance = 1;
+
+    protected override void Setup()
+    {
+        Ability = Attacker == "mage" ? "fireball" : "slash";   // after the args are applied
+    }
+}
+```
+
+This gives 6 ids: `SlashHit[Attacker=knight,Distance=1]` through `SlashHit[Attacker=rogue,Distance=3]`.
+
+### 2. Or yield the variants
+
+```csharp
+protected override IEnumerable<TrialArgs> Variants()
+{
+    yield return new TrialArgs { { "Attacker", "knight" }, { "Distance", 1 } };
+    yield return new TrialArgs { { "Attacker", "mage" }, { "Distance", 4 }, { "tunable:CritShake.Strength", 0.8f } };
+}
+```
+
+`Variants()` replaces the `[Vary]` grid when it returns non-null. Keys are field or property names of the recipe, or
+`tunable:<Type>.<Field>` ([Tunables and presets](/scion/grafts/tunables/)).
+
+### 3. Declare modes
+
+```csharp
+[assembly: TrialModes("360p=640x360", "720p=1280x720", "deuter")]
+```
+
+A mode `name=WxH` sets the capture size. Any other mode is passed to every adapter that implements
+`ITrialModeAware`:
+
+```csharp
+public sealed class OrchardAdapter : TrialAdapter<OrchardRecipe>, ITrialModeAware
+{
+    public void ApplyMode(string mode) => ColorFilter.Set(mode == "deuter" ? Filter.Deuteranopia : Filter.None);
+    // ...
+}
+```
+
+### 4. Select
+
+```sh
+dotnet scion trial list --ids
+dotnet scion trial run "SlashHit[Attacker=mage,*]" --mode 360p
+dotnet scion trial run --tag combat --seeds 1-20
+```
+
+## Reference
+
+### Id grammar
+
+```text
+<Name>[<key>=<value>,...]@<mode>#<seed>
+```
+
+| Part | Present when | Example |
+|---|---|---|
+| `Name` | always | `SlashHit` |
+| `[k=v,...]` | the recipe has variants; keys in declaration order | `[Attacker=mage,Distance=3]` |
+| `@mode` | a mode is selected | `@360p` |
+| `#seed` | a seed range is selected | `#7` |
+
+Values print with invariant culture (`0.8`, `true`). The folder name replaces any character outside
+`[A-Za-z0-9_.,=@#[]-]` with `_`.
+
+### Patterns
+
+| Pattern | Matches |
+|---|---|
+| `SlashHit` | The `Name`: every variant of the recipe. |
+| `SlashHit[Attacker=mage,Distance=3]` | One exact id. |
+| `SlashHit[Attacker=mage,*]` | A glob over ids: `*` any text, `?` one character. |
+| `--tag combat,ui` | Recipes with any of the tags. |
+| `--players 4` | Recipes with `Players == 4`. |
+
+Several patterns are separated by commas or given as separate arguments. A pattern that matches nothing exits 2
+with `no_match` and `did_you_mean`. `Explicit` recipes run only when a pattern names their exact `Name` or `Id`.
+
+### Player flags
+
+| Flag | CLI | Meaning |
+|---|---|---|
+| `-scion-only <patterns>` | positional patterns | Select ids. |
+| `-scion-tag <tags>` | `--tag` | Select by tag. |
+| `-scion-mode <name>` | `--mode` | One mode for the whole run. |
+| `-scion-seeds <a-b>` | `--seeds` | Repeat the selection per seed; ids get `#<seed>`. |
+| `-scion-list` | `trial list --ids` | Write `recipes.json` with the expanded ids and exit 0. |
+
+## Errors
+
+| Code | Exit | Cause | Next action |
+|---|---|---|---|
+| `no_match` | 2 | No id matches. | Use `did_you_mean` or `trial list --ids`. |
+| `bad_value` | 2 | A `[Vary]` value does not convert to the field's type, or an unknown mode. | Fix the value; list modes in `TrialModes`. |
+| recipe error `unknown variant key <k>` | 1 | `TrialArgs` names a member the recipe does not have. | Use the field name. |
+
+## Examples
+
+### Every attacker at 360p and 720p
+
+```sh
+dotnet scion trial run "SlashHit[*]" --mode 360p
+dotnet scion trial run "SlashHit[*]" --mode 720p
+```
+
+### Hunt a rare failure over 200 seeds
+
+```sh
+dotnet scion trial run KnightFalls --seeds 1-200 -j 8
+```
+
+## See also
+
+- [Write a recipe](/scion/trials/recipes/)
+- [trial list](/scion/cli/trial-list/)
+- [recipes.json](/scion/reference/files/recipes-json/)
+- [Recipes API](/scion/reference/api/recipes/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# Static trials
+
+Some things have no action to play: a HUD in 20 states, every unit in its idle pose, every room template. A
+`StaticTrial<TItem>` enumerates items, shows each one, lets it settle, captures it in one or more **views** and
+writes a labeled `sheet.png` with all of them. The package registers the adapter that plays static trials, so a
+static trial needs no adapter of its own.
+
+## When to use
+
+- Use a static trial to review many states at once, or to catch a regression in any of them.
+- Use a normal recipe when something must happen over time (a hit, a turn).
+
+## Steps
+
+### 1. Enumerate, show, clear
+
+```csharp
+using System.Collections;
+using System.Collections.Generic;
+using Scion.Trials;
+
+namespace Orchard.Trials
+{
+    public sealed class UnitGallery : StaticTrial<UnitKind>
+    {
+        public UnitGallery() { Description = "Every unit in its idle pose."; Tags = new[] { "art" }; }
+
+        protected override IEnumerable<UnitKind> Enumerate() => UnitKinds.All;
+        protected override string ItemName(UnitKind k) => k.Id;
+
+        protected override IEnumerator Show(UnitKind k, TrialSession s)
+        {
+            Gallery.Place(k);
+            yield return s.WaitUntil(() => Gallery.Ready, "unit placed");
+        }
+
+        protected override IEnumerator Clear(UnitKind k, TrialSession s)
+        {
+            Gallery.Clear();
+            yield break;
+        }
+
+        protected override IEnumerable<TrialView> Views(UnitKind k)
+        {
+            yield return TrialView.Screen;
+            yield return TrialView.Top(new Bounds(Vector3.zero, new Vector3(4, 2, 4)), pxPerUnit: 32, grid: true);
+        }
+
+        protected override void Measure(UnitKind k, TrialSession s) => s.Probe(k.Id + "_height_px", Gallery.HeightPx);
+    }
+}
+```
+
+### 2. Run it
+
+```sh
+dotnet scion trial run UnitGallery
+dotnet scion trial show UnitGallery --image sheet
+```
+
+## Reference
+
+### Members
+
+| Member | Default | Meaning |
+|---|---|---|
+| `Enumerate()` | abstract | The items, in a stable order. |
+| `ItemName(TItem)` | `ToString()` | The still's name and the sheet label. Names follow the still rules. |
+| `Show(TItem, TrialSession)` | abstract | Put the item on screen and wait until it is ready. |
+| `Clear(TItem, TrialSession)` | nothing | Remove it. |
+| `Views(TItem)` | `TrialView.Screen` | The cameras to capture with. |
+| `Measure(TItem, TrialSession)` | nothing | Probes for the item, after it settled. |
+| `SettleFrames` | 3 | Frames to render after `Show` before capturing. |
+
+### Views
+
+| View | Captures |
+|---|---|
+| `TrialView.Screen` | The game camera, as the player sees it. |
+| `TrialView.Ui` | Only the UI layer, on a transparent background. |
+| `TrialView.Top(bounds, pxPerUnit, grid)` | An orthographic camera from above, framing `bounds` at `pxPerUnit`; `grid` draws a 1-unit grid. |
+
+### Outputs
+
+For each item and view: `<item>.<view>.png` (the view name is omitted for `Screen`). Then `sheet.png`: every
+capture in a grid, labeled with the item name, with the longer side at most 2000 px. A static trial has no cut, so
+`window.png` and `context.png` are not written; baselines compare the stills.
+
+### Adapter choice
+
+The package registers `StaticTrialAdapter : TrialAdapter<StaticTrial>`, which only calls `Play`. To load a scene
+first, register an adapter for your type; the more specific type wins:
+
+```csharp
+public sealed class HudAdapter : TrialAdapter<HudStates>
+{
+    protected override IEnumerator Run(HudStates r, TrialSession s)
+    {
+        yield return SceneLoader.Load("HudPreview");
+        yield return r.Play(s);
+    }
+}
+```
+
+## Errors
+
+| Code | Exit | Cause | Next action |
+|---|---|---|---|
+| recipe error `duplicate item name <name>` | 1 | Two items give the same `ItemName`. | Make names unique. |
+| recipe error `timeout (30s): <what>` | 1 | `Show` never got ready. | Raise `TimeoutSeconds` for big galleries, or split the trial. |
+
+## Examples
+
+### Only the items that changed
+
+```sh
+dotnet scion trial run UnitGallery
+dotnet scion trial show UnitGallery --changed --grid
+```
+
+### HUD states at two resolutions
+
+See [Capture every HUD state](/scion/cookbook/hud-states/).
+
+## See also
+
+- [Capture every HUD state](/scion/cookbook/hud-states/)
+- [Audit level rooms](/scion/cookbook/level-rooms/)
+- [Adapters API](/scion/reference/api/adapters/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# Co-op trials (1-4 players)
+
+A recipe with `Players = 2` to `4` runs as a **group**: one host copy and `Players - 1` client copies of the same
+test build, connected on a free port the CLI picks. Every process writes the state hash of each turn to its
+telemetry; the recipe passes only if all of them agree and none fails. Pixels come from the host. This guide covers
+`Players`, the `scion.json` keys `host_args`, `client_args` and `port_arg`, `-scion-role`, and how groups count
+toward `-j`.
+
+## When to use
+
+- Write a co-op recipe for every mechanic that crosses the network: turns, shared abilities, joining and leaving.
+- Keep solo recipes for presentation: they are cheaper and capture the same pixels.
+
+## Before you begin
+
+- The game takes its own command-line flags to host, join and pick a port. Orchard uses `-orchard-host`,
+  `-orchard-join localhost` and `-orchard-port <n>`.
+- The adapter writes a `turn` event with the state hash at the end of every turn.
+
+## Steps
+
+### 1. Tell the CLI how to start each role
+
+```json
+{"schema_version":1,"trials":{"host_args":["-orchard-host"],"client_args":["-orchard-join","localhost"],"port_arg":"-orchard-port"}}
+```
+
+### 2. Write the recipe
+
+```csharp
+public sealed class CoopTurn : OrchardRecipe
+{
+    public CoopTurn()
+    {
+        Players = 4;
+        Description = "Four players each act once; every peer agrees on the state.";
+        TimeoutSeconds = 60;
+    }
+}
+```
+
+### 3. Play it by role in the adapter
+
+```csharp
+protected override IEnumerator Run(OrchardRecipe r, TrialSession s)
+{
+    yield return s.WaitUntil(() => Lobby.Connected == r.Players, "all players connected");
+    s.BeginCut();
+    for (int turn = 1; turn <= r.Players; turn++)
+    {
+        if (Lobby.LocalPlayer == turn - 1) battle.Issue(Command.Ability("slash", attacker: turn - 1, target: 4));
+        yield return s.WaitUntil(() => battle.State.Turn > turn, "turn " + turn);
+        s.Event("turn", ("turn", turn), ("hash", battle.State.Hash64.ToString("X16")));
+    }
+    s.EndCut();
+    hash = battle.State.Hash64.ToString("X16");
+}
+```
+
+`s.Role` tells the adapter whether it is the host (`IsHost`, index 0) or `client:1` to `client:3`.
+
+### 4. Run it
+
+```sh
+dotnet scion trial run CoopTurn -j 8
+```
+
+With `-j 8`, two groups of four run at once.
+
+## Reference
+
+![Diagram: a host and three clients connected on one port; every process writes per-turn hashes; pixels come from the host.](../../../assets/diagrams/coop-group.svg)
+
+### What the CLI does per group
+
+1. Picks a free port (bind to 0 and release).
+2. Starts the host with `player_args`, `host_args`, `port_arg <port>` and `-scion-role host`.
+3. Starts each client with `player_args`, `client_args`, `port_arg <port>` and `-scion-role client:<i>`.
+4. Gives every process of the group the host's shard and `-scion-players <Players>`.
+5. After the group ends, compares the `turn` events of every process.
+
+### Rules
+
+| Rule | Detail |
+|---|---|
+| Group size | `Players` copies, counted against `-j`. A `-j` smaller than `Players` is raised to `Players`. |
+| Selection | A process plays only recipes whose `Players` equals its `-scion-players` (default 1), so solo copies never wait for clients. |
+| Clock | The host runs on the virtual clock; clients run on the real clock and follow the host's ticks. |
+| Pixels | Only the host captures. Clients write `result.json`, telemetry and logs. |
+| Pass | Every process passes, and every `turn` event agrees on `hash` for the same `turn`. |
+| Fail | Any process failing or exiting (a client that drops) fails the recipe, naming the process and the turn. |
+
+### Output
+
+Each process has its own `q<i>/` folder; `summary.json` lists them under `copies[]` with `role` and `group`.
+A mismatch reads:
+
+```text
+CoopTurn r1: turn 3 hash differs: host 9F3A0C11D2E4B5A6, client:2 1B44E07AC9D20F13
+```
+
+## Errors
+
+| Code | Exit | Cause | Next action |
+|---|---|---|---|
+| recipe error `turn <n> hash differs` | 1 | Peers disagree on the rules state. | Run `dotnet scion diagnose`; look for rules reading local state. |
+| recipe error `client:<i> exited <code>` | 1 | A client crashed or quit. | Read `q<i>/player.log`. |
+| `copy_timeout` | 3 | A group made no progress. | Check `host_args`, `client_args` and `port_arg`. |
+
+## Examples
+
+### Only the co-op recipes
+
+```sh
+dotnet scion trial run --players 2
+dotnet scion trial run --players 4
+```
+
+### A two-player recipe with a pass-through flag
+
+```sh
+dotnet scion trial run CoopTurn -- -orchard-latency 80
+```
+
+Arguments after `--` go to every process of the group and replace the same flag from `player_args`.
+
+## See also
+
+- [Parallel copies](/scion/trials/parallel/)
+- [Configuration](/scion/reference/configuration/)
+- [Player command line](/scion/reference/player-flags/)
+- [Netcode clock](/scion/determinism/netclock/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# Parallel copies
+
+`trial run -j N` starts N copies of the test build, each with a shard `i/N` of the (id, round) pairs, and merges
+their folders into one run. This guide covers how shards split the work, how to choose N (`doctor` suggests it from
+cores and free memory), timeouts, the watchdog, `keep_runs`, and measured costs on a laptop.
+
+## When to use
+
+- Always: even two copies halve the time of a long queue.
+- Raise `-j` until the machine runs out of cores or memory; past that, use warm copies or the mosaic.
+
+## Steps
+
+### 1. Ask doctor
+
+```sh
+dotnet scion doctor
+```
+
+The output has `suggested_copies`: the smaller of (cores - 1) and (free memory / memory per copy measured on the
+last run, or 600 MB before the first).
+
+### 2. Run with that number
+
+```sh
+dotnet scion trial run -j 6 --rounds 4
+```
+
+### 3. Set it as the default
+
+```json
+{"schema_version":1,"trials":{"defaults":{"copies":6,"rounds":1,"timeout_s":300}}}
+```
+
+## Reference
+
+### Shards
+
+Every (round, id) pair, sorted by round and then by id (ordinal), is assigned round-robin: pair `k` goes to shard
+`k mod N`. Each pair runs in exactly one copy. A copy with no pairs exits 0 at once. Co-op groups take the host's
+shard ([Co-op trials](/scion/trials/coop/)).
+
+### Options that affect copies
+
+| Option | Default | Meaning |
+|---|---|---|
+| `-j N` | `trials.defaults.copies` | Copies (co-op groups count `Players` each). |
+| `--rounds N` | 1 | Rounds of every id; shards split them. |
+| `--timeout <s>` | `trials.defaults.timeout_s` (300) | Real seconds for one copy; past it, the copy is killed (`copy_timeout`, exit 3). |
+| `--window` | off | Show the copies' windows instead of headless offscreen capture. |
+| `--size WxH` | `trials.defaults.size` (1280x720) | Capture size. |
+
+### Watchdog
+
+Each copy rewrites `run.json` as it progresses. A copy that makes no progress for 120 seconds of real time ends with
+exit 3 and `watchdog`. The CLI kills the whole process tree of a copy that times out.
+
+### Keeping runs
+
+Runs live in `trials.out` (default `.scion/runs/`), one folder per run named `yyyyMMdd-HHmmss`. At the start of each
+run, the CLI deletes the oldest runs beyond `trials.keep_runs` (default 10). There is no separate clean-up command.
+
+### Measured costs
+
+On an Apple M5 (10 cores, 16 GB), Orchard's test build at 1280x720 offscreen:
+
+| Measure | Value |
+|---|---|
+| Startup to first recipe | 2.1 s |
+| Memory per copy | about 550 MB |
+| One combat recipe (2 s of game time at 30 fps) | 1.4 s of real time |
+| 120 recipe-rounds with `-j 1` | 172 s |
+| 120 recipe-rounds with `-j 6` | 31 s |
+
+Startup dominates short runs; warm copies remove it ([Warm copies](/scion/trials/warm-copies/)).
+
+## Errors
+
+| Code | Exit | Cause | Next action |
+|---|---|---|---|
+| `copy_timeout` | 3 | A copy passed `--timeout`, or was interrupted. | Read `q<i>/player.log`; raise `--timeout` for long queues. |
+| `watchdog` | 3 | A copy stopped making progress for 120 s. | Look for a `WaitUntil` that never ends or a modal dialog. |
+| `player_crashed` | 3 | A copy exited without writing its outputs. | Read `q<i>/player.log` and the crash report. |
+| warning `low_memory` | 0 | Free memory is below what `-j` copies need. | Lower `-j`. |
+
+## Examples
+
+### Spread a long queue on a big machine
+
+```sh
+dotnet scion trial run -j 14 --rounds 2
+```
+
+### One copy for debugging, with a window
+
+```sh
+dotnet scion trial run SlashHit -j 1 --window
+```
+
+## See also
+
+- [trial run](/scion/cli/trial-run/)
+- [Warm copies](/scion/trials/warm-copies/)
+- [Mosaic](/scion/trials/mosaic/)
+- [doctor](/scion/cli/doctor/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# Warm copies
+
+A warm copy is a test build that started, prepared every adapter and waits, idle, for work on a local control
+channel. `dotnet scion trial serve -j N` starts N of them; `dotnet scion trial run --warm` sends recipes to them
+instead of starting new processes, so a run takes the time of the recipes alone. Warm copies also receive injected
+grafts. This guide covers serving, running, stopping and the live files under `~/.scion/live/`.
+
+## When to use
+
+- Use warm copies while iterating on grafts or recipes: a run of a few recipes drops from seconds to under a second.
+- Use cold runs (`trial run` without `--warm`) for baselines, CI and anything you approve: a warm run compares only
+  hash and frames.
+
+## Steps
+
+### 1. Start them
+
+```sh
+dotnet scion trial serve -j 2
+```
+
+<!-- validate: cli/trial-serve -->
+```json
+{"schema_version":1,"command":"trial serve","ok":true,"copies":[{"q":0,"pid":4242,"port":51234,"state":"idle","out":"/Users/alex/orchard/.scion/serve/q0"},{"q":1,"pid":4243,"port":51240,"state":"idle","out":"/Users/alex/orchard/.scion/serve/q1"}],"next_step":"dotnet scion trial run --warm"}
+```
+
+The command returns when every copy is `idle`. Copies run in the background with
+`-scion-serve -scion-control 0`, and without `-scion-quit`.
+
+### 2. Run recipes on them
+
+```sh
+dotnet scion trial run --warm SlashHit FireballArea
+```
+
+The CLI splits the selection between idle copies and sends each an op `run`. The output is the same envelope as a
+cold run.
+
+### 3. Inject and run again
+
+```sh
+dotnet scion graft inject --to all
+dotnet scion trial run --warm SlashHit
+```
+
+### 4. Stop them
+
+```sh
+dotnet scion trial serve --stop
+```
+
+## Reference
+
+### What a warm run compares
+
+| Compared | Cold run | Warm run |
+|---|---|---|
+| State hash | yes | yes |
+| Frame count | yes | yes |
+| Pixel hashes and images | yes | no (a warm process has rendered other recipes before, so caches and pools differ) |
+| Can be approved | yes | no |
+
+### Live files
+
+Each copy writes `control.json` in its output folder and the same object in `~/.scion/live/<pid>.json`, mode 0600,
+after the channel listens. The CLI finds copies through the live folder and deletes files of dead processes. The
+token in the file authenticates every request ([control.json and live files](/scion/reference/files/control-json/)).
+
+### Lifecycle of a copy
+
+| State | Meaning |
+|---|---|
+| `preparing` | Startup: flags, discovery, every adapter's `Prepare`. |
+| `idle` | Waiting for an op. |
+| `running` | Playing a queue (`RunQueue`). An `inject` now answers `pending: true`. |
+
+After 50 injections a copy reports `recycle: true` and `trial serve` replaces it at the next boundary (Mono never
+unloads assemblies).
+
+## Errors
+
+| Code | Exit | Cause | Next action |
+|---|---|---|---|
+| `no_copies` | 3 | `--warm` found no live copy of this build. | `dotnet scion trial serve -j 2`. |
+| `busy` | 3 | Every copy is running a queue. | Wait or start more copies. |
+| `build_stale` | warning | The build changed after the copies started. | `trial serve --stop`, then serve again. |
+
+## Examples
+
+### Serve a different build
+
+```sh
+dotnet scion trial serve -j 2 --build /tmp/orchard-test/Orchard.app
+```
+
+### Watch status from a script
+
+```sh
+dotnet scion trial serve --format json | jq '.copies[] | {pid, state}'
+```
+
+`trial serve` without `-j` on a running set reports the copies and starts none.
+
+## See also
+
+- [trial serve](/scion/cli/trial-serve/)
+- [Live injection](/scion/grafts/injection/)
+- [Control protocol](/scion/reference/control-protocol/)
+- [control.json and live files](/scion/reference/files/control-json/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# Capture and outputs
+
+Every recipe writes a folder of outputs: a verdict (`result.json`), a human report (`report.md`), per-frame data
+(`frames.tsv`), telemetry, the log, and images built from the frames of the cut. This guide covers headless and
+offscreen capture, the contact sheets `window.png` and `context.png`, stills, `sheet.png`, the options `--frames`,
+`--sound`, `--size` and `-scion-raw`, the 2000 px rule and the platform id that names baselines.
+
+## When to use
+
+- Read `window.png` first: it shows the moment that matters, frame by frame.
+- Use `--frames` only to make a video or inspect one frame; it writes every frame as a PNG and is slow.
+- Use `-scion-raw` when a tool needs the exact bytes that were hashed.
+
+## Steps
+
+### 1. Run headless (the default)
+
+```sh
+dotnet scion trial run SlashHit
+```
+
+Copies start with `-batchmode` and `-scion-offscreen`: the camera renders into textures at the capture size, with
+no window. `Screen.width` and `Screen.height` read the capture size through `VirtualScreen`.
+
+### 2. Find the images
+
+```sh
+dotnet scion trial show SlashHit
+```
+
+The output lists the paths of `window.png`, `context.png`, the stills and `report.md`.
+
+### 3. Capture more when needed
+
+```sh
+dotnet scion trial run SlashHit --frames --size 1920x1080 --sound
+```
+
+## Reference
+
+### Images per recipe
+
+| File | Content | Size rule |
+|---|---|---|
+| `window.png` | Up to 12 consecutive frames centered on the first `MarkImpact` (or the cut's middle), 3 columns. | Longer side at most 2000 px |
+| `context.png` | 6 frames spread over the whole cut (start, marks, end), 3x2. | Same |
+| `<still>.png` | One frame per `Still(name)`, full size. | Capture size |
+| `sheet.png` | Every item of a static trial, labeled. | Longer side at most 2000 px |
+| `frames/NNNN.png` | Every frame of the cut (`--frames`). | Capture size |
+| `frames/NNNN.raw` + `frames/raw.json` | The exact bytes hashed per frame (`-scion-raw`). | Capture size |
+| motion pack | `motion-diff.png`, `tracks.png`, `idmask/`, `metrics.json`, `preview.gif` (`--motion`) | See [The motion pack](/scion/evaluation/motion-pack/) |
+
+Sheets downscale by the smallest integer that keeps the longer side at or under 2000 px: 12 frames of 1280x720 in
+3 columns (3840x2880) downscale by 2. Labels name the frame number and its marks.
+
+### Platform id
+
+Images depend on the platform, so baselines keep one folder per platform:
+
+```text
+<os>-<gfx>-<W>x<H>-<capture>        osx-metal-1280x720-offscreen
+```
+
+`os` is `osx`, `win` or `linux`; `gfx` is the graphics API in lowercase (`metal`, `direct3d11`, `vulkan`); capture
+is `offscreen` or `screen` (`--window`), because UI composition differs.
+
+### Options
+
+| CLI | Player flag | Default | Effect |
+|---|---|---|---|
+| `--window` | (no `-batchmode`) | headless | Render to a window; the platform id ends in `screen`. |
+| `--size WxH` | `-screen-width`, `-screen-height` | `trials.defaults.size` | Capture size. |
+| `--frames` | `-scion-frames` | off | Every frame as PNG. |
+| `--sound` | `-scion-sound` | muted | Keep audio on. |
+| `--raw` | `-scion-raw` | off | Keep raw frames. |
+| `--motion` | `-scion-motion` | off | Write the motion pack. |
+
+### Coordinates
+
+In the C# API (`MaskRect`, `CheckResult.Region`, `FrameView`) the origin is at the bottom left, like `Screen`. In
+JSON, PNG and `Scion.Compare`, the origin is at the top left. The player converts when writing.
+
+## Errors
+
+| Code | Exit | Cause | Next action |
+|---|---|---|---|
+| `capture_broken` | 3 | Captures are empty, usually `-batchmode` without offscreen capture. | Let the CLI start copies, or add `-scion-offscreen`. |
+| recipe error `PNG encode failed` | 1 | Writing an image failed. | Check free disk space in `trials.out`. |
+| `out_not_writable` | 3 | The output folder cannot be written. | Fix permissions or `trials.out`. |
+
+## Examples
+
+### A 4K still for a store page
+
+```sh
+dotnet scion trial run UnitGallery --size 3840x2160
+```
+
+### Frames for a GIF
+
+```sh
+dotnet scion trial run SlashHit --frames
+ffmpeg -framerate 30 -i .scion/runs/20261011-143200/q0/SlashHit/r1/frames/%04d.png slash.gif
+```
+
+## See also
+
+- [The run folder](/scion/reference/files/run-folder/)
+- [The motion pack](/scion/evaluation/motion-pack/)
+- [Raw frames](/scion/reference/files/raw-frames/)
+- [Baselines and approval](/scion/trials/baselines/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# Baselines and approval
+
+A baseline is the approved result of one id: its state hash, frame count and, per platform, its frame hashes and
+images. Every `trial run` compares each result with `scion/baselines/` and gives a verdict (`same`, `within`,
+`px_changed`, `changed`, `new`, `stale`). `trial approve` turns a run into the new baseline. Agents may approve only
+`new`; replacing a baseline someone approved needs a person at an interactive terminal.
+
+## When to use
+
+- Approve after an intended change, once the run shows exactly the change you meant.
+- Never approve to make a failure go away: a failed recipe cannot be approved.
+
+## Steps
+
+### 1. Run and read the verdicts
+
+```sh
+dotnet scion trial run
+dotnet scion trial show --changed
+```
+
+<!-- validate: cli/trial-show -->
+```json
+{"schema_version":1,"command":"trial show","ok":true,"run":"/Users/alex/orchard/.scion/runs/20261011-143200","count":1,"recipes":[{"id":"SlashHit","rounds":{"ok":2,"failed":0},"hashes":["9F3A0C11D2E4B5A6"],"frames":[46],"vs_approved":"changed","report":"q0/SlashHit/r1/report.md","images":["q0/SlashHit/r1/window.png"],"reasons":["image"],"stale":[],"px_diff":0.12}],"next_step":"look at q0/SlashHit/r1/window.png; if intended, a person approves: dotnet scion trial approve SlashHit --reason \"...\""}
+```
+
+### 2. Compare side by side
+
+```sh
+dotnet scion trial show SlashHit --grid
+```
+
+`--grid` writes one image per artifact with three columns: baseline, current, difference.
+
+### 3. Approve
+
+```sh
+dotnet scion trial approve SlashHit --reason "crit shake is stronger"
+```
+
+<!-- validate: cli/trial-approve -->
+```json
+{"schema_version":1,"command":"trial approve","ok":true,"run":"/Users/alex/orchard/.scion/runs/20261011-143200","approved":1,"unchanged":0,"baselines":[{"id":"SlashHit","was":"changed","round":1,"copy":0,"dir":"scion/baselines/SlashHit"}],"staged":true,"refused":[],"next_step":"git commit -m \"Approve SlashHit: crit shake is stronger\""}
+```
+
+`approve` writes the files and runs `git add` on them; it never commits.
+
+## Reference
+
+### Verdicts
+
+| Verdict | When |
+|---|---|
+| `same` | Hash, frames and images match. |
+| `within` | Images differ inside the recipe's `Tolerance`. |
+| `px_changed` | Hash and frames match, frame hashes differ, and the recipe compares no images (`Tolerance = null`). Informative. |
+| `changed` | The hash differs, frames differ by more than one, an image is outside the tolerance, or the rule digest changed. |
+| `new` | The id has no `baseline.json`. |
+| `stale` | `baseline.json` exists but not for this platform, or fps, player args or Unity differ. Images and frame hashes are suspended; the hash is still compared, so a different hash is `changed`. |
+
+`reasons` lists what triggered `changed`: `hash`, `frames`, `px`, `image`, `rule_hash`. `stale` lists why:
+`platform`, `fps`, `player_args`, `unity`.
+
+### Who approves what
+
+| Verdict | Agent (no TTY) | Person at a terminal |
+|---|---|---|
+| `new` | yes | yes |
+| `changed`, `stale`, `within`, `px_changed` | no: exit 2, `human_required` | yes, after a confirmation prompt |
+| failed recipe | no | no |
+| run with `--grafts` or `--warm` | no | no |
+
+Approval is all or nothing: if one id is refused, nothing is written and `refused[]` says why. The `guard` hook
+asks the person before an agent's `trial approve` and denies edits under `scion/baselines/`
+([Hooks](/scion/agents/hooks/)).
+
+### Storage
+
+```text
+scion/baselines/SlashHit/
+  baseline.json                         hash, frames, fps, player args, rule digest, approval
+  osx-metal-1280x720-offscreen/
+    platform.json                       size, Unity, tolerance, images
+    frames.tsv                          per-frame hashes
+    window.png  context.png  before.png
+    unstable.png                        learned mask, optional
+```
+
+Store PNGs with Git LFS. Approving on one platform updates `baseline.json` and that platform's folder; other
+platforms become `stale` until someone approves on each.
+
+### Rule digest
+
+`rule_digest` is a 12-hex digest of the files under `rule_paths` in `scion.json` (`Assets/Orchard/Core`,
+`Assets/Orchard/Data`), uncommitted changes included. When it differs from the baseline's, the verdict is `changed`
+with reason `rule_hash`, even if the hash happens to match: a rule change must be reviewed.
+
+## Errors
+
+| Code | Exit | Cause | Next action |
+|---|---|---|---|
+| `human_required` | 2 | Approval of a non-`new` verdict without a TTY. | A person runs the command at a terminal. |
+| `refused` | 1 | An id failed, or the run used `--grafts` or `--warm`. | Fix it, run cold, approve again. |
+| `no_match` | 2 | The id is not in the run. | `trial show` lists the ids of the run. |
+| warning `not_staged` | 0 | `git add` failed (no repository, LFS missing). | Stage the files yourself. |
+
+## Examples
+
+### Approve every new recipe (agents may)
+
+```sh
+dotnet scion trial approve --new --reason "first baseline for the gallery"
+```
+
+### Preview what would be approved
+
+```sh
+dotnet scion trial approve --changed --reason "new palette" --dry-run
+```
+
+## See also
+
+- [trial approve](/scion/cli/trial-approve/)
+- [baseline.json and platform.json](/scion/reference/files/baselines/)
+- [Image comparison](/scion/trials/image-comparison/)
+- [Hooks](/scion/agents/hooks/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# Image comparison
+
+Images are compared with `Scion.Compare`: a per-pixel perceptual distance (OKLab with the HyAB metric), a tolerance
+per recipe (`ImageTolerance`), masks for regions that must be ignored, and an optional mask learned from runs that
+shows which pixels are unstable. The result is a status per artifact (`Same`, `Within`, `Changed`), a changed ratio,
+the bounds of the change and a heatmap `diff.png`.
+
+## When to use
+
+- Keep the default tolerance for most recipes: it ignores dithering and GPU rounding and catches visible changes.
+- Use `ImageTolerance.Exact` for pixel art and UI that must not move a pixel.
+- Set `Tolerance = null` for recipes where only the rules matter: images are captured but never compared.
+
+## Steps
+
+### 1. Choose the tolerance
+
+```csharp
+public HudStates()
+{
+    Tolerance = ImageTolerance.Exact;
+}
+
+public FireballArea()
+{
+    Tolerance = new ImageTolerance(pixel: 0.08f, maxRatio: 0.005f, maxPixels: -1);
+}
+```
+
+### 2. Mask what changes on purpose
+
+```csharp
+public SlashHit()
+{
+    Mask("*", new Rect(0f, 0.94f, 1f, 0.06f), "turn timer");   // every artifact, top strip
+    Mask("window.png", new Rect(0.8f, 0f, 0.2f, 0.1f), "fps counter");
+}
+```
+
+Coordinates are normalized (0 to 1) with the origin at the bottom left, like `Screen`. At run time,
+`session.MaskRect(screenPixels, why)` adds a mask in pixels.
+
+### 3. Learn unstable pixels
+
+```sh
+dotnet scion trial run FireballArea --learn-unstable 3
+```
+
+The recipe runs 3 times; pixels that differ between those runs form `unstable.png`, saved with the baseline when
+approved. A learned mask may cover at most 2 % of the image: above that, the recipe is not deterministic enough to
+mask, and the run warns `mask_cap` instead of hiding the problem.
+
+### 4. Read a change
+
+```sh
+dotnet scion trial show FireballArea --grid
+dotnet scion trial diff 20261011-143200 20261011-150512 FireballArea
+```
+
+## Reference
+
+### The metric
+
+Each pixel pair is converted to OKLab and compared with HyAB (absolute lightness difference plus Euclidean distance
+in a and b), scaled to 0 to 1. A pixel counts as changed when its distance is above `Pixel`. The image is:
+
+| Status | When |
+|---|---|
+| `Same` | No changed pixel. |
+| `Within` | Changed pixels are at most `MaxRatio` of the unmasked area and at most `MaxPixels` (when not -1). |
+| `Changed` | Otherwise. |
+
+The same metric gives the same result on every machine, so baselines from one Mac compare with captures from
+another Mac of the same platform id.
+
+### Tolerances
+
+| Value | Pixel | MaxRatio | MaxPixels |
+|---|---|---|---|
+| `ImageTolerance.Default` | 0.1 | 0.001 | -1 |
+| `ImageTolerance.Exact` | 0 | 0 | 0 |
+| `null` (recipe) | images not compared; frame hash changes give `px_changed` | | |
+
+### Outputs
+
+| File | Content |
+|---|---|
+| `<run>/diff/<IdDir>/r<n>/<artifact>.diff.png` | Heatmap: changed pixels in red over a grey copy of the current image; masks hatched. |
+| `compare.json` | Per id: verdict, reasons, image statuses, ratios, bounds (pixels, top-left origin) and diff paths. |
+| `trial show --grid` output | Baseline, current and diff side by side. |
+
+## Errors
+
+| Code | Exit | Cause | Next action |
+|---|---|---|---|
+| warning `mask_cap` | 0 | The learned mask would cover more than 2 %. | Make the recipe deterministic ([Particles, animators, UI and physics](/scion/determinism/control/)). |
+| warning `px_unstable` | 0 | Frame hashes vary between rounds of this run. | Same as above; `px_changed` is noise until fixed. |
+| warning `baseline_unreadable` | 0 | A baseline image or JSON cannot be read. | Check Git LFS (`git lfs pull`). |
+
+## Examples
+
+### Compare two images from code
+
+```csharp
+var a = Image.Load("scion/baselines/SlashHit/osx-metal-1280x720-offscreen/window.png");
+var b = Image.Load(".scion/runs/20261011-143200/q0/SlashHit/r1/window.png");
+var r = ImageDiff.Compare(a, b, Mask.Empty(a.Width, a.Height), ImageTolerance.Default);
+Console.WriteLine($"{r.Status} {r.Ratio:P2} at {r.Bounds.X},{r.Bounds.Y}");
+```
+
+### Exact UI, tolerant world
+
+```csharp
+Tolerance = ImageTolerance.Default;
+Mask("*", new Rect(0f, 0f, 1f, 0.15f), "HUD compared by HudStates with Exact");
+```
+
+## See also
+
+- [Baselines and approval](/scion/trials/baselines/)
+- [Compare API](/scion/reference/api/compare/)
+- [trial diff](/scion/cli/trial-diff/)
+- [A/B comparisons](/scion/evaluation/ab-comparison/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# Specs
+
+A spec states, before the work starts, what a change must achieve: balance numbers from the simulator, visual
+expectations and gates on recipes, and questions for the judge. It is a `TrialSpec` in the `Scion.Specs` project,
+run with `dotnet scion trial run --spec <Name> --variants a,b,c`, and it returns one JSON verdict per variant. Specs
+turn "make crits feel stronger" into something an agent can iterate on and a person can trust.
+
+## When to use
+
+- Write a spec before asking an agent for a feel or balance change, so success is defined up front.
+- Use it to compare variants (presets, grafts, tunable sets) on the same criteria.
+- Do not change a spec after running it to make a variant pass; write a new spec.
+
+## Before you begin
+
+- A specs project referencing `Scion.Specs` (`specs.project` in `scion.json`):
+
+```sh
+dotnet new classlib -o Trials/Specs/Orchard.Specs
+dotnet add Trials/Specs/Orchard.Specs package Scion.Specs --version 1.0.0
+```
+
+## Steps
+
+### 1. Write the spec
+
+```csharp
+using Scion.Specs;
+
+namespace Orchard.Specs
+{
+    public sealed class StrongerCrits : TrialSpec
+    {
+        public override string Name => "StrongerCrits";
+        public override string Target => "Critical hits read clearly as stronger without slowing the turn.";
+
+        public override void Define(SpecBuilder s)
+        {
+            s.Balance("Duel", players: 1, matches: 500)
+             .Expect("win_rate", min: 0.45, max: 0.55)
+             .Expect("turns_mean", min: 6, max: 9);
+
+            s.Visual("SlashHit")
+             .Expect("hit_stop_ms", min: 50, max: 120)
+             .Expect("shake_peak_px", min: 4, max: 12)
+             .Gate(Gates.Photosensitivity)
+             .Gate(Gates.TextContrast);
+
+            s.Judge("SlashHit", head: "hit_weight").Expect("score", min: 0.6);
+        }
+    }
+}
+```
+
+### 2. Run it on variants
+
+```sh
+dotnet scion trial run --spec StrongerCrits --variants base,heavy,snappy
+```
+
+<!-- validate: cli/trial-run -->
+```json
+{"schema_version":1,"command":"trial run","ok":true,"run":"/Users/alex/orchard/.scion/runs/20261012-091500","build_id":"4c49a1e0b2f3","copies":6,"wall_s":48.3,"runs":{"recipes":1,"rounds":1,"total":3,"ok":3,"failed":0,"changed":0,"px_changed":0,"new":0,"stale":0},"failed":[],"changed":[],"determinism":{"hash_stable":true,"frame_jitter":[]},"spec":{"name":"StrongerCrits","ok":true,"variants":[{"name":"base","ok":false,"failed":["hit_stop_ms 40 < 50"]},{"name":"heavy","ok":true,"failed":[]},{"name":"snappy","ok":true,"failed":[]}],"verdict":"heavy and snappy pass; base fails hit_stop_ms"},"next_step":"compare heavy and snappy: dotnet scion trial show SlashHit --grid"}
+```
+
+### 3. Let a person pick
+
+The spec cuts the variants that fail; it does not choose between those that pass. Look at the grid or ask the judge
+for a duel, then approve.
+
+## Reference
+
+### SpecBuilder
+
+| Call | Runs | Measures |
+|---|---|---|
+| `Balance(name, players, matches)` | The rules simulator in .NET, with bots, `matches` times | `ISimulation.Metrics`: `win_rate`, `turns_mean` and the game's own |
+| `Visual(recipe)` | The recipe in the test build, with `--motion` | The motion metrics (`hit_stop_ms`, `shake_peak_px`, `flash_ms`...) and probes |
+| `Judge(recipe, head)` | The judge head on the recipe's images | `score`, `probabilities` |
+| `Metamorphic(property)` | A property on the core ([Metamorphic tests](/scion/explore/metamorphic/)) | pass or fail |
+| `Curve(name, levels)` | A balance curve over levels ([Balance with the simulator](/scion/explore/balance/)) | per-level metrics |
+
+`Expect(metric, min, max)` adds a bound (either may be omitted). `Gate(id)` enables a gate on the recipe.
+
+### Variants
+
+`--variants a,b,c` names presets in `scion/presets/`, applied one per variant to every part of the spec. The
+`base` preset is always the initial values.
+
+### Guards
+
+- A spec is frozen once it ran: the CLI records its source hash in the run, and a later run of a changed spec with
+  the same name warns.
+- Every spec run includes the `base` variant as a control.
+- When a variant fails, `next_step` asks for a person to look at a sample of the failures, not just the numbers.
+
+## Errors
+
+| Code | Exit | Cause | Next action |
+|---|---|---|---|
+| `no_match` | 2 | No spec with that name in `specs.project`. | Use `did_you_mean`. |
+| `no_simulation` | 3 | `Balance` needs an `ISimulation` and the core declares none. | Implement `ISimulation` ([Core API](/scion/reference/api/core/)). |
+| `model_missing` | 3 | `Judge` needs a head that is not trained. | `dotnet scion judge list`; train the head. |
+| spec `ok: false` | 1 | No variant passes. | Read `spec.variants[].failed`. |
+
+## Examples
+
+### A balance-only spec
+
+```csharp
+public override void Define(SpecBuilder s) =>
+    s.Balance("CoopFloor3", players: 4, matches: 1000).Expect("win_rate", min: 0.6, max: 0.75);
+```
+
+### Run a spec in CI
+
+```sh
+dotnet scion trial run --spec StrongerCrits --variants base
+```
+
+## See also
+
+- [Specs API](/scion/reference/api/specs/)
+- [Gates](/scion/evaluation/gates/)
+- [Balance with the simulator](/scion/explore/balance/)
+- [trial run](/scion/cli/trial-run/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# Turn any match into a recipe
+
+Anything that happens while someone plays a test build can become a recipe. Press **F9**: the game saves the
+match's setup, seed and command log to `scion/recipes/captured/<name>.match.json`. Every saved match is a
+`CapturedMatch` recipe that replays the commands and captures the result like any other recipe. The game implements
+`IMatchCapture` once to save and restore its setup.
+
+## When to use
+
+- Capture a bug the moment you see it: the recipe reproduces it for an agent and guards the fix.
+- Capture a moment that looks great, so later changes cannot break it unnoticed.
+- Captured matches are also the starting points of the multiverse and the live loop.
+
+## Before you begin
+
+- The rules take commands and are deterministic from a seed (level 2 or more, see
+  [Find non-determinism](/scion/determinism/diagnose/)).
+
+## Steps
+
+### 1. Implement IMatchCapture
+
+```csharp
+using Scion.Trials;
+
+[assembly: MatchCapture(typeof(Orchard.Trials.OrchardMatchCapture))]
+
+namespace Orchard.Trials
+{
+    public sealed class OrchardMatchCapture : IMatchCapture
+    {
+        public bool CanCapture => Battle.Current != null;
+        public int Seed => Battle.Current.Setup.Seed;
+        public int Players => Battle.Current.Setup.Players;
+        public string SaveSetup() => JsonUtility.ToJson(Battle.Current.Setup);
+        public IEnumerable<(int Turn, int Player, string Data)> Commands() =>
+            Battle.Current.Log.Select(c => (c.Turn, c.Player, c.ToJson()));
+
+        public IEnumerator Replay(MatchData match, TrialSession s)
+        {
+            var battle = Battle.Start(JsonUtility.FromJson<BattleSetup>(match.Setup));
+            yield return s.WaitUntil(() => battle.Ready, "battle ready");
+            s.BeginCut();
+            foreach (var c in match.Commands)
+            {
+                battle.Issue(Command.FromJson(c.Data));
+                yield return s.WaitUntil(() => battle.Idle, "turn " + c.Turn);
+            }
+            s.EndCut();
+        }
+
+        public string StateHash => Battle.Current?.State.Hash64.ToString("X16");
+    }
+}
+```
+
+### 2. Capture
+
+Play the test build and press F9. The game shows `Saved match knight-dies-to-crit` and writes:
+
+```text
+scion/recipes/captured/knight-dies-to-crit.match.json
+```
+
+The name is typed in a small prompt (Enter keeps the suggested name).
+
+### 3. Replay it
+
+```sh
+dotnet scion trial list
+dotnet scion trial run "CapturedMatch[match=knight-dies-to-crit]"
+```
+
+## Reference
+
+### The file
+
+<!-- validate: match -->
+```json
+{"schema_version":1,"name":"knight-dies-to-crit","captured_at":"2026-10-11T16:02:10Z","build_id":"4c49a1e0b2f3","source":"f9","seed":7,"players":1,"setup":{"map":"orchard-02","units":["knight","skeleton","skeleton"]},"commands":[{"turn":1,"player":0,"data":"{\"ability\":\"slash\",\"attacker\":0,\"target\":1}"},{"turn":2,"player":1,"data":"{\"ability\":\"bite\",\"attacker\":1,\"target\":0}"}],"turns":2,"feature":null}
+```
+
+`source` is `f9`, `hunt` (found by the [rare-moment hunter](/scion/explore/rare-moments/)) or `manual`. Matches the
+hunter finds go to `scion/recipes/found/` until someone moves them to `captured/`.
+
+### The recipe
+
+`CapturedMatch` is a recipe of the package with one variant per file, `CapturedMatch[match=<name>]`. Its adapter
+calls `IMatchCapture.Replay`. Baselines, checks and approval work as for any recipe.
+
+### Options
+
+| Where | Setting |
+|---|---|
+| Key | F9 by default; change it with `[assembly: MatchCapture(typeof(OrchardMatchCapture), Key = KeyCode.F8)]`. |
+| Folder | `scion/recipes/captured/` (`trials.recipes_staging` + `captured/`). |
+| Player flag | `-scion-match <file>` plays one match file directly. |
+
+## Errors
+
+| Code | Exit | Cause | Next action |
+|---|---|---|---|
+| recipe error `replay diverged at turn <n>` | 1 | The rules changed since the capture, or are not deterministic. | Compare with `dotnet scion multiverse run`; recapture if the change is intended. |
+| `no_match` | 2 | No match file with that name. | `trial list` shows captured matches. |
+
+## Examples
+
+### Guard a bug fix
+
+```sh
+dotnet scion trial run "CapturedMatch[match=knight-dies-to-crit]" --rounds 2
+dotnet scion trial approve --new --reason "regression guard for the crit death bug"
+```
+
+### Play one match file in a window
+
+```sh
+.scion/builds/test/Orchard.app/Contents/MacOS/Orchard -scion-trials -scion-out /tmp/m -scion-match scion/recipes/captured/knight-dies-to-crit.match.json
+```
+
+## See also
+
+- [The multiverse](/scion/explore/multiverse/)
+- [Rare-moment hunter](/scion/explore/rare-moments/)
+- [Recipes API](/scion/reference/api/recipes/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# Mosaic
+
+The mosaic runs K **arenas** in one test-build process: K copies of the scene side by side, each with its own camera
+rendering into its own texture, each playing one id. One process instead of K saves memory and startup, and the
+output is a grid that shows the variants of one moment next to each other. This guide covers the requirements,
+when to choose the mosaic over copies, `trial run --mosaic K` and the `IMosaicAdapter` interface.
+
+## When to use
+
+| Situation | Choose |
+|---|---|
+| Many different recipes, CPU-bound | Copies (`-j`) |
+| A few variants of one moment, to look at side by side | Mosaic |
+| Memory is the limit (big scenes, small machine) | Mosaic |
+| The game has singletons or global state per scene | Copies, until `diagnose` shows no blockers |
+
+## Before you begin
+
+- The game can run several battles in one scene: no singletons for battle state, no global `Time.timeScale`, no
+  static caches shared between battles.
+- `dotnet scion diagnose` lists what blocks the mosaic under `singletons`.
+
+## Steps
+
+### 1. Check the blockers
+
+```sh
+dotnet scion diagnose
+```
+
+<!-- validate: cli/diagnose -->
+```json
+{"schema_version":1,"command":"diagnose","ok":true,"adoption_level":3,"assemblies":["Orchard.Core","Orchard.Runtime"],"counts":{"SCN301":12,"SCN302":3,"SCN303":0,"SCN304":0,"SCN305":1,"SCN306":0,"SCN307":0},"blockers":[],"singletons":["Orchard.Runtime.CameraRig.Current (Assets/Orchard/Runtime/CameraRig.cs:14)"],"plan":["Make CameraRig.Current per arena to enable the mosaic."],"adapter_skeleton":null,"report":"Library/Scion/diagnose.md","next_step":"fix the singletons listed, then: dotnet scion trial run --mosaic 4"}
+```
+
+### 2. Make the adapter arena-aware
+
+```csharp
+public sealed class OrchardAdapter : TrialAdapter<OrchardRecipe>, IMosaicAdapter
+{
+    public IEnumerator PrepareArena(int arena, TrialSession s)
+    {
+        yield return SceneLoader.LoadAdditive("Battle", offset: new Vector3(arena * 100, 0, 0));
+    }
+
+    protected override IEnumerator Run(OrchardRecipe r, TrialSession s)
+    {
+        var arena = s.Arena;                     // 0..K-1
+        var battle = Battle.Start(setup, root: Arenas.Root(arena));
+        // ... the same as a single run, through battle and arena-local objects ...
+    }
+}
+```
+
+`TrialSession.Arena` is the arena of the current recipe; `TrialSession.ForArena(i)` returns the session of
+arena `i` from shared code.
+
+### 3. Run
+
+```sh
+dotnet scion trial run SlashHit --variants base,heavy,snappy --mosaic 3
+```
+
+The run writes the usual per-id folders, plus `mosaic.png`: the `window.png` of every arena in one row each,
+aligned on `IMPACT`.
+
+## Reference
+
+| Item | Detail |
+|---|---|
+| Arenas | `K` from 2 to 16; each plays one id at a time from the process's shard. |
+| Cameras | One per arena, rendering to a texture at the capture size; nothing renders to the screen. |
+| Clock | Shared: all arenas advance the same virtual frame together. |
+| Hash | Per arena, from the adapter's `StateHash` while `Arena` is set. |
+| Result | `result.json` has `arena`; `run.json` has `mosaic: K`. |
+| Player flag | `-scion-mosaic K`. |
+
+## Errors
+
+| Code | Exit | Cause | Next action |
+|---|---|---|---|
+| `mosaic_unsupported` | 3 | The adapter does not implement `IMosaicAdapter`. | Implement it, or use copies. |
+| recipe error `arena state leaked` | 1 | An arena's hash depends on another arena (a shared singleton). | Fix what `diagnose` lists under `singletons`. |
+
+## Examples
+
+### Four seeds of one moment
+
+```sh
+dotnet scion trial run KnightFalls --seeds 1-4 --mosaic 4
+```
+
+### The multiverse in a mosaic
+
+```sh
+dotnet scion multiverse run knight-dies-to-crit --at-turn 2 --variants base,heavy --mosaic
+```
+
+## See also
+
+- [Parallel copies](/scion/trials/parallel/)
+- [Find non-determinism](/scion/determinism/diagnose/)
+- [The multiverse](/scion/explore/multiverse/)

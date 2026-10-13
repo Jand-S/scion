@@ -1,0 +1,162 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jand-s.github.io/scion/schemas/v1/cli/trial-approve.schema.json",
+  "title": "trial approve output",
+  "description": "Output of dotnet scion trial approve: what was approved, refused or would be approved.",
+  "allOf": [
+    {
+      "$ref": "https://jand-s.github.io/scion/schemas/v1/envelope.schema.json"
+    },
+    {
+      "type": "object",
+      "properties": {
+        "command": {
+          "const": "trial approve"
+        },
+        "run": {
+          "type": "string",
+          "description": "Run folder."
+        },
+        "approved": {
+          "type": "integer",
+          "description": "Recipes approved."
+        },
+        "unchanged": {
+          "type": "integer",
+          "description": "Recipes already same."
+        },
+        "baselines": {
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "type": "object",
+                "description": "One approved baseline.",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "Id."
+                  },
+                  "was": {
+                    "enum": [
+                      "same",
+                      "within",
+                      "px_changed",
+                      "changed",
+                      "new",
+                      "stale"
+                    ],
+                    "description": "Comparison with the approved baseline."
+                  },
+                  "round": {
+                    "type": "integer",
+                    "description": "Round taken."
+                  },
+                  "copy": {
+                    "type": "integer",
+                    "description": "Copy taken."
+                  },
+                  "dir": {
+                    "type": "string",
+                    "description": "Baseline folder."
+                  }
+                },
+                "required": [
+                  "id",
+                  "was",
+                  "dir"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "$ref": "https://jand-s.github.io/scion/schemas/v1/envelope.schema.json#/$defs/more"
+              }
+            ]
+          },
+          "description": "Approved."
+        },
+        "staged": {
+          "type": "boolean",
+          "description": "git add ran."
+        },
+        "refused": {
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "type": "object",
+                "description": "A refusal.",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "Id."
+                  },
+                  "why": {
+                    "type": "string",
+                    "description": "Why it cannot be approved."
+                  }
+                },
+                "required": [
+                  "id",
+                  "why"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "$ref": "https://jand-s.github.io/scion/schemas/v1/envelope.schema.json#/$defs/more"
+              }
+            ]
+          },
+          "description": "Refused (nothing written)."
+        },
+        "dry_run": {
+          "type": "boolean",
+          "description": "Nothing written."
+        },
+        "would_approve": {
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "type": "string",
+                "description": "Id."
+              },
+              {
+                "$ref": "https://jand-s.github.io/scion/schemas/v1/envelope.schema.json#/$defs/more"
+              }
+            ]
+          },
+          "description": "Ids (dry run)."
+        },
+        "needs_person": {
+          "type": "boolean",
+          "description": "A person must run it at a terminal."
+        }
+      },
+      "required": [
+        "run"
+      ]
+    }
+  ],
+  "examples": [
+    {
+      "schema_version": 1,
+      "command": "trial approve",
+      "ok": true,
+      "run": "/Users/alex/orchard/.scion/runs/20261011-143200",
+      "approved": 1,
+      "unchanged": 3,
+      "baselines": [
+        {
+          "id": "FireballArea",
+          "was": "new",
+          "round": 1,
+          "copy": 2,
+          "dir": "scion/baselines/FireballArea"
+        }
+      ],
+      "staged": true,
+      "next_step": "commit the staged files in scion/baselines/ with the change that explains them"
+    }
+  ]
+}

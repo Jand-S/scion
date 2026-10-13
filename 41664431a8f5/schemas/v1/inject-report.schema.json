@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jand-s.github.io/scion/schemas/v1/inject-report.schema.json",
+  "title": "InjectReport",
+  "description": "InjectReport.ToJson(): the result of one graft DLL injection.",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "description": "Format version of this file. Always 1 in Scion 1.x."
+    },
+    "version": {
+      "type": "integer",
+      "description": "Injection.Version after this load.",
+      "minimum": 0
+    },
+    "ok": {
+      "type": "boolean",
+      "description": "Every graft bound."
+    },
+    "pending": {
+      "type": "boolean",
+      "description": "Waiting for the next recipe boundary."
+    },
+    "bound": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Slot ids now running injected grafts."
+    },
+    "errors": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "\"SCNxxx: message\" per problem."
+    },
+    "recycle": {
+      "type": "boolean",
+      "description": "True after 50 loads: restart the copy."
+    }
+  },
+  "required": [
+    "schema_version",
+    "version",
+    "ok",
+    "pending",
+    "bound",
+    "errors",
+    "recycle"
+  ],
+  "additionalProperties": true,
+  "examples": [
+    {
+      "schema_version": 1,
+      "version": 3,
+      "ok": true,
+      "pending": false,
+      "bound": [
+        "A__Orchard_Presentation_HitPresenter__Play__HitEvent"
+      ],
+      "errors": [],
+      "recycle": false
+    }
+  ]
+}

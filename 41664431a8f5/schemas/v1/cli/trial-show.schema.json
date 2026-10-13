@@ -1,0 +1,218 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jand-s.github.io/scion/schemas/v1/cli/trial-show.schema.json",
+  "title": "trial show output",
+  "description": "Output of dotnet scion trial show: verdicts and file paths of some recipes of a finished run.",
+  "allOf": [
+    {
+      "$ref": "https://jand-s.github.io/scion/schemas/v1/envelope.schema.json"
+    },
+    {
+      "type": "object",
+      "properties": {
+        "command": {
+          "const": "trial show"
+        },
+        "run": {
+          "type": "string",
+          "description": "Run folder."
+        },
+        "count": {
+          "type": "integer",
+          "description": "Recipes shown."
+        },
+        "recipes": {
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "type": "object",
+                "description": "One recipe.",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "Id."
+                  },
+                  "rounds": {
+                    "type": "object",
+                    "description": "Rounds.",
+                    "properties": {
+                      "ok": {
+                        "type": "integer",
+                        "description": "Passed."
+                      },
+                      "failed": {
+                        "type": "integer",
+                        "description": "Failed."
+                      }
+                    },
+                    "required": [
+                      "ok",
+                      "failed"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "hashes": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Distinct hashes."
+                  },
+                  "frames": {
+                    "type": "array",
+                    "items": {
+                      "type": "integer"
+                    },
+                    "description": "Distinct frame counts."
+                  },
+                  "vs_approved": {
+                    "enum": [
+                      "same",
+                      "within",
+                      "px_changed",
+                      "changed",
+                      "new",
+                      "stale"
+                    ],
+                    "description": "Comparison with the approved baseline.",
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "round": {
+                    "type": "integer",
+                    "description": "Round shown."
+                  },
+                  "copy": {
+                    "type": "integer",
+                    "description": "Copy shown."
+                  },
+                  "report": {
+                    "type": "string",
+                    "description": "report.md, relative to run."
+                  },
+                  "images": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Images, relative to run."
+                  },
+                  "reasons": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Why not same."
+                  },
+                  "stale": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Why stale."
+                  },
+                  "px_diff": {
+                    "type": [
+                      "number",
+                      "null"
+                    ],
+                    "description": "px fraction."
+                  },
+                  "grid": {
+                    "type": "string",
+                    "description": "grid.png (baseline | current | diff), with --grid."
+                  },
+                  "failed": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "description": "A failed round.",
+                      "properties": {
+                        "round": {
+                          "type": "integer",
+                          "description": "Round."
+                        },
+                        "copy": {
+                          "type": "integer",
+                          "description": "Copy."
+                        },
+                        "error": {
+                          "type": "string",
+                          "description": "Error."
+                        }
+                      },
+                      "required": [
+                        "round",
+                        "copy",
+                        "error"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "description": "Failed rounds."
+                  }
+                },
+                "required": [
+                  "id",
+                  "rounds",
+                  "vs_approved",
+                  "report",
+                  "images"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "$ref": "https://jand-s.github.io/scion/schemas/v1/envelope.schema.json#/$defs/more"
+              }
+            ]
+          },
+          "description": "At most 5 recipes."
+        }
+      },
+      "required": [
+        "run",
+        "count",
+        "recipes"
+      ]
+    }
+  ],
+  "examples": [
+    {
+      "schema_version": 1,
+      "command": "trial show",
+      "ok": true,
+      "run": "/Users/alex/orchard/.scion/runs/20261011-143200",
+      "count": 1,
+      "recipes": [
+        {
+          "id": "SlashHit",
+          "rounds": {
+            "ok": 2,
+            "failed": 0
+          },
+          "hashes": [
+            "9F3A0C11D2E4B5A6"
+          ],
+          "frames": [
+            46
+          ],
+          "vs_approved": "changed",
+          "round": 1,
+          "copy": 0,
+          "report": "q0/SlashHit/r1/report.md",
+          "images": [
+            "q0/SlashHit/r1/window.png",
+            "q0/SlashHit/r1/context.png"
+          ],
+          "reasons": [
+            "image"
+          ],
+          "grid": "diff/SlashHit/r1/grid.png"
+        }
+      ],
+      "next_step": "look at /Users/alex/orchard/.scion/runs/20261011-143200/diff/SlashHit/r1/grid.png"
+    }
+  ]
+}

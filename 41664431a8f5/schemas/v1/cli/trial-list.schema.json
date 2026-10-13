@@ -1,0 +1,143 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jand-s.github.io/scion/schemas/v1/cli/trial-list.schema.json",
+  "title": "trial list output",
+  "description": "Output of dotnet scion trial list: the recipes of the test build and the staging folders.",
+  "allOf": [
+    {
+      "$ref": "https://jand-s.github.io/scion/schemas/v1/envelope.schema.json"
+    },
+    {
+      "type": "object",
+      "properties": {
+        "command": {
+          "const": "trial list"
+        },
+        "build": {
+          "type": "string",
+          "description": "Test build."
+        },
+        "build_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[0-9a-f]{12}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "count": {
+          "type": "integer",
+          "description": "Recipes."
+        },
+        "recipes": {
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "type": "object",
+                "description": "One recipe.",
+                "properties": {
+                  "name": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "id": {
+                    "type": "string",
+                    "description": "Id (with --ids)."
+                  },
+                  "source": {
+                    "enum": [
+                      "build",
+                      "staging",
+                      "captured",
+                      "found"
+                    ]
+                  },
+                  "players": {
+                    "type": "integer",
+                    "description": "Players when more than 1."
+                  },
+                  "explicit": {
+                    "type": "boolean",
+                    "description": "Runs only when named."
+                  },
+                  "type": {
+                    "type": "string",
+                    "description": "Class, when name is null."
+                  },
+                  "problem": {
+                    "type": "string",
+                    "description": "SCN201 when not constructible."
+                  },
+                  "tags": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Tags (with --ids)."
+                  }
+                },
+                "required": [
+                  "name",
+                  "source"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "$ref": "https://jand-s.github.io/scion/schemas/v1/envelope.schema.json#/$defs/more"
+              }
+            ]
+          },
+          "description": "Recipes."
+        }
+      },
+      "required": [
+        "build",
+        "count",
+        "recipes"
+      ]
+    }
+  ],
+  "examples": [
+    {
+      "schema_version": 1,
+      "command": "trial list",
+      "ok": true,
+      "build": "/Users/alex/orchard/.scion/builds/test/Orchard.app",
+      "build_id": "4c49a1e0b2f3",
+      "count": 7,
+      "recipes": [
+        {
+          "name": "CoopTurn",
+          "source": "build",
+          "players": 4
+        },
+        {
+          "name": "FireballArea",
+          "source": "build"
+        },
+        {
+          "name": "HudStates",
+          "source": "build"
+        },
+        {
+          "name": "KnightFalls",
+          "source": "build"
+        },
+        {
+          "name": "SlashHit",
+          "source": "build"
+        },
+        {
+          "more": 2
+        }
+      ],
+      "next_step": "run one: dotnet scion trial run SlashHit"
+    }
+  ]
+}

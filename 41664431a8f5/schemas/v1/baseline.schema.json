@@ -1,0 +1,106 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jand-s.github.io/scion/schemas/v1/baseline.schema.json",
+  "title": "baseline.json",
+  "description": "The approved result of one recipe that holds on every platform: hash, frames and approval.",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "description": "Format version of this file. Always 1 in Scion 1.x."
+    },
+    "id": {
+      "type": "string",
+      "description": "Recipe id."
+    },
+    "hash": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Approved state hash."
+    },
+    "frames": {
+      "type": "integer",
+      "description": "Approved frame count."
+    },
+    "fps": {
+      "type": "integer",
+      "description": "Capture rate."
+    },
+    "player_args": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Normalized player arguments."
+    },
+    "rule_digest": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^[0-9a-f]{12}$"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "12 hex of the files under rule_paths."
+    },
+    "build_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{12}$"
+    },
+    "approved_by": {
+      "type": "string",
+      "description": "git config user.name of the approver."
+    },
+    "approved_via": {
+      "enum": [
+        "tty",
+        "script"
+      ],
+      "description": "How it was approved."
+    },
+    "reason": {
+      "type": "string",
+      "description": "Why this result is right."
+    },
+    "approved_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Approval time, UTC."
+    }
+  },
+  "required": [
+    "schema_version",
+    "id",
+    "hash",
+    "frames",
+    "fps",
+    "player_args",
+    "rule_digest",
+    "build_id",
+    "approved_by",
+    "approved_via",
+    "reason",
+    "approved_at"
+  ],
+  "additionalProperties": true,
+  "examples": [
+    {
+      "schema_version": 1,
+      "id": "SlashHit",
+      "hash": "9F3A0C11D2E4B5A6",
+      "frames": 46,
+      "fps": 30,
+      "player_args": [],
+      "rule_digest": "a1b2c3d4e5f6",
+      "build_id": "4c49a1e0b2f3",
+      "approved_by": "alex",
+      "approved_via": "tty",
+      "reason": "brighter hit flash",
+      "approved_at": "2026-10-11T15:00:00Z"
+    }
+  ]
+}

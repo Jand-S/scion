@@ -1,0 +1,1548 @@
+# Scion 1.0.0 documentation: Reference
+
+> Every page below is also at its own URL plus `.md`. Index: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# Configuration
+
+Scion reads three files. `scion.json` at the project root (versioned) configures the CLI: paths, defaults, player
+arguments, builds, evaluators, specs and the judge. `scion.local.json` beside it (per machine, in `.gitignore`) has
+the same shape and overrides it. `ProjectSettings/ScionSettings.json` (versioned) configures the weaver, the build
+and the analyzers inside Unity. This page lists every key, plus scripting defines and environment variables.
+
+## scion.json
+
+```json
+{"$schema":"https://jand-s.github.io/scion/schemas/v1/scion-config.schema.json","schema_version":1,"unity_project":".","grafts":{"promoted":"Assets/Orchard/Grafts","staging":"scion/grafts"},"trials":{"recipes_staging":"scion/recipes","out":".scion/runs","baselines":"scion/baselines","keep_runs":10,"defaults":{"copies":6,"rounds":1,"headless":true,"size":"1280x720","seed":1,"timeout_s":300},"player_args":[],"host_args":["-orchard-host"],"client_args":["-orchard-join","localhost"],"port_arg":"-orchard-port"},"rule_paths":["Assets/Orchard/Core","Assets/Orchard/Data"],"log_allow":[],"evaluators":[],"build":{"test":{"method":"Scion.Editor.ScionBuild.TestFromCommandLine","output":{"osx":".scion/builds/test/Orchard.app","win":".scion/builds/test/Orchard.exe","linux":".scion/builds/test/Orchard.x86_64"}},"final":{"method":"Scion.Editor.ScionBuild.FinalFromCommandLine","output":{"osx":".scion/builds/final/Orchard.app","win":".scion/builds/final/Orchard.exe","linux":".scion/builds/final/Orchard.x86_64"}}},"specs":{"project":"Trials/Specs/Orchard.Specs/Orchard.Specs.csproj"},"judge":{"dir":"scion/judge","eyes":"siglip2-so400m","cache":".scion/judge"}}
+```
+
+| Key | Type | Default | Meaning |
+|---|---|---|---|
+| `$schema` | string | | Ignored by the CLI; lets editors validate. |
+| `schema_version` | int | 1 | Format version. |
+| `unity_project` | path | `.` | The Unity project folder, relative to `scion.json`. |
+| `grafts.promoted` | path | `Assets/<Game>/Grafts` | Promoted grafts (with the `.asmref`). |
+| `grafts.staging` | path | `scion/grafts` | Draft grafts. |
+| `trials.recipes_staging` | path | `scion/recipes` | Recipe sources and captured or found matches. |
+| `trials.out` | path | `.scion/runs` | Run folders. |
+| `trials.baselines` | path | `scion/baselines` | Approved baselines. |
+| `trials.keep_runs` | int | 10 | Runs kept; older ones are deleted at the start of a run. |
+| `trials.defaults.copies` | int | doctor's suggestion | Default `-j`. |
+| `trials.defaults.rounds` | int | 1 | Default `--rounds`. |
+| `trials.defaults.headless` | bool | true | False shows windows by default. |
+| `trials.defaults.size` | `WxH` | `1280x720` | Default capture size. |
+| `trials.defaults.seed` | int | 1 | Default run seed. |
+| `trials.defaults.timeout_s` | int | 300 | Real seconds per copy. |
+| `trials.player_args` | string[] | `[]` | Arguments for every player process. |
+| `trials.host_args` | string[] | `[]` | Extra arguments for hosts and solo copies. |
+| `trials.client_args` | string[] | `[]` | Extra arguments for co-op clients. |
+| `trials.port_arg` | string or null | null | The game's flag that takes the group's port. |
+| `rule_paths` | path[] | `[]` | Files whose content forms the rule digest. |
+| `log_allow` | regex[] | `[]` | Errors that do not fail the `log` check, in every recipe. |
+| `evaluators` | object[] | `[]` | `{name, command, kind (process\|agent), gate (false)}`. |
+| `build.test.method`, `build.final.method` | string | `Scion.Editor.ScionBuild.TestFromCommandLine`, `...FinalFromCommandLine` | Batchmode entry points. |
+| `build.test.output.<os>`, `build.final.output.<os>` | path | `.scion/builds/test\|final/<Name>` | Build outputs per OS (`osx`, `win`, `linux`). |
+| `specs.project` | path or null | null | The specs project. |
+| `judge.dir` | path | `scion/judge` | Heads, questions, votes. |
+| `judge.eyes` | string | `siglip2-so400m` | The eye model ([Models and licenses](/scion/judge/models/)). |
+| `judge.cache` | path | `.scion/judge` | Embeddings cache. |
+
+Paths are relative to `scion.json`; `~` expands to the home folder.
+
+## scion.local.json
+
+The same shape, only the keys that differ on this machine, plus:
+
+| Key | Type | Meaning |
+|---|---|---|
+| `unity.editor` | path | The Unity editor executable, when not in the Hub's default path. |
+| `unity.pipeline_cli` | path | The `com.unity.pipeline` command used for builds through the open editor. |
+
+Objects merge deeply; arrays and values in `scion.local.json` replace those of `scion.json`.
+
+## ScionSettings.json
+
+`ProjectSettings/ScionSettings.json`:
+
+```json
+{"schema_version":1,"build":{"main_assembly":"Orchard.Runtime","player_name":"Orchard"},"trials":{"redirect_assemblies":["UnityEngine.UI","Unity.RenderPipelines.Universal.Runtime"],"netclock_assemblies":["Unity.Netcode.Runtime"]},"analyzers":{"rule_assemblies":["Orchard.Core"],"rule_types":["Unity.Netcode.*"],"graft_paths":["Assets/Orchard/Grafts/","../scion/grafts/"]}}
+```
+
+| Key | Default | Meaning |
+|---|---|---|
+| `build.main_assembly` | `Assembly-CSharp` | The assembly whose hash is the `build_id`. |
+| `build.player_name` | product name | The player file name. |
+| `trials.redirect_assemblies` | `[]` | Extra assemblies whose time and screen reads are redirected in test builds. |
+| `trials.netclock_assemblies` | `[]` | Assemblies whose Netcode time moves to the virtual clock (with `SCION_NETCLOCK`). |
+| `analyzers.rule_assemblies` | `[]` | Rule code: SCN001, SCN002, SCN004, SCN005; their types are rule types for SCN003. |
+| `analyzers.rule_types` | `[]` | Extra rule types (`Ns.Type`, `Ns.Outer.Inner`, `Ns.*`). |
+| `analyzers.graft_paths` | `[]` | Folders of graft code (relative to the Unity project). |
+
+Unity does not track this file: recompile the affected assemblies after editing it.
+
+## Scripting defines
+
+| Define | Meaning |
+|---|---|
+| `SCION_SLOTS` | Slot mode, injection, the control server. Test builds. |
+| `SCION_TRIALS` | Trials, virtual clock and screen, captures. Test builds. |
+| `SCION_NETCLOCK` | Netcode tick on the virtual clock. Optional. |
+| `SCION_VERBOSE` | Extra `[Scion]` log lines. Optional. |
+
+## Environment variables
+
+| Variable | Meaning |
+|---|---|
+| `SCION_BUILD` | The test build, when `--build` is not given. |
+| `NO_COLOR` | Plain text output in a TTY. |
+
+## See also
+
+- [JSON Schemas](/scion/reference/schemas/)
+- [CLI overview](/scion/cli/)
+- [Build modes](/scion/grafts/build-modes/)
+- [Player command line](/scion/reference/player-flags/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# Player command line
+
+The test player reads `-scion-*` flags from its command line. The CLI sets them for you; you need them to start the
+player yourself, in CI scripts or for debugging. Every flag starts with `-scion-`; an unknown one exits 2 with
+`unknown_flag` and `did_you_mean`. Unity's flags (`-batchmode`, `-screen-width`, `-logFile`) and the game's own flags
+pass through unchecked.
+
+## Example
+
+```sh
+.scion/builds/test/Orchard.app/Contents/MacOS/Orchard -batchmode -scion-trials -scion-out /tmp/scion-out -scion-only SlashHit -scion-rounds 2 -scion-quit
+```
+
+## Flags
+
+### -scion-trials
+
+No value. Turns the lab on: without it, the test build runs as the normal game. Set by every CLI command that starts
+players.
+
+### -scion-out
+
+A folder; required with `-scion-trials`. This process's output (`run.json`, `results.tsv`, recipe folders). The CLI
+uses `<run>/q<i>/`. Missing: exit 2 `missing_out`.
+
+### -scion-recipes
+
+A DLL; repeatable. Recipes compiled outside Unity; a recipe with the same `Name` replaces the built-in one. CLI:
+`--recipes`.
+
+### -scion-only
+
+Comma-separated patterns. Default: every non-`Explicit` recipe. Each pattern matches an exact `Id`, a `Name` (all its
+variants) or a glob (`*`, `?`) over ids. Nothing matched: exit 2 `no_match`. CLI: positional patterns.
+
+### -scion-rounds
+
+An integer, at least 1; default 1. Total rounds of each id (shards split them). CLI: `--rounds`.
+
+### -scion-quit
+
+No value. Exit when the queue ends, with the exit code. Without it the process stays open.
+
+### -scion-sound
+
+No value. Keep audio on (default muted). CLI: `--sound`.
+
+### -scion-offscreen
+
+No value. Capture from textures. Automatic with `-batchmode`; use it with a window to capture offscreen anyway.
+
+### -scion-frames
+
+No value. Save every frame of the cut as `frames/NNNN.png`. CLI: `--frames`.
+
+### -scion-inject
+
+A DLL. Inject draft grafts at startup (needs `SCION_SLOTS`). CLI: `--grafts`.
+
+### -scion-shard
+
+`i/n`, default `0/1`. Play shard `i` of `n` (0 to n-1); each (id, round) pair runs in exactly one shard, round-robin
+over (round, id). Set by the CLI from `-j`.
+
+### -scion-check
+
+No value. Compare each later round with the first frame by frame and write `determinism.tsv`. CLI: `--check`.
+
+### -scion-jitter
+
+Milliseconds, 0 to 1000; default 0. Sleep a random real time up to this per frame from the second occurrence of each
+id. CLI: `--jitter`.
+
+### -scion-epoch
+
+ISO 8601; default `2000-01-01T00:00:00Z`. The start of the virtual `DateTime.Now` and `UtcNow`.
+
+### -scion-seed
+
+An integer; default 1. `TrialSession.RunSeed`; the adapter maps it to the game's world seed. CLI: `--seed`.
+
+### -scion-raw
+
+No value. Keep `frames/NNNN.raw` and `frames/raw.json`. CLI: `--raw`.
+
+### -scion-log-allow
+
+A file with one .NET regex per line. Errors whose message matches do not fail the `log` check. The CLI writes it from
+`log_allow`.
+
+### -scion-list
+
+No value. Write `recipes.json` with the selected, expanded ids and exit 0 without playing. CLI: `trial list --ids`.
+
+### -scion-players
+
+1 to 4; default 1. Play only recipes whose `Players` equals this. Set by the CLI per group.
+
+### -scion-role
+
+`host` or `client:<i>` (1 to 3); default `host`. The process's role in a co-op group. Set by the CLI.
+
+### -scion-control
+
+A port, or 0 for any free port. Open the control server on the loopback interface and write `control.json`.
+
+### -scion-serve
+
+No value; needs `-scion-control`. Warm copy: prepare every adapter and wait idle for `run` requests instead of playing
+the queue. Without `-scion-control`: exit 2 `bad_value`. CLI: `trial serve`.
+
+### -scion-tag
+
+Comma-separated tags. Only recipes with any of them. CLI: `--tag`.
+
+### -scion-mode
+
+A mode name from `[assembly: TrialModes]`. `name=WxH` modes set the capture size; others go to `ITrialModeAware`.
+CLI: `--mode`.
+
+### -scion-seeds
+
+`a-b`. Repeat the selection for each seed in the range; ids get `#<seed>`. CLI: `--seeds`.
+
+### -scion-match
+
+A `.match.json` file. Play that captured match as a `CapturedMatch` recipe, also in a window for the live loop.
+
+### -scion-set
+
+`key=value`; repeatable. Override a tunable for every recipe (`tunable:CritShake.Strength=0.8`). CLI: `--set`,
+`--preset` (expanded to one `-scion-set` per value).
+
+### -scion-motion
+
+No value. Write the motion pack for every recipe. CLI: `--motion`.
+
+### -scion-mosaic
+
+An integer K, 2 to 16. Run K arenas in this process. CLI: `--mosaic`.
+
+## Rules
+
+- Flags are case-sensitive and take their value as the next argument.
+- A flag repeated (except `-scion-recipes` and `-scion-set`) keeps the first value; the CLI places overrides first.
+- Errors in flags write `run.json` with `error` and exit 2 before anything plays.
+
+## See also
+
+- [trial run](/scion/cli/trial-run/)
+- [Exit codes](/scion/reference/exit-codes/)
+- [How trials work](/scion/trials/overview/)
+- [run.json](/scion/reference/files/run-json/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# Exit codes
+
+The test player and every CLI command exit with one of four codes: 0 (ok), 1 (a recipe or check failed), 2 (usage)
+or 3 (environment). Agents and scripts decide the next step from the code first, then from `error.code`. A bisect
+step uses 125 to tell `git bisect` to skip a commit.
+
+## Codes
+
+| Code | Meaning | Player examples | CLI examples |
+|---|---|---|---|
+| 0 | Everything ok. Warnings do not count. | Five recipes passed; `-scion-list`; a shard with no pairs. | `trial run` with all passing (even with `changed` verdicts); `doctor` without failed checks. |
+| 1 | A recipe, check, graft check or spec failed. | Timeout; `Fail`; `Check(false)`; an error in the log; hash differs between rounds; a graft threw. | `graft check` with errors; `trial approve` refused; `gen --check` stale. |
+| 2 | Usage: the call is wrong. | No `-scion-out`; `-scion-only Slsh` (`did_you_mean: ["SlashHit"]`); `-scion-rond`; `-scion-shard 6/6`. | Unknown command or option; no match; `human_required`. |
+| 3 | Environment: something outside the call is wrong. | No adapter; `Prepare` failed; watchdog; empty captures; output not writable. | No build; no Unity; editor open; a copy crashed or timed out. |
+| 125 | Bisect step only: skip this commit. | | The build failed or rounds disagree at that commit. |
+
+Codes 2 and 3 always come with `error` (`code`, `message`, `hint`, `did_you_mean`): in the CLI envelope, and in the
+player's `run.json`.
+
+## Precedence
+
+When one command combines several results (copies of a run, steps), it exits with the most important one:
+
+```text
+2 > 3 > 1 > 0
+```
+
+Usage errors explain everything after them; environment errors explain failed recipes. A copy killed by a timeout or
+Ctrl-C counts as 3 (`copy_timeout`).
+
+## Without -scion-quit
+
+A player started without `-scion-quit` does not exit; its code is in `run.json` (`exit_code`) when the queue ends.
+
+## See also
+
+- [Error and warning codes](/scion/reference/errors/)
+- [CLI overview](/scion/cli/)
+- [What to do next](/scion/agents/next-action/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# Error and warning codes
+
+Errors appear in `error.code` of the CLI envelope and of the player's `run.json` (exit codes 2 and 3), or in the
+`error.code` of a control-protocol response. Warnings appear in `warnings[].code` and never change the exit code.
+Diagnostics (`SCNxxx`) are listed separately in [Diagnostics](/scion/reference/diagnostics/). Each entry gives the
+exit code, where it comes from, the cause and what to do.
+
+## CLI errors
+
+### usage
+
+Exit 2, CLI. The call is malformed: a missing required argument (`--reason`), conflicting options, or a dirty tree
+for `bisect`. Read `error.message` and `<command> --help`; do not retry unchanged.
+
+### unknown_command
+
+Exit 2, CLI. No such command. Use `did_you_mean`.
+
+### unknown_option
+
+Exit 2, CLI. No such option for this command. Use `did_you_mean`.
+
+### bad_value
+
+Exit 2, CLI and player. An option or flag has an invalid value (`--size 1280`, `-scion-shard 6/6`, an unknown tunable
+in `--set`). `error.message` names the value and the expected form.
+
+### no_match
+
+Exit 2, CLI and player. A pattern, id, name, head, preset or run matched nothing. Use `did_you_mean`, or list with
+`trial list --ids`, `anchor list`, `judge list`.
+
+### human_required
+
+Exit 2, CLI. `trial approve` would replace a baseline a person approved, and there is no interactive terminal. Agents:
+stop and give the person the command from `next_step`.
+
+### not_supported
+
+Exit 2 or 3, CLI and control protocol. The operation needs something this build or command does not have (`inject`
+on a build without `SCION_SLOTS`, `judge vote` without a browser, an evaluator with `gate: true`).
+
+### config_not_found
+
+Exit 2, CLI. No `scion.json` in the current folder or above. Run `dotnet scion init` or change folder.
+
+### config_invalid
+
+Exit 3, CLI. `scion.json`, `scion.local.json` or `ScionSettings.json` does not match its schema. The message names the
+key; validate with the [JSON Schemas](/scion/reference/schemas/).
+
+### build_not_found
+
+Exit 3, CLI. No test build at the discovered path, or no `scion-build.json` beside it. Run `dotnet scion build test`
+or pass `--build`.
+
+### build_wrong_mode
+
+Exit 3, CLI. The build lacks `SCION_TRIALS` (a final build). Run `dotnet scion build test`.
+
+### unity_not_found
+
+Exit 3, CLI. No Unity editor of the project's version in the Hub's default path. Install it, or set `unity.editor` in
+`scion.local.json`.
+
+### editor_open
+
+Exit 3, CLI. The editor has the project open and `com.unity.pipeline` is not installed, so the CLI cannot build
+through it. Close the editor or install the pipeline package.
+
+### unity_failed
+
+Exit 3, CLI. Unity exited without a `BUILD_RESULT` line (crash, license, import error). Read the log in `log`.
+
+### player_crashed
+
+Exit 3, CLI. A copy exited without writing its outputs. Read `q<i>/player.log` and the OS crash report.
+
+### shard_ignored
+
+Exit 0 with a warning, CLI. `-scion-shard` was passed after `--`; the CLI shards the run itself and ignored it.
+
+### copy_timeout
+
+Exit 3, CLI. A copy passed `--timeout`, or the run was interrupted, and the CLI killed its process tree. Raise
+`--timeout` for long queues, or find the `WaitUntil` that never ends.
+
+### no_free_port
+
+Exit 3, CLI. No free local port for a co-op group or a control channel. Close other servers.
+
+### out_not_writable
+
+Exit 3, CLI and player. The output folder cannot be created or written. Fix permissions or `trials.out`.
+
+### interrupted
+
+Exit 3, CLI. Ctrl-C or a cancelled MCP call. Partial outputs stay in the run folder.
+
+### internal_error
+
+Exit 3, CLI and player. A bug in Scion (or in a session hook): the stack is in the log. Report it with the log.
+
+### refused
+
+Exit 1, CLI. `trial approve` refused ids: a failed round, a run with `--grafts` or `--warm`, or an unstable hash.
+`refused[].why` says which.
+
+### no_copies
+
+Exit 3, CLI. `--warm`, `graft inject` or `restore` found no live copy of this build. Run `dotnet scion trial serve`.
+
+### no_simulation
+
+Exit 3, CLI. A command needs the rules as an `ISimulation` (multiverse, balance specs, hunt, metamorphic) and none is
+registered. See [Core API](/scion/reference/api/core/).
+
+### not_forkable
+
+Exit 3, CLI. Forking or looping a span needs `ISaveable` on the simulation state. Implement `Save` and `Load`.
+
+### mosaic_unsupported
+
+Exit 3, CLI. `--mosaic` and no adapter implements `IMosaicAdapter`. Implement it or run copies.
+
+### model_missing
+
+Exit 3, CLI. The judge's eye model is not downloaded. Run the command in `error.hint`.
+
+## Player errors
+
+### missing_out
+
+Exit 2, player. `-scion-trials` without `-scion-out`.
+
+### unknown_flag
+
+Exit 2, player. A `-scion-*` flag that does not exist. Use `did_you_mean`.
+
+### no_adapter
+
+Exit 3, player. No `[assembly: TrialAdapter]` in the build. Register one; `dotnet scion diagnose --adapter` writes a
+skeleton.
+
+### prepare_failed
+
+Exit 3, player. An adapter's `Prepare` threw, timed out (60 s real time) or called `Fail`. Read the copy's
+`player.log`.
+
+### watchdog
+
+Exit 3, player. No progress for 120 seconds of real time. Look for a wait that never ends or a modal dialog.
+
+### capture_broken
+
+Exit 3, player. Captures are empty, usually `-batchmode` without offscreen capture. Let the CLI start players, or add
+`-scion-offscreen`.
+
+## Control protocol errors
+
+### bad_json
+
+The request line is not valid JSON. The connection stays open.
+
+### line_too_long
+
+The request line is longer than 64 KiB. The connection is closed.
+
+### bad_token
+
+The `token` does not match `control.json`. Read the token from the live file again; the copy may have restarted.
+
+### unknown_op
+
+The `op` is not one of `hello`, `status`, `inject`, `restore`, `disable`, `run`, `quit`.
+
+### bad_args
+
+The arguments of the op are missing or of the wrong type (`run` without `out`).
+
+### busy
+
+A `run` while a queue is running; also returned by the CLI when every warm copy is busy. Wait, or start more copies.
+
+### shutting_down
+
+The copy received `quit` and accepts no more requests.
+
+## Warnings
+
+### build_stale
+
+Sources or rule files changed after the test build was made. Rebuild before trusting a result.
+
+### build_info_missing
+
+The build has no `scion-build.json`; `build_id` and git fields are null. Build with `dotnet scion build test`.
+
+### unity_exit
+
+Unity exited with a non-zero code after a successful build. Usually harmless; read the log.
+
+### unreadable_dll
+
+A DLL of the build could not be read while listing recipes or anchors. Rebuild.
+
+### name_at_run_time
+
+A graft names its target with a string computed at run time; tools cannot list it. Use `nameof` or a literal.
+
+### recipe_unbuildable
+
+A recipe has no public parameterless constructor (SCN201). It fails when selected.
+
+### recipes_unchecked
+
+No determinism scan or recipe list yet, so some checks were skipped. Open the project in Unity once.
+
+### low_memory
+
+Free memory is below what the requested copies need. Lower `-j`.
+
+### pairs_missing
+
+Some (id, round) pairs are missing from the outputs (a crashed copy, or ids present in only one side of a diff).
+
+### result_unreadable
+
+A `result.json` is missing or invalid. The copy probably crashed; read its log.
+
+### frame_jitter
+
+Frame counts differ by one between rounds. Usually the Netcode tick; see [Netcode clock](/scion/determinism/netclock/).
+
+### px_unstable
+
+Pixel hashes vary between rounds of this run, so `px_changed` is noise. See
+[Particles, animators, UI and physics](/scion/determinism/control/).
+
+### baseline_unreadable
+
+A baseline file could not be read (often Git LFS pointers not pulled). Run `git lfs pull`.
+
+### summary_not_written
+
+The run was interrupted before `summary.json` was written. Run again.
+
+### build_changed
+
+Live warm copies run an older build than the current one. Stop and serve again.
+
+### not_staged
+
+`trial approve` or `graft promote` wrote files but `git add` failed. Stage them yourself.
+
+### recycle
+
+A warm copy passed 50 injections; it is restarted at the next boundary because Mono never unloads assemblies.
+
+### mask_cap
+
+A learned unstable mask would cover more than 2 % of an image; it was not saved. Make the recipe deterministic.
+
+### version_mismatch
+
+The CLI and the package have different versions. Install the same version of both.
+
+## See also
+
+- [Exit codes](/scion/reference/exit-codes/)
+- [What to do next](/scion/agents/next-action/)
+- [Diagnostics](/scion/reference/diagnostics/)
+- [Control protocol](/scion/reference/control-protocol/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# Diagnostics
+
+Scion reports problems in code as diagnostics with stable ids `SCNxxx`. They come from four sources: the Roslyn
+analyzers (in the IDE and in Unity), the weaver (as compile errors when Unity compiles), the build and the injection
+(as CLI errors), and the determinism scan (only through `dotnet scion diagnose`). Ids are never reused; each has a
+message and a hint with the fix.
+
+## Format
+
+```text
+Scion SCN104: The signature of CritShake.After does not match HitPresenter.Play. Hint: Expected: public static void After(HitPresenter presenter, HitEvent e, ref Call<float> c)
+```
+
+In Unity the message has the file and line of the graft; in the CLI it comes as
+`{file, line, code, message, hint, did_you_mean}` inside `diagnostics[]` or `errors[]`.
+
+## Where they appear
+
+| Source | Ids | Shown in |
+|---|---|---|
+| Analyzers | SCN001-SCN005, SCN101-SCN104, SCN108-SCN110, SCN112 | IDE, Unity console, `graft check` |
+| Weaver | SCN101-SCN109, SCN111, SCN112, SCN114 | Unity console as compile errors, `build test`, `graft check` |
+| Draft compiler | SCN103-SCN105, SCN113 | `graft build`, `graft inject` |
+| Build | SCN120, SCN121 | `build test`, `build final` |
+| Runtime and CLI | SCN130, SCN131, SCN201-SCN203 | `InjectReport.Errors`, `result.json`, `run.json`, envelope |
+| Determinism scan | SCN301-SCN307 | `Library/Scion/determinism-<assembly>.json`, `diagnose` |
+
+SCN3xx never reach the Unity console, so hundreds of findings never bury a real compile error.
+
+## Summary
+
+| Id | Severity | Short |
+|---|---|---|
+| SCN001 | warning | Rule class not sealed |
+| SCN002 | warning | Rule class inherits more than one level |
+| SCN003 | error | Graft writes rule state |
+| SCN004 | warning | `float` in rule code |
+| SCN005 | warning | `[Tunable]` without a range |
+| SCN101 | error | Graft is not `static void`, public or internal, non-generic |
+| SCN102 | error | Target outside the graft's assembly |
+| SCN103 | error | Target method does not exist |
+| SCN104 | error | Signature does not match |
+| SCN105 | error | Target cannot be an anchor |
+| SCN106 | error | Overloads collide on one anchor id |
+| SCN107 | error | `AnchorScope` outside its assembly |
+| SCN108 | error | Skip or Return outside a non-observer `[Before]` |
+| SCN109 | error | Wrong `Call` type |
+| SCN110 | error | Game code calls a graft |
+| SCN111 | warning | Several grafts share `Call.Tag` |
+| SCN112 | error | Prefix matches several overloads |
+| SCN113 | error | No slot for the target in this build |
+| SCN114 | error | Redirect target missing in `Scion.Runtime` |
+| SCN120 | error | Slots need Mono |
+| SCN121 | error | Final build with test defines |
+| SCN130 | error | Graft DLL built for another build |
+| SCN131 | error | Graft DLL of another ABI |
+| SCN201 | error | Recipe without public parameterless constructor |
+| SCN202 | error | Invalid adapter |
+| SCN203 | error | Two adapters for one recipe type |
+| SCN301 | info | Read redirected in test builds |
+| SCN302 | info | Creation replaced in test builds |
+| SCN303 | warning | Wall-clock read not redirected |
+| SCN304 | warning | Threads or tasks |
+| SCN305 | warning | Unordered collection or query |
+| SCN306 | warning | Seed from `GetHashCode` |
+| SCN307 | warning | `Guid` created at run time |
+
+## Suppression
+
+Errors cannot be suppressed. Warnings use the standard Roslyn mechanisms:
+
+```csharp
+#pragma warning disable SCN111
+// ...
+#pragma warning restore SCN111
+
+[SuppressMessage("Scion", "SCN002", Justification = "Netcode requires NetworkBehaviour")]
+```
+
+or a `.globalconfig` for a whole project (`dotnet_diagnostic.SCN004.severity = none`). `doctor --level 3` lists
+every suppression with its justification.
+
+## See also
+
+- [SCN001-SCN005](/scion/reference/diagnostics/standard/)
+- [SCN101-SCN114](/scion/reference/diagnostics/grafts/)
+- [SCN120-SCN131](/scion/reference/diagnostics/builds-and-injection/)
+- [SCN201-SCN203](/scion/reference/diagnostics/trials/)
+- [SCN301-SCN307](/scion/reference/diagnostics/determinism/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# SCN001-SCN005
+
+These analyzers enforce the [Scion Standard](/scion/standard/overview/). SCN001, SCN002, SCN004 and SCN005 apply only
+to rule code (the assemblies in `analyzers.rule_assemblies` of `ScionSettings.json`); SCN003 applies to graft code.
+With no `analyzers` section they report nothing.
+
+## Diagnostics
+
+### SCN001
+
+**Severity:** warning · **Source:** analyzer
+
+**Message:** `{0} is not sealed.` **Hint:** `Seal the class, or suppress SCN001 with a justification.`
+
+**Cause.** A class in rule code is not `sealed` (rule R1). Abstract classes and static classes are exempt.
+
+**Fix.** Add `sealed`.
+
+```csharp
+// Before
+public class BackstabBonus : RuleModifier<DamageCalc> { }
+// After
+public sealed class BackstabBonus : RuleModifier<DamageCalc> { }
+```
+
+**Suppress.** `[SuppressMessage("Scion", "SCN001", Justification = "...")]`.
+
+### SCN002
+
+**Severity:** warning · **Source:** analyzer
+
+**Message:** `{0} inherits more than one level ({1}).` **Hint:** `Prefer composition or a single abstract base.`
+
+**Cause.** A class in rule code derives from a class that itself derives from something other than `object` or a
+Scion base (rule R1).
+
+**Fix.** Flatten the hierarchy: derive from the Scion base directly and move shared code into a helper.
+
+**Suppress.** With a justification, for example when a library requires its own base.
+
+### SCN003
+
+**Severity:** error · **Source:** analyzer
+
+**Message:** `Graft {0} writes rule state ({1}); grafts are visual only.` **Hint:** `Move the rule change to the
+core; rule code is listed in ScionSettings.json analyzers.`
+
+**Cause.** Inside graft code, a write to a field, property, indexer, event or array element of a rule type, or any use
+of an internal member of a rule type.
+
+**Fix.** Move the change into the core as a `RuleModifier<T>` or a command.
+
+```csharp
+// Before
+[After(typeof(HitPresenter), nameof(HitPresenter.Play))]
+public static void After(HitPresenter presenter, HitEvent e) { presenter.Battle.State.Turn = 0; }
+// After: no write; the rule change lives in Orchard.Core
+```
+
+**Suppress.** Not allowed.
+
+### SCN004
+
+**Severity:** warning · **Source:** analyzer
+
+**Message:** `float used in rule code ({0}).` **Hint:** `Use int or fixed point in the core so every machine gets
+the same result.`
+
+**Cause.** A `float` or `double` field, local, parameter or operation in rule code. Floating point can differ between
+machines and compilers, which breaks co-op and replays.
+
+**Fix.** Use `int` with a fixed scale (permille).
+
+```csharp
+// Before
+c.Multiplier *= 1.5f;
+// After
+c.MulPermille += 500;
+```
+
+**Suppress.** For values that never feed the state (debug output), with a justification.
+
+### SCN005
+
+**Severity:** warning · **Source:** analyzer
+
+**Message:** `{0} is [Tunable] without a range.` **Hint:** `Declare it as [Tunable(min, max)]; numeric tunables need
+a range.`
+
+**Cause.** A numeric field marked `[Tunable]` without `min` and `max`. Search, presets and clamping need the range.
+
+**Fix.**
+
+```csharp
+// Before
+[Tunable] public static float Strength = 0.3f;
+// After
+[Tunable(0f, 1f)] public static float Strength = 0.3f;
+```
+
+**Suppress.** Not recommended.
+
+## See also
+
+- [Rules R1-R8](/scion/standard/rules/)
+- [Enforcement](/scion/standard/enforcement/)
+- [Grafts are visual only](/scion/grafts/visual-only/)
+- [Diagnostics](/scion/reference/diagnostics/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# SCN101-SCN114
+
+These diagnostics come from the weaver when Unity compiles, from the analyzers in the IDE, and from `graft check`,
+`graft build` and `graft inject` outside Unity. All but SCN111 are errors: the assembly does not compile (or the
+draft is not injected) until they are fixed.
+
+## Diagnostics
+
+### SCN101
+
+**Severity:** error · **Source:** weaver, analyzer
+
+**Message:** `Graft {0} must be static void, public or internal, and not generic.` **Hint:** `Declare it as: public
+static void {0}(...) in a non-generic class.`
+
+**Cause.** The method marked `[Before]` or `[After]` is an instance method, returns a value, is private or protected,
+is generic, or is declared in a generic type or a private nested type. Injected drafts must also be `public` in a
+`public` type.
+
+**Fix.**
+
+```csharp
+// Before
+[After(typeof(HitPresenter), nameof(HitPresenter.Play))]
+void After(HitPresenter presenter) { }
+// After
+[After(typeof(HitPresenter), nameof(HitPresenter.Play))]
+public static void After(HitPresenter presenter) { }
+```
+
+**Suppress.** Not allowed.
+
+### SCN102
+
+**Severity:** error · **Source:** weaver, analyzer
+
+**Message:** `Target {0} is outside assembly {1}; a graft only weaves targets of its own assembly.` **Hint:** `Put the
+graft in a folder with an .asmref to the target's assembly.`
+
+**Cause.** The graft compiles into another assembly than its target, so the weaver cannot rewrite the target.
+
+**Fix.** Move the file into the grafts folder with `{"reference":"Orchard.Runtime"}` in its `.asmref`. In a draft
+project compiled outside Unity, turn SCN102 off with `dotnet_diagnostic.SCN102.severity = none`.
+
+**Suppress.** Only in draft projects, as above.
+
+### SCN103
+
+**Severity:** error · **Source:** weaver, analyzer, draft compiler
+
+**Message:** `{0}.{1} does not exist.` **Hint:** `Did you mean '{2}'?`
+
+**Cause.** The target type has no method with that name declared on it (inherited methods do not count).
+
+**Fix.** Use the suggested name, or target the type that declares the method.
+
+```csharp
+// Before
+[After(typeof(HitPresenter), "Ply")]
+// After
+[After(typeof(HitPresenter), nameof(HitPresenter.Play))]
+```
+
+**Suppress.** Not allowed.
+
+### SCN104
+
+**Severity:** error · **Source:** weaver, analyzer, draft compiler
+
+**Message:** `The signature of {0} does not match {1}.{2}.` **Hint:** `Expected: {3}`
+
+**Cause.** The graft's parameters match no overload of the target: the instance, the target's parameters in order
+with the same `in`/`ref`, then optionally `ref Call` or `ref Call<T>`, last.
+
+**Fix.** Copy the expected signature from the hint, or declare a prefix of it.
+
+```csharp
+// Before
+[After(typeof(HitPresenter), nameof(HitPresenter.Play))]
+public static void After(int e) { }
+// After
+[After(typeof(HitPresenter), nameof(HitPresenter.Play))]
+public static void After(HitPresenter presenter, HitEvent e) { }
+```
+
+**Suppress.** Not allowed.
+
+### SCN105
+
+**Severity:** error · **Source:** weaver, draft compiler
+
+**Message:** `{0}.{1} cannot have an anchor: {2}.` **Hint:** `Hang the graft on a plain method instead (iterators,
+async, RPCs, structs and out parameters have no anchor).`
+
+**Cause.** The target is a constructor, abstract, generic, in a struct, an iterator, `async`, a Netcode RPC, has an
+`out` or pointer parameter, returns by reference, or is otherwise ineligible ([Anchors](/scion/grafts/anchors/)).
+
+**Fix.** Target the plain method the iterator, `async` method or RPC calls.
+
+**Suppress.** Not allowed.
+
+### SCN106
+
+**Severity:** error · **Source:** weaver
+
+**Message:** `Overloads of {0}.{1} collide on anchor id {2}.` **Hint:** `Rename one overload or give its parameter
+types distinct names.`
+
+**Cause.** Two overloads produce the same anchor id because their parameter types have the same simple names
+(`List<int>` and `List<string>`).
+
+**Fix.** Rename one overload, or wrap a parameter in a type with a distinct name.
+
+**Suppress.** Not allowed.
+
+### SCN107
+
+**Severity:** error · **Source:** weaver
+
+**Message:** `[assembly: AnchorScope(typeof({0}))] in {1} points outside the assembly.` **Hint:** `Declare the scope
+in the assembly that defines {0}.`
+
+**Cause.** An `AnchorScope` names a type of another assembly.
+
+**Fix.** Move the attribute to a file that compiles into the type's assembly (the grafts folder works).
+
+**Suppress.** Not allowed.
+
+### SCN108
+
+**Severity:** error · **Source:** weaver, analyzer
+
+**Message:** `{0} calls {1}, but only a [Before] that is not an observer may skip.` **Hint:** `Use a [Before] without
+Observe = true, or just read c.Skipped.`
+
+**Cause.** `Skip()` or `Return()` in an `[After]` or an observer.
+
+**Fix.** Move the skip to a non-observer `[Before]`.
+
+**Suppress.** Not allowed.
+
+### SCN109
+
+**Severity:** error · **Source:** weaver, analyzer
+
+**Message:** `{0} takes {1}, but {2}.{3} returns {4}.` **Hint:** `Use ref Call<{4}> (or ref Call when the target
+returns void).`
+
+**Cause.** `Call<T>` with a `T` other than the return type, or `Call` on a target that returns a value.
+
+**Fix.**
+
+```csharp
+// Before
+public static void After(HitPresenter presenter, HitEvent e, ref Call<int> c) { }
+// After
+public static void After(HitPresenter presenter, HitEvent e, ref Call<float> c) { }
+```
+
+**Suppress.** Not allowed.
+
+### SCN110
+
+**Severity:** error · **Source:** analyzer
+
+**Message:** `{0} calls graft {1} directly; only the weaver calls grafts.` **Hint:** `Move the shared code to a normal
+helper and call that.`
+
+**Cause.** Game code refers to graft code. Deleting the grafts folder must leave a game that compiles.
+
+**Fix.** Move the shared code out of graft code. Test assemblies are exempt.
+
+**Suppress.** Not allowed.
+
+### SCN111
+
+**Severity:** warning · **Source:** weaver
+
+**Message:** `Grafts {0} on anchor {1} all use Call.Tag; they share one value.` **Hint:** `Let one graft own Tag, or
+keep the state in your own field.`
+
+**Cause.** Two or more befores, or two or more afters, of one anchor read or write `Tag`.
+
+**Fix.** Let one pair own `Tag`.
+
+**Suppress.** `#pragma warning disable SCN111` when the sharing is intended.
+
+### SCN112
+
+**Severity:** error · **Source:** weaver, analyzer
+
+**Message:** `{0} matches more than one overload of {1}.{2} by prefix: {3}.` **Hint:** `Declare all parameters so
+exactly one overload matches.`
+
+**Cause.** The graft declares a prefix of parameters that fits several overloads.
+
+**Fix.** Declare the full parameter list of the overload you want.
+
+**Suppress.** Not allowed.
+
+### SCN113
+
+**Severity:** error · **Source:** draft compiler (`graft build`, `graft inject`)
+
+**Message:** `{0}.{1} has no slot in this build.` **Hint:** `Add its type to [assembly: AnchorScope], run dotnet scion
+build test and inject again.`
+
+**Cause.** A draft targets a method that has neither a promoted graft nor an `AnchorScope` in this test build.
+
+**Fix.** Add `[assembly: AnchorScope(typeof(T))]`, rebuild the test player, inject again.
+
+**Suppress.** Not allowed.
+
+### SCN114
+
+**Severity:** error · **Source:** weaver
+
+**Message:** `Redirect target {0}.{1} does not exist in Scion.Runtime.` **Hint:** `Keep the redirect targets in
+Scion.Runtime under SCION_TRIALS, or fix TrialsReads in ScionWeaver.cs.`
+
+**Cause.** The weaver and `Scion.Runtime` come from different package versions, so a redirect target is missing.
+
+**Fix.** Reinstall the package so all its assemblies match.
+
+**Suppress.** Not allowed.
+
+## See also
+
+- [Write a graft](/scion/grafts/write/)
+- [Call and Call\<T\>](/scion/grafts/call-context/)
+- [Anchors](/scion/grafts/anchors/)
+- [Diagnostics](/scion/reference/diagnostics/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# SCN120-SCN131
+
+Build guards stop a player build that would not work or would ship lab code; injection checks refuse a graft DLL
+that does not match the running build. They appear in `build test`, `build final`, `graft inject`,
+`InjectReport.Errors` and `trial run --grafts`.
+
+## Diagnostics
+
+### SCN120
+
+**Severity:** error · **Source:** build
+
+**Message:** `SCION_SLOTS needs a JIT backend (Mono); this build uses IL2CPP.` **Hint:** `Build tests with
+ScionBuild.BuildTestPlayer (forces Mono), or remove SCION_SLOTS.`
+
+**Cause.** A player build with `SCION_SLOTS` on IL2CPP. Slots are replaced at run time, which needs a JIT.
+
+**Fix.** Use `dotnet scion build test` or `ScionBuild.BuildTestPlayer`.
+
+**Suppress.** Not allowed.
+
+### SCN121
+
+**Severity:** error · **Source:** build
+
+**Message:** `Final build with test defines: {0}.` **Hint:** `Remove SCION_SLOTS and SCION_TRIALS from the build, or
+use ScionBuild.BuildTestPlayer.`
+
+**Cause.** `BuildFinalPlayer` (or `build final`) found `SCION_SLOTS` or `SCION_TRIALS` in the build's defines.
+
+**Fix.** Remove them from Player Settings or the build profile; test builds add them for the build only.
+
+**Suppress.** Not allowed.
+
+### SCN130
+
+**Severity:** error · **Source:** runtime, CLI
+
+**Message:** `Graft DLL targets build {0}, but this player is build {1}.` **Hint:** `Run dotnet scion graft build
+against this build, then inject again.`
+
+**Cause.** The DLL was compiled against another test build (another `build_id`), so its references may not match.
+
+**Fix.** `dotnet scion graft build` against the running build, then inject.
+
+**Suppress.** Not allowed.
+
+### SCN131
+
+**Severity:** error · **Source:** runtime, CLI
+
+**Message:** `Graft DLL has ABI {0}; this player expects ABI {1}.` **Hint:** `Use the same Scion version for the CLI
+and the build.`
+
+**Cause.** The CLI that built the DLL and the package in the build have different weaver ABIs (`Anchors.AbiVersion`).
+
+**Fix.** Install the same Scion version for the package and the CLI; rebuild.
+
+**Suppress.** Not allowed.
+
+## See also
+
+- [Build modes](/scion/grafts/build-modes/)
+- [Live injection](/scion/grafts/injection/)
+- [Versioning and compatibility](/scion/contribute/compatibility/)
+- [Diagnostics](/scion/reference/diagnostics/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# SCN201-SCN203
+
+The test player checks recipes and adapters when the session starts. A selected recipe that cannot be created fails
+alone; an invalid adapter or an ambiguous choice stops the run with exit 3 before any recipe plays.
+
+## Diagnostics
+
+### SCN201
+
+**Severity:** error · **Source:** runtime
+
+**Message:** `Recipe {0} has no public parameterless constructor.` **Hint:** `Add: public {0}() { ... }`
+
+**Cause.** The session creates recipes through their public parameterless constructor.
+
+**Fix.**
+
+```csharp
+public sealed class SlashHit : OrchardRecipe
+{
+    public SlashHit() { Seed = 7; }
+}
+```
+
+When the recipe is selected, it fails with `error: "SCN201: ..."`; when it is not, the log has a warning and the
+CLI reports `recipe_unbuildable`.
+
+**Suppress.** Not allowed.
+
+### SCN202
+
+**Severity:** error · **Source:** runtime
+
+**Message:** `Adapter {0} is not valid: {1}.` **Hint:** `Derive from TrialAdapter<TRecipe> (or implement
+ITrialAdapter) with a public parameterless constructor.`
+
+**Cause.** A type in `[assembly: TrialAdapter(typeof(...))]` does not implement `ITrialAdapter`, is abstract, or a
+non-`MonoBehaviour` adapter has no public parameterless constructor. Exit 3.
+
+**Fix.** Derive from `TrialAdapter<TRecipe>`.
+
+**Suppress.** Not allowed.
+
+### SCN203
+
+**Severity:** error · **Source:** runtime
+
+**Message:** `Adapters {0} and {1} both handle {2}.` **Hint:** `Keep one adapter per recipe type; a more specific type
+wins.`
+
+**Cause.** Two registered adapters have the same recipe type and both accept a selected recipe. Exit 3.
+
+**Fix.** Remove one, or make one handle a more specific recipe type.
+
+**Suppress.** Not allowed.
+
+## See also
+
+- [Write a recipe](/scion/trials/recipes/)
+- [Write an adapter](/scion/trials/adapters/)
+- [Diagnostics](/scion/reference/diagnostics/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# SCN301-SCN307
+
+The weaver scans every assembly that references `Scion.Runtime` when Unity compiles it and writes the findings to
+`Library/Scion/determinism-<assembly>.json`. They never appear in the Unity console; `dotnet scion diagnose` reports
+them with file and line, counts and a plan.
+
+## Diagnostics
+
+### SCN301
+
+**Severity:** info · **Source:** scan
+
+**Message:** `{0} reads {1}; redirected to {2} in test builds.`
+
+**Cause.** A read of `Time.*`, `DateTime.Now`, `Screen.width` or similar that the test build already redirects.
+Nothing to fix; it shows what the virtual clock covers.
+
+### SCN302
+
+**Severity:** info · **Source:** scan
+
+**Message:** `{0} creates {1}; replaced by {2} in test builds.`
+
+**Cause.** `new System.Random()` or `new WaitForSecondsRealtime(t)` that the test build replaces. Nothing to fix.
+
+### SCN303
+
+**Severity:** warning · **Source:** scan
+
+**Message:** `{0} reads the wall clock ({1}), which is not redirected.` **Hint:** `Use Time or Clock, or mark the
+method [WallClock] if it must be real time.`
+
+**Cause.** `Stopwatch`, `Environment.TickCount`, `DateTime.Now` in a `[WallClock]`-free path not covered, or a native
+time call.
+
+**Fix.**
+
+```csharp
+// Before
+turnStarted = Stopwatch.GetTimestamp();
+// After
+turnStarted = Time.timeAsDouble;
+```
+
+**Suppress.** `[WallClock]` on code that must measure real time.
+
+### SCN304
+
+**Severity:** warning · **Source:** scan
+
+**Message:** `{0} uses threads or tasks ({1}); results may change between runs.` **Hint:** `Keep game logic on the
+main thread.`
+
+**Cause.** `Task.Run`, `Thread`, `Parallel`, or `async` continuations on the thread pool in game logic.
+
+**Fix.** Run game logic on the main thread; keep threads for I/O and pure computations whose result does not depend on
+timing.
+
+**Suppress.** `#pragma warning disable SCN304` with a reason when the result is order-independent.
+
+### SCN305
+
+**Severity:** warning · **Source:** scan
+
+**Message:** `{0} depends on an unordered collection or query ({1}).` **Hint:** `Sort first, or use a list or array.`
+
+**Cause.** Iterating a `HashSet`, `Dictionary` or an unordered query and letting the order decide an outcome (the
+first target, a tie-break).
+
+**Fix.**
+
+```csharp
+// Before
+var target = candidates.First();          // HashSet<Unit>
+// After
+var target = candidates.OrderBy(u => u.Id).First();
+```
+
+**Suppress.** When the result does not depend on order (a sum).
+
+### SCN306
+
+**Severity:** warning · **Source:** scan
+
+**Message:** `{0} seeds randomness from GetHashCode ({1}).` **Hint:** `Use a fixed seed (recipe Seed or
+Determinism.SeedFor).`
+
+**Cause.** `new Random(name.GetHashCode())`: string hash codes change between processes in .NET.
+
+**Fix.** Use a stable hash or `Determinism.SeedFor(path, order)`.
+
+**Suppress.** Not recommended.
+
+### SCN307
+
+**Severity:** warning · **Source:** scan
+
+**Message:** `{0} creates a Guid ({1}); it changes every run.` **Hint:** `Use a counter or a seeded id.`
+
+**Cause.** `Guid.NewGuid()` in game logic or state.
+
+**Fix.** Use a counter or an id derived from the seed.
+
+**Suppress.** For ids that never enter state or output (telemetry session ids).
+
+## See also
+
+- [Find non-determinism](/scion/determinism/diagnose/)
+- [diagnose](/scion/cli/diagnose/)
+- [Clock, screen and random](/scion/determinism/clock-and-screen/)
+- [Diagnostics](/scion/reference/diagnostics/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# run-folder
+
+_This page is still being written._
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# run-json
+
+_This page is still being written._
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# result-json
+
+_This page is still being written._
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# tables
+
+_This page is still being written._
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# telemetry-jsonl
+
+_This page is still being written._
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# report-md
+
+_This page is still being written._
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# recipes-json
+
+_This page is still being written._
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# raw-frames
+
+_This page is still being written._
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# summary
+
+_This page is still being written._
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# baselines
+
+_This page is still being written._
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# scion-build-json
+
+_This page is still being written._
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# control-json
+
+_This page is still being written._
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# inject-report
+
+_This page is still being written._
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# evals
+
+_This page is still being written._
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# manifest
+
+_This page is still being written._
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# judge-data
+
+_This page is still being written._
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# control-protocol
+
+_This page is still being written._
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# schemas
+
+_This page is still being written._
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# glossary
+
+_This page is still being written._
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# api
+
+_This page is still being written._
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# grafts
+
+_This page is still being written._
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# injection
+
+_This page is still being written._
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# determinism
+
+_This page is still being written._
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# recipes
+
+_This page is still being written._
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# adapters
+
+_This page is still being written._
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# session
+
+_This page is still being written._
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# checks
+
+_This page is still being written._
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# fx
+
+_This page is still being written._
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# testing
+
+_This page is still being written._
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# compare
+
+_This page is still being written._
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# editor
+
+_This page is still being written._
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# specs
+
+_This page is still being written._
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# core
+
+_This page is still being written._

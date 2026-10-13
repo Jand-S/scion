@@ -1,0 +1,249 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jand-s.github.io/scion/schemas/v1/judge-question.schema.json",
+  "title": "Judge question (eval-in.json)",
+  "description": "Questions and the items to judge; the input of trial eval evaluators and of judge run.",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "description": "Format version of this file. Always 1 in Scion 1.x."
+    },
+    "run": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Run folder, or null."
+    },
+    "blind": {
+      "type": "boolean",
+      "description": "Labels are shuffled and the source hidden."
+    },
+    "orders": {
+      "enum": [
+        1,
+        2
+      ],
+      "description": "Ask once, or twice with the order reversed."
+    },
+    "questions": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "description": "One question.",
+        "properties": {
+          "type": {
+            "enum": [
+              "noul",
+              "score",
+              "choice"
+            ],
+            "description": "noul: yes or no as 0 to 1; score: 2 to 10 levels; choice: up to 255 options."
+          },
+          "instructions": {
+            "type": "string",
+            "description": "The question."
+          },
+          "criteria": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "What to look at."
+          },
+          "levels": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "description": "One score level.",
+              "properties": {
+                "what": {
+                  "type": "string",
+                  "description": "What this level means."
+                },
+                "examples": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "description": "Example image paths or descriptions."
+                }
+              },
+              "required": [
+                "what"
+              ],
+              "additionalProperties": false
+            },
+            "description": "Score levels, worst first (score).",
+            "minItems": 2,
+            "maxItems": 10
+          },
+          "options": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "description": "One option.",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "Option id."
+                },
+                "description": {
+                  "type": "string",
+                  "description": "What it means."
+                }
+              },
+              "required": [
+                "id",
+                "description"
+              ],
+              "additionalProperties": false
+            },
+            "description": "Options (choice).",
+            "minItems": 2,
+            "maxItems": 255
+          }
+        },
+        "required": [
+          "type",
+          "instructions"
+        ],
+        "additionalProperties": false
+      },
+      "description": "Questions by id."
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "description": "One item to judge.",
+        "properties": {
+          "label": {
+            "type": "string",
+            "description": "Blind label (X, Y, Z...) or an image id."
+          },
+          "images": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Image paths."
+          },
+          "frames": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            },
+            "description": "Frames shown."
+          },
+          "telemetry": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "telemetry.jsonl path, or null."
+          },
+          "metrics": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "metrics.json path, or null."
+          }
+        },
+        "required": [
+          "label",
+          "images"
+        ],
+        "additionalProperties": false
+      },
+      "description": "Items."
+    },
+    "pairs": {
+      "type": "array",
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "minItems": 2,
+        "maxItems": 2
+      },
+      "description": "Pairs of labels to compare (duels), if any."
+    }
+  },
+  "required": [
+    "schema_version",
+    "questions",
+    "items"
+  ],
+  "additionalProperties": true,
+  "examples": [
+    {
+      "schema_version": 1,
+      "run": "/Users/alex/orchard/.scion/runs/20261011-143200",
+      "blind": true,
+      "orders": 2,
+      "questions": {
+        "has_glitch": {
+          "type": "noul",
+          "instructions": "Is there a visual glitch?"
+        },
+        "readability": {
+          "type": "score",
+          "instructions": "How readable is the HUD at 1x?",
+          "levels": [
+            {
+              "what": "hard to read"
+            },
+            {
+              "what": "readable with effort"
+            },
+            {
+              "what": "clear at a glance"
+            }
+          ]
+        },
+        "main_issue": {
+          "type": "choice",
+          "instructions": "What is the main issue?",
+          "options": [
+            {
+              "id": "contrast",
+              "description": "text contrast"
+            },
+            {
+              "id": "clutter",
+              "description": "too many elements"
+            },
+            {
+              "id": "none",
+              "description": "no issue"
+            }
+          ]
+        }
+      },
+      "items": [
+        {
+          "label": "X",
+          "images": [
+            "q0/HudStates/r1/sheet.png"
+          ]
+        },
+        {
+          "label": "Y",
+          "images": [
+            "q1/HudStates[Theme=dusk]/r1/sheet.png"
+          ]
+        }
+      ],
+      "pairs": [
+        [
+          "X",
+          "Y"
+        ]
+      ]
+    }
+  ]
+}

@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jand-s.github.io/scion/schemas/v1/control-response.schema.json",
+  "title": "Control response",
+  "description": "One response line from the control server, in request order.",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "integer",
+      "description": "The request id."
+    },
+    "ok": {
+      "type": "boolean",
+      "description": "True when the operation succeeded."
+    },
+    "error": {
+      "type": "object",
+      "description": "Present when ok is false.",
+      "properties": {
+        "code": {
+          "enum": [
+            "bad_json",
+            "line_too_long",
+            "bad_token",
+            "unknown_op",
+            "bad_args",
+            "busy",
+            "not_supported",
+            "shutting_down"
+          ],
+          "description": "Error code."
+        },
+        "message": {
+          "type": "string",
+          "description": "What happened."
+        },
+        "hint": {
+          "type": "string",
+          "description": "What to do."
+        }
+      },
+      "required": [
+        "code",
+        "message",
+        "hint"
+      ],
+      "additionalProperties": false
+    },
+    "state": {
+      "enum": [
+        "idle",
+        "preparing",
+        "running"
+      ],
+      "description": "Queue state (hello, status)."
+    }
+  },
+  "required": [
+    "id",
+    "ok"
+  ],
+  "additionalProperties": true,
+  "if": {
+    "properties": {
+      "ok": {
+        "const": false
+      }
+    }
+  },
+  "then": {
+    "required": [
+      "error"
+    ]
+  },
+  "examples": [
+    {
+      "id": 7,
+      "ok": true,
+      "state": "idle",
+      "recipe": null,
+      "round": 0,
+      "done": 0,
+      "total": 0,
+      "grafts": 2,
+      "pending": false
+    },
+    {
+      "id": 9,
+      "ok": false,
+      "error": {
+        "code": "busy",
+        "message": "a queue is already running",
+        "hint": "wait for it or send quit"
+      }
+    }
+  ]
+}

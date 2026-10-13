@@ -1,0 +1,124 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jand-s.github.io/scion/schemas/v1/cli/anchor-list.schema.json",
+  "title": "anchor list output",
+  "description": "Output of dotnet scion anchor list: eligible anchors of the build.",
+  "allOf": [
+    {
+      "$ref": "https://jand-s.github.io/scion/schemas/v1/envelope.schema.json"
+    },
+    {
+      "type": "object",
+      "properties": {
+        "command": {
+          "const": "anchor list"
+        },
+        "build": {
+          "type": "string",
+          "description": "Build."
+        },
+        "total": {
+          "type": "integer",
+          "description": "Matches."
+        },
+        "anchors": {
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "type": "object",
+                "description": "One anchor side.",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "Slot id (A__/B__...)."
+                  },
+                  "anchor": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "[Anchor] Id, or null."
+                  },
+                  "target": {
+                    "type": "string",
+                    "description": "Type.Method."
+                  },
+                  "signature": {
+                    "type": "string",
+                    "description": "C# signature."
+                  },
+                  "slot": {
+                    "type": "boolean",
+                    "description": "Has a slot in this build."
+                  },
+                  "doc": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "[Anchor] Doc."
+                  },
+                  "promoted": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Promoted grafts on it."
+                  }
+                },
+                "required": [
+                  "id",
+                  "anchor",
+                  "target",
+                  "slot"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "$ref": "https://jand-s.github.io/scion/schemas/v1/envelope.schema.json#/$defs/more"
+              }
+            ]
+          },
+          "description": "Anchors."
+        }
+      },
+      "required": [
+        "total",
+        "anchors"
+      ]
+    }
+  ],
+  "examples": [
+    {
+      "schema_version": 1,
+      "command": "anchor list",
+      "ok": true,
+      "build": "/Users/alex/orchard/.scion/builds/test/Orchard.app",
+      "total": 2,
+      "anchors": [
+        {
+          "id": "A__Orchard_Presentation_HitPresenter__Play__HitEvent",
+          "anchor": "presentation.hit",
+          "target": "Orchard.Presentation.HitPresenter.Play",
+          "signature": "float Play(HitEvent e)",
+          "slot": true,
+          "doc": "Plays one hit and returns how long it lasts.",
+          "promoted": [
+            "Orchard.Grafts.HitFlash.After"
+          ]
+        },
+        {
+          "id": "B__Orchard_Presentation_HitPresenter__Play__HitEvent",
+          "anchor": "presentation.hit",
+          "target": "Orchard.Presentation.HitPresenter.Play",
+          "signature": "float Play(HitEvent e)",
+          "slot": true,
+          "doc": null,
+          "promoted": []
+        }
+      ],
+      "next_step": "create a graft: dotnet scion graft new MyGraft --after Orchard.Presentation.HitPresenter.Play"
+    }
+  ]
+}

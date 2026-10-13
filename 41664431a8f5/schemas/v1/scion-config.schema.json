@@ -1,0 +1,372 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jand-s.github.io/scion/schemas/v1/scion-config.schema.json",
+  "title": "scion.json and scion.local.json",
+  "description": "CLI configuration at the project root; scion.local.json has the same shape with only the keys that change on one machine.",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Optional: the URL of this schema, for editors. The CLI ignores it."
+    },
+    "schema_version": {
+      "const": 1,
+      "description": "Format version of this file. Always 1 in Scion 1.x."
+    },
+    "unity_project": {
+      "type": "string",
+      "description": "The Unity project folder, relative to the root."
+    },
+    "grafts": {
+      "type": "object",
+      "description": "Graft folders.",
+      "properties": {
+        "promoted": {
+          "type": "string",
+          "description": "Graft folder compiled into the game."
+        },
+        "staging": {
+          "type": "string",
+          "description": "Draft grafts (graft new, graft build)."
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "trials": {
+      "type": "object",
+      "description": "Trials.",
+      "properties": {
+        "recipes_staging": {
+          "type": "string",
+          "description": "Extra recipe DLLs; captured/ and found/ hold match files."
+        },
+        "out": {
+          "type": "string",
+          "description": "Run folders (outside git)."
+        },
+        "baselines": {
+          "type": "string",
+          "description": "Approved baselines (in git)."
+        },
+        "keep_runs": {
+          "type": "integer",
+          "description": "Finished runs kept.",
+          "minimum": 1
+        },
+        "defaults": {
+          "type": "object",
+          "description": "trial run defaults.",
+          "properties": {
+            "copies": {
+              "type": "integer",
+              "description": "Default -j.",
+              "minimum": 1
+            },
+            "rounds": {
+              "type": "integer",
+              "description": "Default --rounds.",
+              "minimum": 1
+            },
+            "headless": {
+              "type": "boolean",
+              "description": "False acts as --window."
+            },
+            "size": {
+              "type": "string",
+              "description": "WxH.",
+              "pattern": "^[0-9]+x[0-9]+$"
+            },
+            "seed": {
+              "type": "integer",
+              "description": "Default --seed."
+            },
+            "timeout_s": {
+              "type": "integer",
+              "description": "Default --timeout."
+            }
+          },
+          "required": [],
+          "additionalProperties": false
+        },
+        "player_args": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Game arguments for every copy."
+        },
+        "host_args": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Arguments for host copies."
+        },
+        "client_args": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Arguments for client copies."
+        },
+        "port_arg": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The game port flag, or null."
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "rule_paths": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Folders with game rules (code or data)."
+    },
+    "log_allow": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": ".NET regexes of logged errors that do not fail a recipe."
+    },
+    "evaluators": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "description": "One evaluator.",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Evaluator name used by --with."
+          },
+          "command": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Process to run; gets eval-in.json and writes eval-out.json."
+          },
+          "kind": {
+            "enum": [
+              "process",
+              "agent"
+            ],
+            "description": "agent: exported for an AI agent, then imported."
+          },
+          "gate": {
+            "type": "boolean",
+            "description": "Scores fail the run when true; false by default."
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "description": "Evaluators for trial eval."
+    },
+    "build": {
+      "type": "object",
+      "description": "Builds.",
+      "properties": {
+        "test": {
+          "type": "object",
+          "description": "Test build.",
+          "properties": {
+            "method": {
+              "type": "string",
+              "description": "Static method for the test build."
+            },
+            "output": {
+              "type": "object",
+              "description": "Player path per OS; only the running OS is required.",
+              "properties": {
+                "osx": {
+                  "type": "string",
+                  "description": "macOS path."
+                },
+                "win": {
+                  "type": "string",
+                  "description": "Windows path."
+                },
+                "linux": {
+                  "type": "string",
+                  "description": "Linux path."
+                }
+              },
+              "required": [],
+              "additionalProperties": false
+            }
+          },
+          "required": [],
+          "additionalProperties": false
+        },
+        "final": {
+          "type": "object",
+          "description": "Final build.",
+          "properties": {
+            "method": {
+              "type": "string",
+              "description": "Static method for the final build."
+            },
+            "output": {
+              "type": "object",
+              "description": "Player path per OS; only the running OS is required.",
+              "properties": {
+                "osx": {
+                  "type": "string",
+                  "description": "macOS path."
+                },
+                "win": {
+                  "type": "string",
+                  "description": "Windows path."
+                },
+                "linux": {
+                  "type": "string",
+                  "description": "Linux path."
+                }
+              },
+              "required": [],
+              "additionalProperties": false
+            }
+          },
+          "required": [],
+          "additionalProperties": false
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "specs": {
+      "type": "object",
+      "description": "Specs.",
+      "properties": {
+        "project": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": ".csproj of the specs, or null."
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "judge": {
+      "type": "object",
+      "description": "Judge.",
+      "properties": {
+        "dir": {
+          "type": "string",
+          "description": "Judge data (heads, votes, gold sets)."
+        },
+        "eyes": {
+          "type": "string",
+          "description": "Default eye model."
+        },
+        "cache": {
+          "type": "string",
+          "description": "Embedding cache (outside git)."
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "unity": {
+      "type": "object",
+      "description": "Local only: Unity paths.",
+      "properties": {
+        "editor": {
+          "type": "string",
+          "description": "Unity editor executable."
+        },
+        "pipeline_cli": {
+          "type": "string",
+          "description": "Unity Hub command line."
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    }
+  },
+  "required": [],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "$schema": "https://jand-s.github.io/scion/schemas/v1/scion-config.schema.json",
+      "schema_version": 1,
+      "unity_project": ".",
+      "grafts": {
+        "promoted": "Assets/Orchard/Grafts",
+        "staging": "scion/grafts"
+      },
+      "trials": {
+        "recipes_staging": "scion/recipes",
+        "out": ".scion/runs",
+        "baselines": "scion/baselines",
+        "keep_runs": 10,
+        "defaults": {
+          "copies": 4,
+          "rounds": 1,
+          "headless": true,
+          "size": "1280x720",
+          "seed": 1,
+          "timeout_s": 300
+        },
+        "player_args": [],
+        "host_args": [
+          "-orchard-host"
+        ],
+        "client_args": [
+          "-orchard-join",
+          "127.0.0.1"
+        ],
+        "port_arg": "-orchard-port"
+      },
+      "rule_paths": [
+        "Assets/Orchard/Core",
+        "Assets/Orchard/Data"
+      ],
+      "log_allow": [],
+      "evaluators": [],
+      "build": {
+        "test": {
+          "method": "Scion.Editor.ScionBuild.TestFromCommandLine",
+          "output": {
+            "osx": ".scion/builds/test/Orchard.app",
+            "win": ".scion/builds/test/Orchard.exe",
+            "linux": ".scion/builds/test/Orchard.x86_64"
+          }
+        },
+        "final": {
+          "method": "Scion.Editor.ScionBuild.FinalFromCommandLine",
+          "output": {
+            "osx": ".scion/builds/final/Orchard.app",
+            "win": ".scion/builds/final/Orchard.exe",
+            "linux": ".scion/builds/final/Orchard.x86_64"
+          }
+        }
+      },
+      "specs": {
+        "project": "Trials/Specs/Orchard.Specs.csproj"
+      },
+      "judge": {
+        "dir": "scion/judge",
+        "eyes": "siglip2-so400m",
+        "cache": ".scion/judge"
+      }
+    },
+    {
+      "trials": {
+        "out": ".scion/runs-clone2"
+      },
+      "unity": {
+        "editor": "/Applications/Unity/Hub/Editor/6000.3.25f1/Unity.app/Contents/MacOS/Unity"
+      }
+    }
+  ]
+}

@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jand-s.github.io/scion/schemas/v1/cli/multiverse.schema.json",
+  "title": "multiverse output",
+  "description": "Output of dotnet scion multiverse run and multiverse show.",
+  "allOf": [
+    {
+      "$ref": "https://jand-s.github.io/scion/schemas/v1/envelope.schema.json"
+    },
+    {
+      "type": "object",
+      "properties": {
+        "command": {
+          "enum": [
+            "multiverse run",
+            "multiverse show"
+          ]
+        },
+        "run": {
+          "type": "string",
+          "description": "Multiverse folder."
+        },
+        "match": {
+          "type": "string",
+          "description": "Match file."
+        },
+        "at_turn": {
+          "type": "integer",
+          "description": "Fork turn."
+        },
+        "variants": {
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "type": "object",
+                "description": "A variant.",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "Variant."
+                  },
+                  "diverged": {
+                    "type": "boolean",
+                    "description": "Rules diverged."
+                  },
+                  "first_turn": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "description": "First turn."
+                  },
+                  "field": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "First field."
+                  }
+                },
+                "required": [
+                  "name",
+                  "diverged",
+                  "first_turn",
+                  "field"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "$ref": "https://jand-s.github.io/scion/schemas/v1/envelope.schema.json#/$defs/more"
+              }
+            ]
+          },
+          "description": "Variants."
+        },
+        "report": {
+          "type": "string",
+          "description": "multiverse.json."
+        },
+        "mosaic": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Side-by-side image, or null."
+        }
+      },
+      "required": [
+        "run",
+        "match",
+        "at_turn",
+        "variants",
+        "report"
+      ]
+    }
+  ],
+  "examples": [
+    {
+      "schema_version": 1,
+      "command": "multiverse run",
+      "ok": true,
+      "run": "/Users/alex/orchard/.scion/multiverse/20261011-190000",
+      "match": "scion/recipes/captured/goblin-ambush.match.json",
+      "at_turn": 4,
+      "variants": [
+        {
+          "name": "heavy-feel",
+          "diverged": false,
+          "first_turn": null,
+          "field": null
+        },
+        {
+          "name": "crit-plus-10",
+          "diverged": true,
+          "first_turn": 5,
+          "field": "units[3].hp"
+        }
+      ],
+      "report": "/Users/alex/orchard/.scion/multiverse/20261011-190000/multiverse.json",
+      "mosaic": "/Users/alex/orchard/.scion/multiverse/20261011-190000/mosaic.png",
+      "next_step": "look at /Users/alex/orchard/.scion/multiverse/20261011-190000/mosaic.png"
+    }
+  ]
+}

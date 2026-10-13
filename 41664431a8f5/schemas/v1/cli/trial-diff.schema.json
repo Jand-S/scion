@@ -1,0 +1,156 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jand-s.github.io/scion/schemas/v1/cli/trial-diff.schema.json",
+  "title": "trial diff output",
+  "description": "Output of dotnet scion trial diff: two runs (or copies) compared recipe by recipe.",
+  "allOf": [
+    {
+      "$ref": "https://jand-s.github.io/scion/schemas/v1/envelope.schema.json"
+    },
+    {
+      "type": "object",
+      "properties": {
+        "command": {
+          "const": "trial diff"
+        },
+        "a": {
+          "type": "string",
+          "description": "First run or copy folder."
+        },
+        "b": {
+          "type": "string",
+          "description": "Second run or copy folder."
+        },
+        "recipes": {
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "type": "object",
+                "description": "One recipe.",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "Id."
+                  },
+                  "hash": {
+                    "enum": [
+                      "same",
+                      "changed"
+                    ]
+                  },
+                  "frames": {
+                    "type": "array",
+                    "items": {
+                      "type": "integer"
+                    },
+                    "description": "[a, b]."
+                  },
+                  "first_frame": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "description": "First frame whose px differs."
+                  },
+                  "cause": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "First differing column (determinism.tsv order)."
+                  },
+                  "images": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "description": "One image.",
+                      "properties": {
+                        "file": {
+                          "type": "string",
+                          "description": "Image."
+                        },
+                        "status": {
+                          "enum": [
+                            "same",
+                            "within",
+                            "changed"
+                          ]
+                        },
+                        "ratio": {
+                          "type": "number",
+                          "description": "Ratio."
+                        },
+                        "diff": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "description": "Heatmap."
+                        }
+                      },
+                      "required": [
+                        "file",
+                        "status",
+                        "ratio",
+                        "diff"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "description": "Images."
+                  }
+                },
+                "required": [
+                  "id",
+                  "hash",
+                  "frames",
+                  "images"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "$ref": "https://jand-s.github.io/scion/schemas/v1/envelope.schema.json#/$defs/more"
+              }
+            ]
+          },
+          "description": "Recipes."
+        }
+      },
+      "required": [
+        "a",
+        "b",
+        "recipes"
+      ]
+    }
+  ],
+  "examples": [
+    {
+      "schema_version": 1,
+      "command": "trial diff",
+      "ok": true,
+      "a": "/Users/alex/orchard/.scion/runs/20261011-143200",
+      "b": "/Users/alex/orchard/.scion/runs/20261011-150410",
+      "recipes": [
+        {
+          "id": "SlashHit",
+          "hash": "same",
+          "frames": [
+            46,
+            46
+          ],
+          "first_frame": 12,
+          "cause": "px",
+          "images": [
+            {
+              "file": "window.png",
+              "status": "changed",
+              "ratio": 0.004,
+              "diff": "diff/SlashHit/r1/window.diff.png"
+            }
+          ]
+        }
+      ],
+      "next_step": "look at /Users/alex/orchard/.scion/runs/20261011-150410/diff/SlashHit/r1/window.diff.png"
+    }
+  ]
+}

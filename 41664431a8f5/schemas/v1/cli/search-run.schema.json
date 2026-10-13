@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jand-s.github.io/scion/schemas/v1/cli/search-run.schema.json",
+  "title": "search run output",
+  "description": "Output of dotnet scion search run: the guided search over tunables.",
+  "allOf": [
+    {
+      "$ref": "https://jand-s.github.io/scion/schemas/v1/envelope.schema.json"
+    },
+    {
+      "type": "object",
+      "properties": {
+        "command": {
+          "const": "search run"
+        },
+        "spec": {
+          "type": "string",
+          "description": "Spec."
+        },
+        "tunables": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Keys searched."
+        },
+        "evaluated": {
+          "type": "integer",
+          "description": "Candidates."
+        },
+        "duels": {
+          "type": "integer",
+          "description": "Duels for people."
+        },
+        "gallery": {
+          "type": "string",
+          "description": "search.json."
+        },
+        "best": {
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "type": "object",
+                "description": "A candidate.",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "Candidate."
+                  },
+                  "values": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "number"
+                    }
+                  },
+                  "score": {
+                    "type": "number",
+                    "description": "Score."
+                  }
+                },
+                "required": [
+                  "name",
+                  "values",
+                  "score"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "$ref": "https://jand-s.github.io/scion/schemas/v1/envelope.schema.json#/$defs/more"
+              }
+            ]
+          },
+          "description": "Best first."
+        }
+      },
+      "required": [
+        "spec",
+        "tunables",
+        "evaluated",
+        "duels",
+        "gallery",
+        "best"
+      ]
+    }
+  ],
+  "examples": [
+    {
+      "schema_version": 1,
+      "command": "search run",
+      "ok": true,
+      "spec": "SlashFeelsHeavy",
+      "tunables": [
+        "CritShake.Strength",
+        "HitStop.Seconds"
+      ],
+      "evaluated": 64,
+      "duels": 12,
+      "gallery": "/Users/alex/orchard/.scion/search/20261011-200000/search.json",
+      "best": [
+        {
+          "name": "c17",
+          "values": {
+            "CritShake.Strength": 0.45,
+            "HitStop.Seconds": 0.08
+          },
+          "score": 0.71
+        }
+      ],
+      "next_step": "vote on the finalists: dotnet scion judge vote --run /Users/alex/orchard/.scion/search/20261011-200000"
+    }
+  ]
+}

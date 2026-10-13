@@ -1,0 +1,161 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jand-s.github.io/scion/schemas/v1/cli/judge.schema.json",
+  "title": "judge output",
+  "description": "Output of the dotnet scion judge commands.",
+  "allOf": [
+    {
+      "$ref": "https://jand-s.github.io/scion/schemas/v1/envelope.schema.json"
+    },
+    {
+      "type": "object",
+      "properties": {
+        "command": {
+          "enum": [
+            "judge list",
+            "judge show",
+            "judge new",
+            "judge vote",
+            "judge train",
+            "judge run"
+          ]
+        },
+        "heads": {
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "type": "object",
+                "description": "A head.",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "Head."
+                  },
+                  "version": {
+                    "type": "integer",
+                    "description": "Version."
+                  },
+                  "type": {
+                    "enum": [
+                      "noul",
+                      "score",
+                      "choice"
+                    ]
+                  },
+                  "votes": {
+                    "type": "integer",
+                    "description": "Votes."
+                  },
+                  "agreement": {
+                    "type": [
+                      "number",
+                      "null"
+                    ],
+                    "description": "Gold agreement."
+                  }
+                },
+                "required": [
+                  "name",
+                  "version",
+                  "type",
+                  "votes",
+                  "agreement"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "$ref": "https://jand-s.github.io/scion/schemas/v1/envelope.schema.json#/$defs/more"
+              }
+            ]
+          },
+          "description": "Heads (list)."
+        },
+        "head": {
+          "$ref": "https://jand-s.github.io/scion/schemas/v1/head.schema.json"
+        },
+        "votes": {
+          "type": "integer",
+          "description": "Votes recorded (vote) or used (train)."
+        },
+        "url": {
+          "type": "string",
+          "description": "Local vote page (vote)."
+        },
+        "training": {
+          "type": "object",
+          "description": "Training result (train).",
+          "properties": {
+            "folds": {
+              "type": "integer",
+              "description": "Cross-validation folds."
+            },
+            "accuracy": {
+              "type": "number",
+              "description": "Held-out accuracy."
+            },
+            "gold_agreement": {
+              "type": "number",
+              "description": "Agreement with the gold set."
+            },
+            "previous": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "Agreement of the current version."
+            },
+            "promoted": {
+              "type": "boolean",
+              "description": "The new version replaced the old one."
+            }
+          },
+          "required": [
+            "folds",
+            "accuracy",
+            "gold_agreement",
+            "previous",
+            "promoted"
+          ],
+          "additionalProperties": false
+        },
+        "results": {
+          "type": "string",
+          "description": "judge.json written in the run (run)."
+        },
+        "escalate": {
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "type": "string",
+                "description": "Recipe id."
+              },
+              {
+                "$ref": "https://jand-s.github.io/scion/schemas/v1/envelope.schema.json#/$defs/more"
+              }
+            ]
+          },
+          "description": "Items with low confidence (run)."
+        }
+      },
+      "required": []
+    }
+  ],
+  "examples": [
+    {
+      "schema_version": 1,
+      "command": "judge train",
+      "ok": true,
+      "votes": 212,
+      "training": {
+        "folds": 10,
+        "accuracy": 0.73,
+        "gold_agreement": 0.78,
+        "previous": 0.74,
+        "promoted": true
+      },
+      "next_step": "rank a run: dotnet scion judge run --heads readability"
+    }
+  ]
+}

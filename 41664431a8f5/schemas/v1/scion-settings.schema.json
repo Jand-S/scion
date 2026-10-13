@@ -1,0 +1,118 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jand-s.github.io/scion/schemas/v1/scion-settings.schema.json",
+  "title": "ScionSettings.json",
+  "description": "ProjectSettings/ScionSettings.json: settings read by the weaver, the build and the analyzers inside Unity.",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Optional schema URL; ignored."
+    },
+    "schema_version": {
+      "const": 1,
+      "description": "Format version of this file. Always 1 in Scion 1.x."
+    },
+    "build": {
+      "type": "object",
+      "description": "Build.",
+      "properties": {
+        "main_assembly": {
+          "type": "string",
+          "description": "Assembly that identifies the build (default Assembly-CSharp)."
+        },
+        "player_name": {
+          "type": "string",
+          "description": "Player file name (default Product Name)."
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "trials": {
+      "type": "object",
+      "description": "Trials.",
+      "properties": {
+        "redirect_assemblies": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Extra assemblies whose time and screen reads are redirected in test builds."
+        },
+        "netclock_assemblies": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Assemblies whose clock reads follow the NetClock (SCION_NETCLOCK)."
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "analyzers": {
+      "type": "object",
+      "description": "Analyzers.",
+      "properties": {
+        "rule_assemblies": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Rule (simulation) assemblies."
+        },
+        "rule_types": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Extra rule types, Ns.Type or Ns.*."
+        },
+        "graft_paths": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Folders of graft code, relative to the Unity project."
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "schema_version"
+  ],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "schema_version": 1,
+      "build": {
+        "main_assembly": "Orchard.Runtime",
+        "player_name": "Orchard"
+      },
+      "trials": {
+        "redirect_assemblies": [
+          "UnityEngine.UI",
+          "Unity.RenderPipelines.Universal.Runtime"
+        ],
+        "netclock_assemblies": [
+          "Unity.Netcode.Runtime"
+        ]
+      },
+      "analyzers": {
+        "rule_assemblies": [
+          "Orchard.Core"
+        ],
+        "rule_types": [
+          "Unity.Netcode.*"
+        ],
+        "graft_paths": [
+          "Assets/Orchard/Grafts/",
+          "../scion/grafts/"
+        ]
+      }
+    }
+  ]
+}

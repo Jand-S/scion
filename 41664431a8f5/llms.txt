@@ -1,0 +1,219 @@
+# Scion
+
+> Scion 1.0.0 is a Unity 6 package and .NET CLI for building games with AI agents: Grafts weave new code onto game methods at compile time, Trials play deterministic recipes in the real player build in parallel and compare them with approved baselines, and the Judge ranks visual results with a trainable taste model.
+
+Docs version: 1.0.0. Every page below is Markdown. Append `.md` to any page URL for its Markdown. The whole site in one file: https://jand-s.github.io/scion/41664431a8f5/llms-full.txt (one file per section is linked under "Machine-readable"). The docs of the installed version are also inside the package at `Packages/me.jandson.scion/Documentation~/site/src/content/docs/` (or `Library/PackageCache/me.jandson.scion@*/Documentation~/site/src/content/docs/`).
+
+## How agents should use Scion
+
+- Run `dotnet scion doctor` first. Exit 0 means usable; exit 3 means fix what `error.hint` says.
+- Every command prints one JSON object on stdout (`schema_version`, `ok`, `next_step`, `error` on exits 2 and 3). Parse it; do not scrape text. Follow `next_step`.
+- Exit codes: 0 ok, 1 a check failed, 2 usage error (see `did_you_mean`), 3 environment. Next actions: https://jand-s.github.io/scion/agents/next-action.md
+- You may approve only `new` baselines (`trial approve --new --reason "..."`). Never approve `changed`, `stale` or `px_changed`, and never edit `scion/baselines/` by hand: ask a person.
+- Read `report.md` only for failed or changed recipes; open images only when pixels changed or the task is visual.
+
+## Start here
+
+- [Scion](https://jand-s.github.io/scion/41664431a8f5/index.md): Graft new code onto a Unity game, test it in the real build and judge the result, with a CLI built for AI agents.
+- [What is Scion](https://jand-s.github.io/scion/41664431a8f5/start/overview.md): The problem Scion solves, its four modules, its three pieces and the three adoption levels.
+- [Requirements](https://jand-s.github.io/scion/41664431a8f5/start/requirements.md): Unity, .NET, operating systems, scripting backends, memory, disk and git LFS needed to run Scion 1.0.0.
+- [Install](https://jand-s.github.io/scion/41664431a8f5/start/install.md): Install the Scion package, the dotnet scion CLI and the agent integration, then verify the setup with dotnet scion doctor.
+- [Quickstart](https://jand-s.github.io/scion/41664431a8f5/start/quickstart.md): Ten minutes on the Orchard sample - build the test player, run and approve a recipe, write a graft, inject it live and review the change.
+- [Start a new project](https://jand-s.github.io/scion/41664431a8f5/start/new-project.md): Create a Scion project at adoption level 3 from a genre template with dotnet scion new --genre.
+- [Add Scion to an existing game](https://jand-s.github.io/scion/41664431a8f5/start/existing-project.md): Adopt Scion in a game that already has code - level 1 on day one, an adapter for level 2 and a deterministic core for level 3.
+
+## For AI agents
+
+- [For AI agents](https://jand-s.github.io/scion/41664431a8f5/agents.md): Start page for AI coding agents - the Scion loop, the rules, what to read in which order and where the machine-readable files are.
+- [Set up your agent](https://jand-s.github.io/scion/41664431a8f5/agents/setup.md): Connect Claude Code, Codex, Cursor, GitHub Copilot or any other AI agent to Scion with the plugin, MCP and an AGENTS.md block.
+- [The Scion skill](https://jand-s.github.io/scion/41664431a8f5/agents/skill.md): What the scion skill of the Claude Code plugin contains, when it loads, the scion-triage subagent and the scoped rules.
+- [Hooks](https://jand-s.github.io/scion/41664431a8f5/agents/hooks.md): The four Claude Code hooks of the Scion plugin - session index, graft check after edits, approval guard and baseline guard.
+- [MCP server](https://jand-s.github.io/scion/41664431a8f5/agents/mcp.md): The dotnet scion mcp server - one tool per CLI command plus docs_search and docs_read - and GitMCP for the website.
+- [What to do next](https://jand-s.github.io/scion/41664431a8f5/agents/next-action.md): Decision table from exit code, error code, verdict, warning and SCN id to the next action an agent should take.
+- [Reading results](https://jand-s.github.io/scion/41664431a8f5/agents/reading-results.md): The order in which an agent reads a trial run - JSON, report.md, window.png, context.png - with the image rules and token costs.
+- [Project index and manifest](https://jand-s.github.io/scion/41664431a8f5/agents/project-index.md): The project index agents get at session start, the scion block in CLAUDE.md or AGENTS.md, and the generated manifest and GRAFTS.md.
+
+## Grafts
+
+- [How grafts work](https://jand-s.github.io/scion/41664431a8f5/grafts/overview.md): Compile-time IL weaving with an ILPostProcessor, anchors, call mode and slot mode, and why grafts cost nothing in the final build.
+- [Write a graft](https://jand-s.github.io/scion/41664431a8f5/grafts/write.md): Write Before and After grafts - method shape, the asmref folder, parameter binding by exact signature or prefix, Priority and Observe.
+- [Call and Call<T>](https://jand-s.github.io/scion/41664431a8f5/grafts/call-context.md): Use ref Call and ref Call<T> to skip a target, return early, change its result and pass state from Before to After with Tag.
+- [Anchors](https://jand-s.github.io/scion/41664431a8f5/grafts/anchors.md): Find which game methods take grafts, give them stable ids with Anchor, and give them slots in test builds with AnchorScope.
+- [Grafts are visual only](https://jand-s.github.io/scion/41664431a8f5/grafts/visual-only.md): Why grafts never change rule state, how SCN003 and SCN110 enforce it, and how rules change through RuleModifier in the core.
+- [Build modes](https://jand-s.github.io/scion/41664431a8f5/grafts/build-modes.md): Build the test player in slot mode on Mono and the final player in call mode, with the scripting defines, ScionBuild entry points and build guards.
+- [Live injection](https://jand-s.github.io/scion/41664431a8f5/grafts/injection.md): Compile draft grafts against a test build and swap them into running copies at the next recipe boundary, then restore or disable slots.
+- [From draft to final build](https://jand-s.github.io/scion/41664431a8f5/grafts/lifecycle.md): Take a graft from a draft in scion/grafts through check, injection, approval and promotion into the final build, or loop it with graft watch.
+- [When a graft throws](https://jand-s.github.io/scion/41664431a8f5/grafts/faults.md): How slot mode catches a throwing graft, disables only that graft and fails the recipe, and how call mode lets the exception propagate.
+- [Effects with Fx](https://jand-s.github.io/scion/41664431a8f5/grafts/fx.md): Call sound, shake, text, flash, hit-stop, VFX and marks from grafts through the Fx facade, register the game's sink, and read the calls in telemetry.
+- [Test grafts without Unity](https://jand-s.github.io/scion/41664431a8f5/grafts/testing.md): Unit-test grafts with dotnet test using the Scion.Testing package, FxRecorder and a Call constructed with a result.
+- [Tunables and presets](https://jand-s.github.io/scion/41664431a8f5/grafts/tunables.md): Declare tunable fields with ranges, override them per recipe and per run, save feel presets, blend them, and keep rule tunables in the lobby hash.
+
+## Trials
+
+- [How trials work](https://jand-s.github.io/scion/41664431a8f5/trials/overview.md): One test build launched as N copies, each playing a share of a recipe queue, with captures and verdicts against approved baselines.
+- [Write a recipe](https://jand-s.github.io/scion/41664431a8f5/trials/recipes.md): Declare a TrialRecipe with its seed, fps, timeout, players, tags and checks, cut the capture around the action, and ship recipes in a DLL.
+- [Write an adapter](https://jand-s.github.io/scion/41664431a8f5/trials/adapters.md): Write the TrialAdapter that plays your recipes - Prepare once, Run per recipe, Teardown, StateHash - and register it so each recipe finds its adapter.
+- [TrialSession](https://jand-s.github.io/scion/41664431a8f5/trials/session.md): Every member of TrialSession - capture, verdict, data, waiting, queues and properties - with what each call writes to the run folder.
+- [Checks](https://jand-s.github.io/scion/41664431a8f5/trials/checks.md): Fail recipes with built-in checks, declared TrialChecks, soft Check calls and your own ITrialCheck, and allow known log errors.
+- [Variants, modes and seeds](https://jand-s.github.io/scion/41664431a8f5/trials/variants.md): Expand one recipe into many ids with Vary fields, Variants, capture modes and seed ranges, and select them with patterns, tags and globs.
+- [Static trials](https://jand-s.github.io/scion/41664431a8f5/trials/static-trials.md): Capture every state of a screen, a unit or a room with StaticTrial, in one or more views, with measurements and a labeled contact sheet.
+- [Co-op trials (1-4 players)](https://jand-s.github.io/scion/41664431a8f5/trials/coop.md): Run recipes with 1 to 4 players as groups of a host and clients on one port, compare per-turn state hashes, and capture pixels from the host.
+- [Parallel copies](https://jand-s.github.io/scion/41664431a8f5/trials/parallel.md): Run N copies of the test build at once with shards, choose N from cores and free memory, and keep runs, timeouts and the watchdog under control.
+- [Warm copies](https://jand-s.github.io/scion/41664431a8f5/trials/warm-copies.md): Keep prepared copies of the test build running with trial serve, run recipes on them in seconds with trial run --warm, and inject grafts into them.
+- [Capture and outputs](https://jand-s.github.io/scion/41664431a8f5/trials/capture.md): What a recipe captures - window, context, stills, sheets, frames and raw frames - in headless offscreen mode, with sizes, platforms and sound.
+- [Baselines and approval](https://jand-s.github.io/scion/41664431a8f5/trials/baselines.md): How runs are compared with approved baselines, what each verdict means, who may approve what, and how baselines are stored per platform.
+- [Image comparison](https://jand-s.github.io/scion/41664431a8f5/trials/image-comparison.md): Compare captures with baselines using a perceptual OKLab metric, tolerances, masks and learned unstable masks, and read the heatmaps.
+- [Specs](https://jand-s.github.io/scion/41664431a8f5/trials/specs.md): Write a TrialSpec that states what a change must achieve - balance numbers, visual gates and judge questions - and run it against variants for one verdict.
+- [Turn any match into a recipe](https://jand-s.github.io/scion/41664431a8f5/trials/captured-matches.md): Press F9 in a test build to save the setup, seed and command log of the current match, and replay it as a CapturedMatch recipe.
+- [Mosaic](https://jand-s.github.io/scion/41664431a8f5/trials/mosaic.md): Run K arenas in one process, each with its own camera and render texture, to compare variants side by side when memory limits parallel copies.
+
+## Determinism
+
+- [Deterministic runs](https://jand-s.github.io/scion/41664431a8f5/determinism/overview.md): How the test build makes time, screen size and randomness identical across rounds and machines, so the same recipe gives the same hash and frames.
+- [Clock, screen and random](https://jand-s.github.io/scion/41664431a8f5/determinism/clock-and-screen.md): Reference for Clock, VirtualScreen, VirtualWaitForSecondsRealtime, SeededRandom, the WallClock attribute and the redirect_assemblies setting.
+- [Particles, animators, UI and physics](https://jand-s.github.io/scion/41664431a8f5/determinism/control.md): Make particle systems, animators, UI Toolkit and physics deterministic per recipe with DeterminismControl and Determinism.SeedFor.
+- [Netcode clock](https://jand-s.github.io/scion/41664431a8f5/determinism/netclock.md): Put the Netcode for GameObjects tick on the virtual clock with SCION_NETCLOCK and netclock_assemblies, so co-op recipes give the same frames every round.
+- [Verify determinism](https://jand-s.github.io/scion/41664431a8f5/determinism/verify.md): Prove recipes are deterministic with rounds, frame-by-frame comparison, timing jitter and the determinism.tsv report, and run it nightly.
+- [Find non-determinism](https://jand-s.github.io/scion/41664431a8f5/determinism/diagnose.md): Scan the game's assemblies for wall-clock reads, threads, unordered collections and unstable seeds with scion diagnose, and read the adoption level.
+
+## Evaluation
+
+- [The evaluation funnel](https://jand-s.github.io/scion/41664431a8f5/evaluation/overview.md): How Scion judges a change in stages - the state oracle and objective gates block, taste triage only orders, and a person makes the final pick.
+- [Gates](https://jand-s.github.io/scion/41664431a8f5/evaluation/gates.md): Every built-in gate - text overflow, UI grid, contrast, photosensitivity, regression, telemetry versus pixels, nothing changed, palette - and custom gates.
+- [The motion pack](https://jand-s.github.io/scion/41664431a8f5/evaluation/motion-pack.md): The images and metrics Scion writes to describe motion - motion diff, tracks, id masks, metrics.json and a preview GIF - and how agents read them.
+- [Telemetry, probes and sensors](https://jand-s.github.io/scion/41664431a8f5/evaluation/telemetry.md): What a recipe records besides pixels - telemetry.jsonl event kinds, probes, per-frame sensors, marks and frames.tsv columns.
+- [A/B comparisons](https://jand-s.github.io/scion/41664431a8f5/evaluation/ab-comparison.md): Compare variants fairly - aligned on the impact frame, one row each plus a difference row, with blind shuffled labels asked in both orders.
+- [Evaluators](https://jand-s.github.io/scion/41664431a8f5/evaluation/evaluators.md): Score runs with external evaluators - scripts or agents - through eval-in.json and eval-out.json, blind, with scores in evals.tsv that never fail a run.
+
+## Judge
+
+- [The Judge](https://jand-s.github.io/scion/41664431a8f5/judge/overview.md): A fast trainable judge - frozen vision eyes turn captures into embeddings once, small heads trained in seconds answer one question each, and it only filters.
+- [Questions and answers](https://jand-s.github.io/scion/41664431a8f5/judge/questions.md): The judge's question types noul, score and choice, the answer fields, and Scion's additions - evidence, escalate, head version and calibration.
+- [Train a head](https://jand-s.github.io/scion/41664431a8f5/judge/training.md): Collect blind duels and labels, add synthetic degradations, keep a gold set out of training, train a head in seconds and check its calibration.
+- [Judge motion](https://jand-s.github.io/scion/41664431a8f5/judge/motion.md): Train sequence heads that judge feel from motion metrics and per-frame embeddings, such as hit weight, anticipation and too much or too little juice.
+- [Taste heads and feel presets](https://jand-s.github.io/scion/41664431a8f5/judge/presets.md): Swap judge heads per audience, keep feel presets and blend them, and know where art-style variations come from.
+- [Review a UI with the judge](https://jand-s.github.io/scion/41664431a8f5/judge/ui-review.md): A nine-step UI review - capture every state at two sizes, run gates and the judge, fix the worst, re-judge variations in pairs and let a person pick.
+- [Models and licenses](https://jand-s.github.io/scion/41664431a8f5/judge/models.md): The vision models the judge supports as eyes, the hardware they need, where embeddings and heads live, and the licenses to check.
+
+## Exploration
+
+- [The multiverse](https://jand-s.github.io/scion/41664431a8f5/explore/multiverse.md): Fork a deterministic match at a turn, run variants of code or numbers from that point, and see the first turn and field where the rules diverge.
+- [The live loop](https://jand-s.github.io/scion/41664431a8f5/explore/live-loop.md): Loop a real window of play from a captured match or telemetry, and see each injected graft on the next pass without restarting.
+- [Bisect a regression](https://jand-s.github.io/scion/41664431a8f5/explore/bisect.md): Find the commit that changed a recipe's hash, pixels or a check with scion bisect, building cold at each step and skipping steps that cannot decide.
+- [Metamorphic tests](https://jand-s.github.io/scion/41664431a8f5/explore/metamorphic.md): Test properties of the rules instead of single outputs - mirrored maps, permuted players, visual toggles and save-load - on the core simulator.
+- [Rare-moment hunter](https://jand-s.github.io/scion/41664431a8f5/explore/rare-moments.md): Search game states with coverage-guided fuzzing on the core simulator to find rare situations, and turn each find into a recipe.
+- [Guided search](https://jand-s.github.io/scion/41664431a8f5/explore/guided-search.md): Search tunables with paired Bayesian optimization and a MAP-Elites gallery of diverse good options, pre-filtered by the judge and decided by a person.
+- [Balance with the simulator](https://jand-s.github.io/scion/41664431a8f5/explore/balance.md): Run balance specs on the core simulator without Unity for 1 to 4 players, check a difficulty curve, and calibrate it with real telemetry.
+
+## Scion Standard
+
+- [The Scion Standard](https://jand-s.github.io/scion/41664431a8f5/standard/overview.md): Five principles and six layers that keep a game easy to extend, test and hand to agents, with the dependency rule that holds them together.
+- [Rules R1-R8](https://jand-s.github.io/scion/41664431a8f5/standard/rules.md): The eight rules of the Scion Standard, each with its statement, why it exists, an Orchard example and how it is enforced.
+- [Primitives](https://jand-s.github.io/scion/41664431a8f5/standard/primitives.md): The building blocks of the Scion Standard - anchors, grafts, rule modifiers, strategies, type objects, tunables, probes, cues, adapters and exemplars.
+- [Enforcement](https://jand-s.github.io/scion/41664431a8f5/standard/enforcement.md): How the standard is enforced - analyzers SCN001 to SCN005 configured in ScionSettings.json, doctor, completeness tests, scaffolds and suppressions.
+
+## CLI reference
+
+- [CLI overview](https://jand-s.github.io/scion/41664431a8f5/cli.md): How the dotnet scion CLI is installed and called, how it finds the project, build and Unity, its global options, the JSON envelope and exit codes.
+- [doctor](https://jand-s.github.io/scion/41664431a8f5/cli/doctor.md): Check the Scion setup - configuration, CLI and package versions, Unity, the test build, the machine and the judge - and report the adoption level.
+- [init, new, uninstall](https://jand-s.github.io/scion/41664431a8f5/cli/init.md): Set up Scion in a project with init, create a project or scaffold a feature, effect, graft or trial with new, and remove Scion with uninstall.
+- [build test, build final](https://jand-s.github.io/scion/41664431a8f5/cli/build.md): Build the Mono test player with slots and trials, or the final player without test code, in batchmode or through the open editor.
+- [trial list](https://jand-s.github.io/scion/41664431a8f5/cli/trial-list.md): List the recipes of the test build and the recipe sources in scion/recipes, or every expanded id with variants, modes and seeds.
+- [trial run](https://jand-s.github.io/scion/41664431a8f5/cli/trial-run.md): Run recipes on N parallel copies of the test build, compare with baselines and print counts, failures, changes and the next step.
+- [trial show](https://jand-s.github.io/scion/41664431a8f5/cli/trial-show.md): Show what a run found for one id, the failed or the changed ones - verdicts, hashes, reasons and the paths of reports, images and grids.
+- [trial approve](https://jand-s.github.io/scion/41664431a8f5/cli/trial-approve.md): Turn results of a run into baselines - agents approve only new ids, people approve changes at an interactive terminal, all or nothing.
+- [trial serve](https://jand-s.github.io/scion/41664431a8f5/cli/trial-serve.md): Start, list or stop warm copies of the test build that wait idle on a local control channel for recipes and injections.
+- [trial diff](https://jand-s.github.io/scion/41664431a8f5/cli/trial-diff.md): Compare two runs or two copies id by id - hash, frame counts, the first differing frame and its cause, and image heatmaps.
+- [trial eval](https://jand-s.github.io/scion/41664431a8f5/cli/trial-eval.md): Score a run with external evaluators - export blind eval-in.json, run or import eval-out.json, and write evals.tsv without changing any verdict.
+- [trial loop](https://jand-s.github.io/scion/41664431a8f5/cli/trial-loop.md): Replay a window of play in a loop in the test build, applying each graft injection on the next pass, until stopped or a pass count.
+- [anchor list, anchor show](https://jand-s.github.io/scion/41664431a8f5/cli/anchor.md): List the methods of the test build that can take grafts, with slots, Anchor ids, docs and promoted grafts, and show one anchor with a ready declaration.
+- [graft](https://jand-s.github.io/scion/41664431a8f5/cli/graft.md): Create, check, build, inject, restore, disable, promote and watch grafts from the command line, without opening Unity.
+- [bisect](https://jand-s.github.io/scion/41664431a8f5/cli/bisect.md): Find the first commit that changed a recipe's hash, pixels or a check, building cold at each step and skipping undecidable steps with exit 125.
+- [diagnose](https://jand-s.github.io/scion/41664431a8f5/cli/diagnose.md): Report the adoption level, determinism blockers with file and line, mosaic singletons and a plan, from the weaver's scan of each game assembly.
+- [index, guard](https://jand-s.github.io/scion/41664431a8f5/cli/index-and-guard.md): Print the short project index for agents at session start, and guard baselines and generated files against agent edits and approvals.
+- [gen](https://jand-s.github.io/scion/41664431a8f5/cli/gen.md): Generate scion.manifest.json and GRAFTS.md from the code - anchors, grafts, tunables, recipes and probes - or list one kind of item.
+- [judge](https://jand-s.github.io/scion/41664431a8f5/cli/judge.md): Manage judge heads - list, show, create, vote, train and run them on a run's captures - with data in scion/judge.
+- [multiverse](https://jand-s.github.io/scion/41664431a8f5/cli/multiverse.md): Fork a captured match at a turn, play variants on the core simulator, report where rules diverge, and show the result or a side-by-side mosaic.
+- [hunt, search](https://jand-s.github.io/scion/41664431a8f5/cli/hunt-and-search.md): Hunt rare game states with coverage-guided fuzzing on the simulator, and search tunables with guided optimization and a gallery of diverse options.
+- [mcp](https://jand-s.github.io/scion/41664431a8f5/cli/mcp.md): Run Scion as a Model Context Protocol server over stdio, exposing CLI commands as scion tools and the installed docs as docs_search and docs_read.
+
+## Reference
+
+- [Configuration](https://jand-s.github.io/scion/41664431a8f5/reference/configuration.md): Every key of scion.json, scion.local.json and ScionSettings.json, the scripting defines and the environment variables, with types, defaults and meaning.
+- [Player command line](https://jand-s.github.io/scion/41664431a8f5/reference/player-flags.md): Every -scion flag of the test player, with its value, default, meaning and the CLI option that sets it; unknown flags exit 2.
+- [Exit codes](https://jand-s.github.io/scion/41664431a8f5/reference/exit-codes.md): The four exit codes shared by the test player and the CLI, the bisect step code 125, and the precedence used when copies disagree.
+- [Error and warning codes](https://jand-s.github.io/scion/41664431a8f5/reference/errors.md): Every error code of the CLI, the test player and the control protocol, and every warning, with its exit code, cause and next action.
+- [Diagnostics](https://jand-s.github.io/scion/41664431a8f5/reference/diagnostics.md): Where Scion's SCN diagnostics appear, their message format, how to suppress warnings, and a summary of every id from SCN001 to SCN307.
+- [SCN001-SCN005](https://jand-s.github.io/scion/41664431a8f5/reference/diagnostics/standard.md): The Scion Standard analyzers - sealed rule classes, shallow inheritance, grafts that write rule state, float in rule code and tunables without a range.
+- [SCN101-SCN114](https://jand-s.github.io/scion/41664431a8f5/reference/diagnostics/grafts.md): Weaver and graft analyzer diagnostics - method shape, assembly, missing targets, signatures, ineligible anchors, Call usage, overloads, slots and redirects.
+- [SCN120-SCN131](https://jand-s.github.io/scion/41664431a8f5/reference/diagnostics/builds-and-injection.md): Build guard and injection diagnostics - slots on IL2CPP, test defines in a final build, and graft DLLs built for another build or ABI.
+- [SCN201-SCN203](https://jand-s.github.io/scion/41664431a8f5/reference/diagnostics/trials.md): Trials diagnostics - recipes that cannot be created, invalid adapters, and two adapters claiming the same recipe type.
+- [SCN301-SCN307](https://jand-s.github.io/scion/41664431a8f5/reference/diagnostics/determinism.md): Determinism scan findings - redirected reads and creations, wall-clock reads, threads, unordered collections, hash-code seeds and Guids.
+- [run-folder](https://jand-s.github.io/scion/41664431a8f5/reference/files/run-folder.md): Page in progress.
+- [run-json](https://jand-s.github.io/scion/41664431a8f5/reference/files/run-json.md): Page in progress.
+- [result-json](https://jand-s.github.io/scion/41664431a8f5/reference/files/result-json.md): Page in progress.
+- [tables](https://jand-s.github.io/scion/41664431a8f5/reference/files/tables.md): Page in progress.
+- [telemetry-jsonl](https://jand-s.github.io/scion/41664431a8f5/reference/files/telemetry-jsonl.md): Page in progress.
+- [report-md](https://jand-s.github.io/scion/41664431a8f5/reference/files/report-md.md): Page in progress.
+- [recipes-json](https://jand-s.github.io/scion/41664431a8f5/reference/files/recipes-json.md): Page in progress.
+- [raw-frames](https://jand-s.github.io/scion/41664431a8f5/reference/files/raw-frames.md): Page in progress.
+- [summary](https://jand-s.github.io/scion/41664431a8f5/reference/files/summary.md): Page in progress.
+- [baselines](https://jand-s.github.io/scion/41664431a8f5/reference/files/baselines.md): Page in progress.
+- [scion-build-json](https://jand-s.github.io/scion/41664431a8f5/reference/files/scion-build-json.md): Page in progress.
+- [control-json](https://jand-s.github.io/scion/41664431a8f5/reference/files/control-json.md): Page in progress.
+- [inject-report](https://jand-s.github.io/scion/41664431a8f5/reference/files/inject-report.md): Page in progress.
+- [evals](https://jand-s.github.io/scion/41664431a8f5/reference/files/evals.md): Page in progress.
+- [manifest](https://jand-s.github.io/scion/41664431a8f5/reference/files/manifest.md): Page in progress.
+- [judge-data](https://jand-s.github.io/scion/41664431a8f5/reference/files/judge-data.md): Page in progress.
+- [control-protocol](https://jand-s.github.io/scion/41664431a8f5/reference/control-protocol.md): Page in progress.
+- [schemas](https://jand-s.github.io/scion/41664431a8f5/reference/schemas.md): Page in progress.
+- [glossary](https://jand-s.github.io/scion/41664431a8f5/reference/glossary.md): Page in progress.
+- [api](https://jand-s.github.io/scion/41664431a8f5/reference/api.md): Page in progress.
+- [grafts](https://jand-s.github.io/scion/41664431a8f5/reference/api/grafts.md): Page in progress.
+- [injection](https://jand-s.github.io/scion/41664431a8f5/reference/api/injection.md): Page in progress.
+- [determinism](https://jand-s.github.io/scion/41664431a8f5/reference/api/determinism.md): Page in progress.
+- [recipes](https://jand-s.github.io/scion/41664431a8f5/reference/api/recipes.md): Page in progress.
+- [adapters](https://jand-s.github.io/scion/41664431a8f5/reference/api/adapters.md): Page in progress.
+- [session](https://jand-s.github.io/scion/41664431a8f5/reference/api/session.md): Page in progress.
+- [checks](https://jand-s.github.io/scion/41664431a8f5/reference/api/checks.md): Page in progress.
+- [fx](https://jand-s.github.io/scion/41664431a8f5/reference/api/fx.md): Page in progress.
+- [testing](https://jand-s.github.io/scion/41664431a8f5/reference/api/testing.md): Page in progress.
+- [compare](https://jand-s.github.io/scion/41664431a8f5/reference/api/compare.md): Page in progress.
+- [editor](https://jand-s.github.io/scion/41664431a8f5/reference/api/editor.md): Page in progress.
+- [specs](https://jand-s.github.io/scion/41664431a8f5/reference/api/specs.md): Page in progress.
+- [core](https://jand-s.github.io/scion/41664431a8f5/reference/api/core.md): Page in progress.
+
+## Cookbook
+
+- [ci](https://jand-s.github.io/scion/41664431a8f5/cookbook/ci.md): Page in progress.
+- [hud-states](https://jand-s.github.io/scion/41664431a8f5/cookbook/hud-states.md): Page in progress.
+- [tune-hit-feel](https://jand-s.github.io/scion/41664431a8f5/cookbook/tune-hit-feel.md): Page in progress.
+- [level-rooms](https://jand-s.github.io/scion/41664431a8f5/cookbook/level-rooms.md): Page in progress.
+
+## Machine-readable
+
+- [JSON Schemas](https://jand-s.github.io/scion/41664431a8f5/reference/schemas.md): URLs of every schema for Scion files and CLI outputs.
+- [Full docs](https://jand-s.github.io/scion/41664431a8f5/llms-full.txt): every page in one file.
+- [Start here docs](https://jand-s.github.io/scion/41664431a8f5/start/llms-full.txt): every page of the Start here section in one file.
+- [For AI agents docs](https://jand-s.github.io/scion/41664431a8f5/agents/llms-full.txt): every page of the For AI agents section in one file.
+- [Grafts docs](https://jand-s.github.io/scion/41664431a8f5/grafts/llms-full.txt): every page of the Grafts section in one file.
+- [Trials docs](https://jand-s.github.io/scion/41664431a8f5/trials/llms-full.txt): every page of the Trials section in one file.
+- [Determinism docs](https://jand-s.github.io/scion/41664431a8f5/determinism/llms-full.txt): every page of the Determinism section in one file.
+- [Evaluation docs](https://jand-s.github.io/scion/41664431a8f5/evaluation/llms-full.txt): every page of the Evaluation section in one file.
+- [Judge docs](https://jand-s.github.io/scion/41664431a8f5/judge/llms-full.txt): every page of the Judge section in one file.
+- [Exploration docs](https://jand-s.github.io/scion/41664431a8f5/explore/llms-full.txt): every page of the Exploration section in one file.
+- [Scion Standard docs](https://jand-s.github.io/scion/41664431a8f5/standard/llms-full.txt): every page of the Scion Standard section in one file.
+- [CLI reference docs](https://jand-s.github.io/scion/41664431a8f5/cli/llms-full.txt): every page of the CLI reference section in one file.
+- [Reference docs](https://jand-s.github.io/scion/41664431a8f5/reference/llms-full.txt): every page of the Reference section in one file.
+- [Cookbook docs](https://jand-s.github.io/scion/41664431a8f5/cookbook/llms-full.txt): every page of the Cookbook section in one file.
+- [Help docs](https://jand-s.github.io/scion/41664431a8f5/help/llms-full.txt): every page of the Help section in one file.
+- [Contribute docs](https://jand-s.github.io/scion/41664431a8f5/contribute/llms-full.txt): every page of the Contribute section in one file.
+
+## Optional
+
+- [troubleshooting](https://jand-s.github.io/scion/41664431a8f5/help/troubleshooting.md): Page in progress.
+- [faq](https://jand-s.github.io/scion/41664431a8f5/help/faq.md): Page in progress.
+- [changelog](https://jand-s.github.io/scion/41664431a8f5/help/changelog.md): Page in progress.
+- [license](https://jand-s.github.io/scion/41664431a8f5/help/license.md): Page in progress.
+- [architecture](https://jand-s.github.io/scion/41664431a8f5/contribute/architecture.md): Page in progress.
+- [compatibility](https://jand-s.github.io/scion/41664431a8f5/contribute/compatibility.md): Page in progress.

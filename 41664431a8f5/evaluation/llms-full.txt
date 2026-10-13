@@ -1,0 +1,550 @@
+# Scion 1.0.0 documentation: Evaluation
+
+> Every page below is also at its own URL plus `.md`. Index: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# The evaluation funnel
+
+An agent can produce ten versions of a hit effect in minutes; nobody can review ten versions of everything. Scion
+evaluates in a funnel: cheap, certain stages first, each cutting what reaches the next. The **state oracle** and the
+**objective gates** may block a change; **taste triage** (the judge, evaluators) only orders what is left; a
+**person** picks. No model ever approves a change.
+
+## How it works
+
+![Diagram: four stages from wide to narrow: state oracle, objective gates, taste triage, a person picks.](../../../assets/diagrams/funnel.svg)
+
+### 1. State oracle (blocks)
+
+What the rules say happened: the state hash, checks, probes, the turn log. A graft that changes the hash is wrong
+whatever it looks like. Cost: free, already in every run. See [Checks](/scion/trials/checks/).
+
+### 2. Objective gates (block)
+
+Measurable visual rules that do not need taste: text that overflows its box, contrast under WCAG, flashes that risk
+seizures, a regression against the baseline, telemetry that says something happened while the pixels show nothing.
+A gate is a check with the id `gate:<name>`; a failing gate fails the recipe. See [Gates](/scion/evaluation/gates/).
+
+### 3. Taste triage (orders)
+
+What remains is a matter of feel: is the hit heavy enough, is the HUD clean? Judge heads score images and sequences
+in milliseconds; evaluators (scripts or agents) add scores from files. Scores never fail a run (`gate: false`): they
+sort variants and pick which pairs a person should see. See [The Judge](/scion/judge/overview/) and
+[Evaluators](/scion/evaluation/evaluators/).
+
+### 4. A person picks
+
+The person sees few, well-chosen comparisons: blind A/B pairs aligned on the impact frame
+([A/B comparisons](/scion/evaluation/ab-comparison/)). Their vote approves the baseline and trains the judge.
+
+### Where the inputs come from
+
+| Stage | Reads |
+|---|---|
+| State oracle | `result.json` (`hash`, `checks`, `probes`), `telemetry.jsonl` |
+| Gates | frames, `frames.tsv`, the UI tree in test builds, telemetry |
+| Taste | `window.png`, `context.png`, the motion pack, `metrics.json` |
+| Person | `trial show --grid`, `preview.gif`, the judge's ranking |
+
+## Key terms
+
+| Term | Meaning |
+|---|---|
+| State oracle | The rules' own record: hash, checks, probes. |
+| Gate | An objective visual check that can fail a recipe. |
+| Triage | Ordering variants by predicted taste; never blocks. |
+| Head | A small judge model that answers one question. |
+| Evaluator | An external scorer (process or agent) wired through files. |
+| Duel | A blind A/B comparison shown to a person. |
+
+## Guarantees and limits
+
+- Only stages 1 and 2 change exit codes. A low judge score is never a failure.
+- Gates measure what they can measure: a gate that passes does not mean the screen looks good.
+- The judge is trained on the team's own votes; it predicts their taste, not general quality.
+- A person approves every replaced baseline ([Baselines and approval](/scion/trials/baselines/)).
+
+## See also
+
+- [Gates](/scion/evaluation/gates/)
+- [The motion pack](/scion/evaluation/motion-pack/)
+- [The Judge](/scion/judge/overview/)
+- [Evaluators](/scion/evaluation/evaluators/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# Gates
+
+A gate is an objective visual check: it measures something a person would otherwise have to notice, and fails the
+recipe when the measure is out of bounds. Gates are checks with the id `gate:<name>`, enabled per recipe with
+`TrialChecks.Gate` or per spec with `.Gate(Gates.X)`. Their results appear in `result.json` like any check, with the
+frame and the region of the problem.
+
+## Enabling a gate
+
+```csharp
+protected override void Checks(TrialChecks c) =>
+    c.Gate(Gates.TextOverflow)
+     .Gate(Gates.TextContrast, ("min_ratio", 4.5))
+     .Gate(Gates.Photosensitivity);
+```
+
+`Gates` holds the ids as string constants (`Gates.TextOverflow == "text_overflow"`). Options are name and value
+pairs; unknown options fail the recipe with a message listing the valid ones.
+
+## Built-in gates
+
+### TextOverflow
+
+Id `text_overflow`. Fails when a TextMeshPro or UI Toolkit text in the visible UI is truncated, wraps beyond its
+rect or overflows its parent, on any captured frame. Reads the UI tree in test builds. Options: `ignore` (a list of
+element names).
+
+### UiGrid
+
+Id `ui_grid`. Fails when a UI element's edges are off the layout grid by more than `tolerance_px` (default 1).
+Options: `grid_px` (default 8), `tolerance_px`, `root` (a UI element name). Use it on static HUD states.
+
+### TextContrast
+
+Id `text_contrast`. Fails when text contrast with the pixels behind it is under WCAG 2.2: 4.5:1 for normal text,
+3:1 for large text (18 pt, or 14 pt bold). Measures the rendered frame under each text element. Options:
+`min_ratio`, `min_ratio_large`.
+
+### Photosensitivity
+
+Id `photosensitivity`. Fails on general or red flashes above the limits of the IRIS method (more than 3 flashes in
+any second over 25 % of the screen). Reads every frame of the cut; works on `window.png` sequences too. Options:
+`area` (default 0.25), `max_per_second` (default 3).
+
+### ImageRegression
+
+Id `image_regression`. Fails when an image is `changed` against the baseline, instead of only reporting the verdict.
+Use it for screens that must never change without a new approval in the same commit. No options.
+
+### TelemetryVsPixel
+
+Id `telemetry_vs_pixel`. Fails when telemetry says a visual effect happened (an `fx` line: `Flash`, `Shake`, `Vfx`,
+`Text`) but the frames within `window_frames` (default 6) after it show no change in the region, or the frame hash
+did not change. Catches effects that fire but draw nothing (a missing material, a culled layer).
+
+### NothingChanged
+
+Id `nothing_changed`. Fails when the cut shows less than `min_ratio` (default 0.001) of changed pixels between its
+first and last frame. Catches actions that silently do nothing on screen.
+
+### Palette
+
+Id `palette`. Fails when an isolated 2D asset (a sprite or a UI icon captured with `TrialView.Ui` on a transparent
+background) uses colors outside the palette file. Options: `palette` (a `.hex` or `.gpl` file), `max_delta` (OKLab
+distance, default 0.02). Only for isolated assets: lighting and post-processing change colors in scenes.
+
+## Custom gates
+
+Write an `ITrialCheck` whose `Id` starts with `gate:` and register it with `[assembly: TrialCheck]`. Two examples from
+Orchard:
+
+```csharp
+public sealed class FloatingPropGate : ITrialCheck   // props must touch the ground
+{
+    string problem;
+    public string Id => "gate:floating_prop";
+    public void Begin(TrialRecipe r, TrialSession s) => problem = null;
+    public void OnFrame(in FrameView f) { }
+    public void OnLog(string m, string st, LogType t) { }
+    public CheckResult End()
+    {
+        foreach (var prop in Props.All)
+            if (prop.GroundGap > 0.02f) return CheckResult.Fail($"{prop.name} floats {prop.GroundGap:0.00} above ground");
+        return CheckResult.Pass();
+    }
+}
+```
+
+A blocked door gate works the same way: for each door in the room, ask the navigation mesh for a path through it
+and fail with the door's name when there is none.
+
+## Results
+
+| Field | Value |
+|---|---|
+| `checks[].id` | `gate:text_contrast` |
+| `checks[].status` | `pass`, `warn`, `fail`, `skipped` |
+| `checks[].reason` | `"Score" 3.1:1 on #5a5a5a (needs 4.5:1)` |
+| `checks[].frame`, `region` | where; region in pixels, origin at the top left |
+
+## See also
+
+- [The evaluation funnel](/scion/evaluation/overview/)
+- [Checks](/scion/trials/checks/)
+- [Specs](/scion/trials/specs/)
+- [Specs API](/scion/reference/api/specs/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# The motion pack
+
+A sheet of frames shows what a hit looks like, not how it moves. With `--motion`, each recipe also writes a
+**motion pack**: `motion-diff.png` (what changed between frames), `tracks.png` (where things moved), `idmask/`
+(which object is which), `metrics.json` (hit-stop, shake, flash, number easing as numbers) and `preview.gif` for
+people. Agents read the metrics and the two PNGs; they never need to watch a video.
+
+## When to use
+
+- Turn on `--motion` when the task is about feel: hit-stop, shake, flash, timing.
+- Use the metrics as spec targets (`Expect("hit_stop_ms", 50, 120)`).
+
+## Steps
+
+### 1. Run with the pack
+
+```sh
+dotnet scion trial run SlashHit --motion
+```
+
+### 2. Read the metrics
+
+`q0/SlashHit/r1/metrics.json`:
+
+<!-- validate: metrics -->
+```json
+{"schema_version":1,"id":"SlashHit","round":1,"impact_frame":14,"hit_stop":{"frames":2,"ms":66.7},"shake":{"peak_px":7.5,"rms_px":3.1,"decay_ms":200},"flash":{"delta_l":0.42,"ms":100,"area":0.03,"per_second":1},"anticipation_ms":133.3,"numbers":[{"text":"12","rise_px":38,"ms":900,"easing":"ease-out"}],"targets":{"hit_stop_ms":{"min":50,"max":120,"status":"pass"}}}
+```
+
+### 3. Look at the images when needed
+
+```sh
+dotnet scion trial show SlashHit --image motion-diff
+```
+
+## Reference
+
+### Files
+
+| File | Content | For |
+|---|---|---|
+| `window.png` | 12 frames around the impact | agents, people |
+| `context.png` | 6 frames across the cut | agents, people |
+| `motion-diff.png` | The same frames as `window.png`, each showing only what changed since the previous frame (brighter = more) | agents |
+| `tracks.png` | The first frame with the path of each tracked object drawn over it, one color per object, dots every frame | agents |
+| `idmask/NNNN.png` | Per frame, every renderer drawn in a flat color by object id; `idmask/ids.json` maps colors to object paths | tools |
+| `metrics.json` | Motion metrics (below) | agents, specs, the judge |
+| `preview.gif` | The cut at real speed, at most 640 px wide | people |
+| `report.md` | Links and a metrics table | both |
+
+### Metrics
+
+| Metric | How it is measured |
+|---|---|
+| `hit_stop.frames`, `ms` | Consecutive frames after the impact where tracked objects do not move. |
+| `shake.peak_px`, `rms_px`, `decay_ms` | Camera offset per frame (from the camera transform), in screen pixels. |
+| `flash.delta_l`, `ms`, `area`, `per_second` | Mean OKLab lightness change in the flashed region, its duration and screen fraction. |
+| `anticipation_ms` | Time between the command and the impact. |
+| `numbers[]` | Floating text: rise in pixels, lifetime, the easing that fits best (`linear`, `ease-out`, `ease-in-out`, `back`). |
+| `targets` | The bounds from the active spec and whether each passes. |
+
+### Image rules
+
+- Every PNG keeps the longer side at or under 2000 px.
+- Frames carry their number and marks in a label strip, so an agent can cite "frame 14".
+- `motion-diff.png` and `tracks.png` share the frame order and size of `window.png`.
+
+## Errors
+
+| Code | Exit | Cause | Next action |
+|---|---|---|---|
+| warning in `report.md` `no impact mark` | 0 | No `MarkImpact` in the cut; metrics measured from the cut's middle. | Mark the impact from an observer graft. |
+| `bad_value` | 2 | `--motion` with `--warm` (warm runs capture no images). | Run cold. |
+
+## Examples
+
+### Ask for motion only on combat recipes
+
+```sh
+dotnet scion trial run --tag combat --motion
+```
+
+### Use a metric in a spec
+
+```csharp
+s.Visual("SlashHit").Expect("shake_peak_px", min: 4, max: 12);
+```
+
+## See also
+
+- [Capture and outputs](/scion/trials/capture/)
+- [Judge motion](/scion/judge/motion/)
+- [The run folder](/scion/reference/files/run-folder/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# Telemetry, probes and sensors
+
+Pixels show what happened; telemetry says it. Every recipe writes `telemetry.jsonl` (one JSON line per event: log
+lines, notes, marks, probes, checks, faults, game events, `Fx` calls, injections) and `frames.tsv` (one row per
+captured frame, with fixed columns, the game's sensors and the marks). Probes are the numbers checks and specs test.
+
+## Probes
+
+```csharp
+session.Probe("damage", hpBefore - hpAfter);
+```
+
+- The last value per key goes to `result.json` under `probes`; `ProbeIs` tests it.
+- Every call writes a `probe` line to telemetry, with frame and game time.
+- Keys: lowercase letters, digits and `_`.
+
+Core code can declare probes without referencing Trials: `[Probe("damage")]` on a field or property of a rule type
+makes the adapter's generated code record it at the end of each recipe ([Core API](/scion/reference/api/core/)).
+
+## Sensors
+
+```csharp
+session.Sensor("enemy_hp", () => battle.State.Unit(1).Hp);
+```
+
+- A column in `frames.tsv`, read once per captured frame.
+- Registered once per process, in `Prepare`; columns freeze at the first `BeginCut` of a recipe.
+- `state` and `tick` are the conventional names that `--check` reads first ([Verify determinism](/scion/determinism/verify/)).
+
+## Marks
+
+`Mark(label)`, `MarkImpact()` and `Fx.Mark(label)` label the current frame. Labels appear in the `marks` column, as
+`mark` lines in telemetry and in `report.md`'s timeline. `IMPACT` is reserved for `MarkImpact`.
+
+## Telemetry kinds
+
+Every line has `f` (frame of the cut, -1 outside it), `t` (game seconds since the recipe start) and `kind`:
+
+| kind | Fields | Written by |
+|---|---|---|
+| `log` | `type` (`Error`, `Assert`, `Exception`, `Warning`), `msg`, `stack` (up to 2 KB), `thread` (`main`, `worker`) | Unity's log |
+| `note` | `msg` | `TrialSession.Note` |
+| `mark` | `label` | `Mark`, `MarkImpact`, `Fx.Mark` |
+| `probe` | `key`, `value` | `Probe` |
+| `check` | `id`, `status`, `reason`, `frame` | the checks at the end |
+| `fault` | `source`, `type`, `msg` | a graft that threw |
+| `event` | `name` and the caller's fields | `TrialSession.Event` |
+| `fx` | `verb`, `args`, `by` | every `Fx` call |
+| `inject` | `version`, `bound` | an injection applied |
+
+```json
+{"f":14,"t":1.467,"kind":"event","name":"turn","turn":3,"hash":"9F3A0C11D2E4B5A6"}
+```
+
+## frames.tsv columns
+
+| Column | Meaning |
+|---|---|
+| `frame` | Frame index in the cut, from 0. |
+| `ms` | Game milliseconds since the cut started (integer). |
+| `real_ms` | Wall milliseconds (informative, never compared). |
+| `px` | xxHash64 of the frame's raw bytes, 16 hex digits. |
+| `rng` | xxHash64 of `UnityEngine.Random.state`. |
+| `unscaled`, `time` | Virtual unscaled and scaled time since the recipe start, seconds with 6 decimals. |
+| sensors | One column per sensor, in registration order. |
+| `marks` | Labels of the frame, comma-separated. |
+
+## See also
+
+- [TrialSession](/scion/trials/session/)
+- [telemetry.jsonl](/scion/reference/files/telemetry-jsonl/)
+- [results.tsv, frames.tsv, determinism.tsv](/scion/reference/files/tables/)
+- [Effects with Fx](/scion/grafts/fx/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# A/B comparisons
+
+Comparing two versions of an effect by eye is easy to get wrong: the frames are not aligned, the labels give the
+answer away, and the first one shown wins more often. Scion's comparisons align variants on the impact event, show
+one row per variant plus a difference row, hide which is which behind shuffled labels (X, Y, Z) and ask each pair in
+both orders. The same rules apply when an agent, the judge or a person compares.
+
+## When to use
+
+- Use `trial show --grid` to compare a run with its baseline.
+- Use `trial diff` to compare two runs (before and after a graft, two presets).
+- Use `judge vote` to collect blind duels from people ([Train a head](/scion/judge/training/)).
+
+## Steps
+
+### 1. Produce the variants
+
+```sh
+dotnet scion trial run SlashHit --variants base,heavy,snappy
+```
+
+### 2. Compare two runs
+
+```sh
+dotnet scion trial diff 20261011-143200 20261011-150512 SlashHit
+```
+
+<!-- validate: cli/trial-diff -->
+```json
+{"schema_version":1,"command":"trial diff","ok":true,"a":"20261011-143200","b":"20261011-150512","recipes":[{"id":"SlashHit","hash":"same","frames":[46,48],"first_frame":14,"cause":"px","images":[{"file":"window.png","status":"changed","ratio":0.021,"diff":"diff/SlashHit/r1/window.diff.png"}]}],"next_step":"look at diff/SlashHit/r1/window.diff.png"}
+```
+
+### 3. Ask blind
+
+```sh
+dotnet scion judge vote --run 20261011-150512 --head hit_weight
+```
+
+The page shows two sequences labeled X and Y, aligned on the impact, and asks which is better (or a tie, and how
+strongly). Each pair comes back later in the other order.
+
+## Reference
+
+### Alignment
+
+Variants are aligned on the first `IMPACT` mark. When a variant has none, on the first mark with the same label in
+both; otherwise on the cut's first frame, and the grid says so. Frames before and after are padded so every row has
+the same length.
+
+### Grid layout
+
+| Row | Content |
+|---|---|
+| One per variant | The `window.png` frames, aligned. |
+| Difference | Per column, the heatmap between the first two rows. |
+
+Labels in the grid are the variant names for `--grid` and `trial diff` (not blind), and X, Y, Z for duels.
+
+### Blind rules
+
+- Labels are shuffled per pair and stored in the vote, never shown with names.
+- Each pair is asked in both orders; votes that disagree with themselves count as a tie.
+- The control variant (`base`) is included in every comparison set.
+
+## Errors
+
+| Code | Exit | Cause | Next action |
+|---|---|---|---|
+| `no_match` | 2 | A run or id is not found. | Use the run folder name from `trial run`. |
+| warning in output `not aligned` | 0 | No common mark. | Mark the impact in both variants. |
+
+## Examples
+
+### Compare two copies of one run
+
+```sh
+dotnet scion trial diff 20261011-143200/q0 20261011-143200/q3 KnightFalls
+```
+
+### Grid against the baseline
+
+```sh
+dotnet scion trial show SlashHit --grid
+```
+
+## See also
+
+- [Image comparison](/scion/trials/image-comparison/)
+- [trial diff](/scion/cli/trial-diff/)
+- [Train a head](/scion/judge/training/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# Evaluators
+
+An evaluator scores the images of a run from outside Scion: a script, a model you run, or an agent. `dotnet scion
+trial eval <run>` writes `eval-in.json` (questions and blind items), runs the evaluators configured in `scion.json`
+or waits for an answer file, reads `eval-out.json` and writes `evals.tsv`. The CLI never calls a model itself, and
+scores only order variants: an evaluator can never fail a run.
+
+## When to use
+
+- Use an evaluator for a question the trained judge does not cover yet, or to get a second opinion.
+- Use an agent evaluator when you are an agent: export, answer the file yourself, import.
+
+## Steps
+
+### 1. Configure evaluators
+
+```json
+{"schema_version":1,"evaluators":[{"name":"contrast-script","command":["python3","tools/eval_contrast.py"],"kind":"process","gate":false},{"name":"agent","command":[],"kind":"agent","gate":false}]}
+```
+
+A `process` evaluator is called with the paths of `eval-in.json` and `eval-out.json` as its two arguments. An
+`agent` evaluator is answered by hand or by an agent through `--import`.
+
+### 2. Run them
+
+```sh
+dotnet scion trial eval 20261011-150512 --with contrast-script
+```
+
+### 3. Or answer as an agent
+
+```sh
+dotnet scion trial eval 20261011-150512 --with agent
+# read .scion/runs/20261011-150512/eval-in.json, look at the images, write eval-out.json
+dotnet scion trial eval 20261011-150512 --import eval-out.json
+```
+
+<!-- validate: cli/trial-eval -->
+```json
+{"schema_version":1,"command":"trial eval","ok":true,"run":"/Users/alex/orchard/.scion/runs/20261011-150512","evaluators":["agent"],"items":3,"exported":null,"imported":"eval-out.json","evals":"evals.tsv","scores":[{"id":"SlashHit[preset=heavy]","evaluator":"agent","question":"hit_weight","score":0.8}],"next_step":"dotnet scion trial show --grid"}
+```
+
+## Reference
+
+### Files
+
+| File | Written by | Content |
+|---|---|---|
+| `eval-in.json` | the CLI | Questions and items with blind labels (X, Y, Z), image paths, frames and metrics. |
+| `eval-out.json` | the evaluator | Answers per item and question, with probabilities, confidence and evidence. |
+| `evals.tsv` | the CLI | `id evaluator question score label`, one line per answer. |
+
+The shapes are the judge's question and answer formats ([eval-in.json, eval-out.json, evals.tsv](/scion/reference/files/evals/)).
+
+### Rules
+
+- Items are blind: the evaluator sees labels, never variant names. The CLI maps labels back on import.
+- `gate` must be `false`: scores never change exit codes. An evaluator that should block is a gate, written as an
+  `ITrialCheck`.
+- Scores also go to the `eval` column of `summary.tsv`.
+
+## Errors
+
+| Code | Exit | Cause | Next action |
+|---|---|---|---|
+| `no_match` | 2 | `--with` names an evaluator not in `scion.json`. | Use `did_you_mean`. |
+| `bad_value` | 2 | `eval-out.json` does not match the schema. | Validate it against `judge-answer.schema.json`. |
+| none | 1 | A process evaluator exited non-zero; its scores are missing and `ok` is false. | Read its stderr in the run's `evals.log`. |
+
+## Examples
+
+### Two evaluators at once
+
+```sh
+dotnet scion trial eval 20261011-150512 --with contrast-script,agent
+```
+
+### Export only
+
+```sh
+dotnet scion trial eval 20261011-150512 --with agent --dry-run
+```
+
+## See also
+
+- [trial eval](/scion/cli/trial-eval/)
+- [eval-in.json, eval-out.json, evals.tsv](/scion/reference/files/evals/)
+- [Questions and answers](/scion/judge/questions/)

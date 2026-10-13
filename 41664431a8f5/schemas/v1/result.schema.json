@@ -1,0 +1,429 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jand-s.github.io/scion/schemas/v1/result.schema.json",
+  "title": "result.json",
+  "description": "The verdict of one recipe in one round: read it first. Contract between the player, the CLI and the Judge.",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "description": "Format version of this file. Always 1 in Scion 1.x."
+    },
+    "id": {
+      "type": "string",
+      "description": "Recipe id, for example SlashHit[Attacker=Knight]@360p#7."
+    },
+    "name": {
+      "type": "string",
+      "description": "Recipe name."
+    },
+    "variant": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Variant arguments, for example \"Attacker=Knight\", or null."
+    },
+    "mode": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Capture mode, or null."
+    },
+    "round": {
+      "type": "integer",
+      "description": "Round, from 1.",
+      "minimum": 1
+    },
+    "role": {
+      "type": "string",
+      "description": "host or client:<i>.",
+      "pattern": "^(host|client:[1-3])$"
+    },
+    "arena": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "description": "Arena index in mosaic mode, or null."
+    },
+    "ok": {
+      "type": "boolean",
+      "description": "True when the recipe passed."
+    },
+    "error": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "First failure reason, or null."
+    },
+    "hash": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "State hash returned by the adapter, or null."
+    },
+    "px_hash": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^[0-9a-f]{16}$"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "xxHash64 of the sequence of per-frame px values."
+    },
+    "frames": {
+      "type": "integer",
+      "description": "Frames in the cut.",
+      "minimum": 0
+    },
+    "fps": {
+      "type": "integer",
+      "description": "Capture rate.",
+      "minimum": 1
+    },
+    "seed": {
+      "type": "integer",
+      "description": "Recipe seed."
+    },
+    "run_seed": {
+      "type": "integer",
+      "description": "Run seed."
+    },
+    "size": {
+      "type": "array",
+      "items": {
+        "type": "integer",
+        "minimum": 1
+      },
+      "minItems": 2,
+      "maxItems": 2,
+      "description": "Capture size [width, height] in pixels."
+    },
+    "grafts": {
+      "type": "integer",
+      "description": "Injection.Version when the recipe ran (0 without injection).",
+      "minimum": 0
+    },
+    "checks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "description": "One check.",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Check id: log, assert, blank, magenta, px, determinism, marked:<label>, order, frames, probe:<key>, gate:<id>, or a custom ITrialCheck id."
+          },
+          "status": {
+            "enum": [
+              "pass",
+              "warn",
+              "fail",
+              "skipped"
+            ],
+            "description": "Outcome."
+          },
+          "reason": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Why it did not pass."
+          },
+          "frame": {
+            "type": "integer",
+            "description": "First frame concerned, -1 for none.",
+            "minimum": -1
+          },
+          "region": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "integer"
+                },
+                "minItems": 4,
+                "maxItems": 4,
+                "description": "[x, y, width, height] in pixels, origin at the top left."
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Region concerned, or null."
+          }
+        },
+        "required": [
+          "id",
+          "status"
+        ],
+        "additionalProperties": false
+      },
+      "description": "Every check, passed or not."
+    },
+    "probes": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "number"
+      },
+      "description": "Last value of each probe key."
+    },
+    "images": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "description": "One image.",
+        "properties": {
+          "file": {
+            "type": "string",
+            "description": "File name in the recipe folder."
+          },
+          "role": {
+            "enum": [
+              "window",
+              "context",
+              "still",
+              "sheet",
+              "motion-diff",
+              "tracks",
+              "preview"
+            ],
+            "description": "Image role."
+          },
+          "frames": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            },
+            "description": "Cut frames shown, in order."
+          },
+          "marks": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Marks shown on those frames."
+          }
+        },
+        "required": [
+          "file",
+          "role",
+          "frames",
+          "marks"
+        ],
+        "additionalProperties": false
+      },
+      "description": "Images written for this recipe."
+    },
+    "masks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "description": "A region image comparison ignores.",
+        "properties": {
+          "artifact": {
+            "type": "string",
+            "description": "Image file name, or * for all."
+          },
+          "rect": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            },
+            "minItems": 4,
+            "maxItems": 4,
+            "description": "[x, y, width, height] in pixels, origin at the top left."
+          },
+          "why": {
+            "type": "string",
+            "description": "Why the region is ignored."
+          }
+        },
+        "required": [
+          "artifact",
+          "rect",
+          "why"
+        ],
+        "additionalProperties": false
+      },
+      "description": "Masks from Mask() and MaskRect()."
+    },
+    "timing": {
+      "type": "object",
+      "description": "Where the time went.",
+      "properties": {
+        "seconds": {
+          "type": "number",
+          "description": "Wall seconds of the recipe."
+        },
+        "setup_s": {
+          "type": "number",
+          "description": "Seconds before the cut."
+        },
+        "cut_s": {
+          "type": "number",
+          "description": "Seconds inside the cut."
+        },
+        "read_s": {
+          "type": "number",
+          "description": "Seconds reading frames."
+        },
+        "wait_s": {
+          "type": "number",
+          "description": "Seconds waiting for PNG encoding."
+        },
+        "outputs_s": {
+          "type": "number",
+          "description": "Seconds writing outputs."
+        },
+        "switch_seconds": {
+          "type": "number",
+          "description": "Seconds of teardown before the next recipe."
+        }
+      },
+      "required": [
+        "seconds"
+      ],
+      "additionalProperties": true
+    }
+  },
+  "required": [
+    "schema_version",
+    "id",
+    "name",
+    "variant",
+    "mode",
+    "round",
+    "role",
+    "ok",
+    "error",
+    "hash",
+    "px_hash",
+    "frames",
+    "fps",
+    "seed",
+    "run_seed",
+    "size",
+    "grafts",
+    "checks",
+    "probes",
+    "images",
+    "masks",
+    "timing"
+  ],
+  "additionalProperties": true,
+  "examples": [
+    {
+      "schema_version": 1,
+      "id": "SlashHit",
+      "name": "SlashHit",
+      "variant": null,
+      "mode": null,
+      "round": 1,
+      "role": "host",
+      "ok": true,
+      "error": null,
+      "hash": "9F3A0C11D2E4B5A6",
+      "px_hash": "0c1d2e3f4a5b6c7d",
+      "frames": 46,
+      "fps": 30,
+      "seed": 1,
+      "run_seed": 1,
+      "size": [
+        1280,
+        720
+      ],
+      "grafts": 0,
+      "checks": [
+        {
+          "id": "log",
+          "status": "pass"
+        },
+        {
+          "id": "marked:IMPACT",
+          "status": "pass"
+        },
+        {
+          "id": "probe:damage",
+          "status": "pass"
+        }
+      ],
+      "probes": {
+        "damage": 12
+      },
+      "images": [
+        {
+          "file": "window.png",
+          "role": "window",
+          "frames": [
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19
+          ],
+          "marks": [
+            "IMPACT"
+          ]
+        },
+        {
+          "file": "context.png",
+          "role": "context",
+          "frames": [
+            0,
+            9,
+            12,
+            20,
+            32,
+            45
+          ],
+          "marks": [
+            "attack",
+            "IMPACT"
+          ]
+        },
+        {
+          "file": "before.png",
+          "role": "still",
+          "frames": [],
+          "marks": []
+        }
+      ],
+      "masks": [
+        {
+          "artifact": "*",
+          "rect": [
+            0,
+            0,
+            1280,
+            40
+          ],
+          "why": "turn timer"
+        }
+      ],
+      "timing": {
+        "seconds": 2.1,
+        "setup_s": 0.4,
+        "cut_s": 1.5,
+        "read_s": 0.1,
+        "wait_s": 0,
+        "outputs_s": 0.05,
+        "switch_seconds": 0.3
+      }
+    }
+  ]
+}

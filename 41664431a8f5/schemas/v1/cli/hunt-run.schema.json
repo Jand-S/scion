@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jand-s.github.io/scion/schemas/v1/cli/hunt-run.schema.json",
+  "title": "hunt run output",
+  "description": "Output of dotnet scion hunt run: rare states found and saved as matches.",
+  "allOf": [
+    {
+      "$ref": "https://jand-s.github.io/scion/schemas/v1/envelope.schema.json"
+    },
+    {
+      "type": "object",
+      "properties": {
+        "command": {
+          "const": "hunt run"
+        },
+        "target": {
+          "type": "string",
+          "description": "Recipe or spec."
+        },
+        "budget_s": {
+          "type": "integer",
+          "description": "Seconds spent."
+        },
+        "states": {
+          "type": "integer",
+          "description": "States explored."
+        },
+        "features": {
+          "type": "integer",
+          "description": "Distinct coverage features."
+        },
+        "finds": {
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "type": "object",
+                "description": "A rare moment.",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "Match name."
+                  },
+                  "file": {
+                    "type": "string",
+                    "description": "Saved match."
+                  },
+                  "feature": {
+                    "type": "string",
+                    "description": "Feature first seen."
+                  }
+                },
+                "required": [
+                  "name",
+                  "file",
+                  "feature"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "$ref": "https://jand-s.github.io/scion/schemas/v1/envelope.schema.json#/$defs/more"
+              }
+            ]
+          },
+          "description": "New rare moments."
+        }
+      },
+      "required": [
+        "target",
+        "budget_s",
+        "states",
+        "features",
+        "finds"
+      ]
+    }
+  ],
+  "examples": [
+    {
+      "schema_version": 1,
+      "command": "hunt run",
+      "ok": true,
+      "target": "KnightFalls",
+      "budget_s": 600,
+      "states": 182044,
+      "features": 311,
+      "finds": [
+        {
+          "name": "found-0007",
+          "file": "scion/recipes/found/found-0007.match.json",
+          "feature": "four_units_adjacent_to_one"
+        }
+      ],
+      "next_step": "capture it: dotnet scion trial run found-0007"
+    }
+  ]
+}

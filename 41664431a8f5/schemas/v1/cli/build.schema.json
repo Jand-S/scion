@@ -1,0 +1,168 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jand-s.github.io/scion/schemas/v1/cli/build.schema.json",
+  "title": "build output",
+  "description": "Output of dotnet scion build test and build final.",
+  "allOf": [
+    {
+      "$ref": "https://jand-s.github.io/scion/schemas/v1/envelope.schema.json"
+    },
+    {
+      "type": "object",
+      "properties": {
+        "command": {
+          "enum": [
+            "build test",
+            "build final"
+          ]
+        },
+        "channel": {
+          "enum": [
+            "editor",
+            "batchmode"
+          ]
+        },
+        "dry_run": {
+          "type": "boolean",
+          "description": "Only the plan."
+        },
+        "out": {
+          "type": "string",
+          "description": "Build folder."
+        },
+        "program": {
+          "type": "string",
+          "description": "Unity executable (dry run)."
+        },
+        "args": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Unity arguments (dry run)."
+        },
+        "seconds": {
+          "type": "number",
+          "description": "Build seconds."
+        },
+        "log": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Unity log (batchmode)."
+        },
+        "build_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[0-9a-f]{12}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "output": {
+          "type": "string",
+          "description": "The built player."
+        },
+        "errors": {
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "type": "object",
+                "description": "One compiler or Scion diagnostic.",
+                "properties": {
+                  "file": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "Source file relative to the project root, or null."
+                  },
+                  "line": {
+                    "type": "integer",
+                    "description": "1-based line, 0 when the diagnostic has no position.",
+                    "minimum": 0
+                  },
+                  "code": {
+                    "type": "string",
+                    "description": "SCNxxx for Scion diagnostics, CSxxxx for compiler errors, build for a failed build."
+                  },
+                  "message": {
+                    "type": "string",
+                    "description": "The message."
+                  },
+                  "hint": {
+                    "type": "string",
+                    "description": "The fix, when the diagnostic has one."
+                  },
+                  "did_you_mean": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Close names, for SCN103."
+                  }
+                },
+                "required": [
+                  "file",
+                  "line",
+                  "code",
+                  "message"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "$ref": "https://jand-s.github.io/scion/schemas/v1/envelope.schema.json#/$defs/more"
+              }
+            ]
+          },
+          "description": "At most 10 errors."
+        },
+        "errors_total": {
+          "type": "integer",
+          "description": "All errors, when more than 10."
+        }
+      },
+      "required": [
+        "channel"
+      ]
+    }
+  ],
+  "examples": [
+    {
+      "schema_version": 1,
+      "command": "build test",
+      "ok": true,
+      "channel": "batchmode",
+      "seconds": 31.8,
+      "log": "/Users/alex/orchard/.scion/builds/test/build.log",
+      "build_id": "4c49a1e0b2f3",
+      "output": "/Users/alex/orchard/.scion/builds/test/Orchard.app",
+      "errors": [],
+      "next_step": "run: dotnet scion trial run"
+    },
+    {
+      "schema_version": 1,
+      "command": "build test",
+      "ok": false,
+      "channel": "batchmode",
+      "seconds": 12.2,
+      "log": "/Users/alex/orchard/.scion/builds/test/build.log",
+      "build_id": null,
+      "output": "/Users/alex/orchard/.scion/builds/test/Orchard.app",
+      "errors": [
+        {
+          "file": "Assets/Orchard/Grafts/HitFlash.cs",
+          "line": 9,
+          "code": "SCN104",
+          "message": "Scion SCN104: The signature of HitFlash.After does not match HitPresenter.Play. Hint: Expected: static void After(HitPresenter presenter, HitEvent e)"
+        }
+      ],
+      "next_step": "fix Assets/Orchard/Grafts/HitFlash.cs:9 (SCN104), then build again"
+    }
+  ]
+}

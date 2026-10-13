@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jand-s.github.io/scion/schemas/v1/control.schema.json",
+  "title": "control.json",
+  "description": "How to reach the control server of a player started with -scion-control; also written to ~/.scion/live/<pid>.json.",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "description": "Format version of this file. Always 1 in Scion 1.x."
+    },
+    "pid": {
+      "type": "integer",
+      "description": "Process id."
+    },
+    "port": {
+      "type": "integer",
+      "description": "TCP port on 127.0.0.1.",
+      "minimum": 1,
+      "maximum": 65535
+    },
+    "token": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{32}$",
+      "description": "128-bit token every request must carry."
+    },
+    "build_id": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^[0-9a-f]{12}$"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Build id."
+    },
+    "abi": {
+      "type": "integer",
+      "description": "Slot ABI."
+    },
+    "out": {
+      "type": "string",
+      "description": "The process output folder."
+    },
+    "role": {
+      "type": "string",
+      "description": "host or client:<i>."
+    },
+    "started_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Start time, UTC."
+    }
+  },
+  "required": [
+    "schema_version",
+    "pid",
+    "port",
+    "token",
+    "build_id",
+    "abi",
+    "out",
+    "role",
+    "started_at"
+  ],
+  "additionalProperties": true,
+  "examples": [
+    {
+      "schema_version": 1,
+      "pid": 4242,
+      "port": 51234,
+      "token": "9c1f0e7a2b3c4d5e6f708192a3b4c5d6",
+      "build_id": "4c49a1e0b2f3",
+      "abi": 1,
+      "out": "/Users/alex/orchard/.scion/warm/q0",
+      "role": "host",
+      "started_at": "2026-10-11T14:32:00Z"
+    }
+  ]
+}

@@ -1,0 +1,137 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jand-s.github.io/scion/schemas/v1/cli/anchor-show.schema.json",
+  "title": "anchor show output",
+  "description": "Output of dotnet scion anchor show: one anchor with its grafts and a ready graft signature.",
+  "allOf": [
+    {
+      "$ref": "https://jand-s.github.io/scion/schemas/v1/envelope.schema.json"
+    },
+    {
+      "type": "object",
+      "properties": {
+        "command": {
+          "const": "anchor show"
+        },
+        "anchor": {
+          "type": "object",
+          "description": "The anchor.",
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "Slot id."
+            },
+            "anchor": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "[Anchor] Id."
+            },
+            "target": {
+              "type": "string",
+              "description": "Type.Method."
+            },
+            "signature": {
+              "type": "string",
+              "description": "C# signature."
+            },
+            "slot": {
+              "type": "boolean",
+              "description": "Has a slot."
+            },
+            "doc": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "Doc."
+            },
+            "grafts": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "description": "A graft.",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "Graft."
+                  },
+                  "kind": {
+                    "enum": [
+                      "before",
+                      "after"
+                    ]
+                  },
+                  "priority": {
+                    "type": "integer",
+                    "description": "Priority."
+                  },
+                  "observe": {
+                    "type": "boolean",
+                    "description": "Observer."
+                  },
+                  "promoted": {
+                    "type": "boolean",
+                    "description": "Promoted."
+                  }
+                },
+                "required": [
+                  "name",
+                  "kind",
+                  "priority",
+                  "observe",
+                  "promoted"
+                ],
+                "additionalProperties": false
+              },
+              "description": "Grafts, in run order."
+            },
+            "example": {
+              "type": "string",
+              "description": "A graft declaration that binds to this anchor."
+            }
+          },
+          "required": [
+            "id",
+            "target",
+            "signature",
+            "slot",
+            "grafts",
+            "example"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "anchor"
+      ]
+    }
+  ],
+  "examples": [
+    {
+      "schema_version": 1,
+      "command": "anchor show",
+      "ok": true,
+      "anchor": {
+        "id": "A__Orchard_Presentation_HitPresenter__Play__HitEvent",
+        "anchor": "presentation.hit",
+        "target": "Orchard.Presentation.HitPresenter.Play",
+        "signature": "float Play(HitEvent e)",
+        "slot": true,
+        "doc": "Plays one hit and returns how long it lasts.",
+        "grafts": [
+          {
+            "name": "Orchard.Grafts.HitFlash.After",
+            "kind": "after",
+            "priority": 0,
+            "observe": false,
+            "promoted": true
+          }
+        ],
+        "example": "[After(typeof(HitPresenter), nameof(HitPresenter.Play))] public static void After(HitPresenter presenter, HitEvent e, ref Call<float> c)"
+      },
+      "next_step": "dotnet scion graft new MyGraft --after Orchard.Presentation.HitPresenter.Play"
+    }
+  ]
+}

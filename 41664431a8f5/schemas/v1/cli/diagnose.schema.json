@@ -1,0 +1,156 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jand-s.github.io/scion/schemas/v1/cli/diagnose.schema.json",
+  "title": "diagnose output",
+  "description": "Output of dotnet scion diagnose: adoption level, determinism blockers and a plan.",
+  "allOf": [
+    {
+      "$ref": "https://jand-s.github.io/scion/schemas/v1/envelope.schema.json"
+    },
+    {
+      "type": "object",
+      "properties": {
+        "command": {
+          "const": "diagnose"
+        },
+        "adoption_level": {
+          "type": "integer",
+          "description": "Current level.",
+          "minimum": 0,
+          "maximum": 3
+        },
+        "assemblies": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Assemblies scanned."
+        },
+        "counts": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer"
+          },
+          "description": "Findings per SCN3xx id."
+        },
+        "blockers": {
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "type": "object",
+                "description": "One blocker.",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "description": "File."
+                  },
+                  "line": {
+                    "type": "integer",
+                    "description": "Line."
+                  },
+                  "code": {
+                    "type": "string",
+                    "description": "SCN id or singleton."
+                  },
+                  "message": {
+                    "type": "string",
+                    "description": "Message."
+                  }
+                },
+                "required": [
+                  "file",
+                  "line",
+                  "code",
+                  "message"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "$ref": "https://jand-s.github.io/scion/schemas/v1/envelope.schema.json#/$defs/more"
+              }
+            ]
+          },
+          "description": "Blockers, worst first."
+        },
+        "singletons": {
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "type": "string",
+                "description": "Type.Member."
+              },
+              {
+                "$ref": "https://jand-s.github.io/scion/schemas/v1/envelope.schema.json#/$defs/more"
+              }
+            ]
+          },
+          "description": "Global state that blocks the mosaic."
+        },
+        "plan": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Next steps, in order."
+        },
+        "adapter_skeleton": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Generated adapter file, or null."
+        },
+        "report": {
+          "type": "string",
+          "description": "diagnose.md."
+        }
+      },
+      "required": [
+        "adoption_level",
+        "assemblies",
+        "counts",
+        "blockers",
+        "plan",
+        "report"
+      ]
+    }
+  ],
+  "examples": [
+    {
+      "schema_version": 1,
+      "command": "diagnose",
+      "ok": true,
+      "adoption_level": 2,
+      "assemblies": [
+        "Orchard.Core",
+        "Orchard.Runtime"
+      ],
+      "counts": {
+        "SCN301": 41,
+        "SCN302": 3,
+        "SCN303": 1,
+        "SCN305": 2
+      },
+      "blockers": [
+        {
+          "file": "Assets/Orchard/Runtime/Ai/Planner.cs",
+          "line": 88,
+          "code": "SCN305",
+          "message": "Planner.Pick depends on an unordered collection or query (Dictionary<int, Unit>)."
+        }
+      ],
+      "singletons": [
+        "Orchard.Presentation.CameraRig.Instance"
+      ],
+      "plan": [
+        "Sort the planner candidates by id (SCN305).",
+        "Register ISimulation in Orchard.Core for level 3."
+      ],
+      "adapter_skeleton": null,
+      "report": "/Users/alex/orchard/Library/Scion/diagnose.md",
+      "next_step": "fix Assets/Orchard/Runtime/Ai/Planner.cs:88 (SCN305)"
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <style>
+    .trunk { stroke: #5d6862; } .branch { stroke: #17784a; } .leaf { fill: #17784a; } .band { fill: #9a5b00; }
+    @media (prefers-color-scheme: dark) {
+      .trunk { stroke: #8a968f; } .branch { stroke: #4cc98a; } .leaf { fill: #4cc98a; } .band { fill: #e0a84a; }
+    }
+  </style>
+  <path class="trunk" d="M12 29V14" stroke-width="3"/>
+  <path class="branch" d="M12 15C12 9 17 5.5 24 4.5" stroke-width="3"/>
+  <path class="leaf" d="M24 4.5c-3.5.8-5 3.6-4 6.2 2.6.2 4.6-2.2 4-6.2z"/>
+  <rect class="band" x="8.5" y="13" width="7" height="4" rx="1.5"/>
+</svg>

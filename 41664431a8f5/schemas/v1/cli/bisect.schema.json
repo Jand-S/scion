@@ -1,0 +1,119 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jand-s.github.io/scion/schemas/v1/cli/bisect.schema.json",
+  "title": "bisect output",
+  "description": "Output of dotnet scion bisect: the first commit where a recipe changed.",
+  "allOf": [
+    {
+      "$ref": "https://jand-s.github.io/scion/schemas/v1/envelope.schema.json"
+    },
+    {
+      "type": "object",
+      "properties": {
+        "command": {
+          "const": "bisect"
+        },
+        "id": {
+          "type": "string",
+          "description": "Recipe id."
+        },
+        "good": {
+          "type": "string",
+          "description": "Good revision."
+        },
+        "bad": {
+          "type": "string",
+          "description": "Bad revision."
+        },
+        "on": {
+          "type": "string",
+          "description": "hash, pixels or check:<id>."
+        },
+        "steps": {
+          "type": "integer",
+          "description": "Steps run."
+        },
+        "skipped": {
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "type": "string",
+                "description": "Commit."
+              },
+              {
+                "$ref": "https://jand-s.github.io/scion/schemas/v1/envelope.schema.json#/$defs/more"
+              }
+            ]
+          },
+          "description": "Commits skipped (125)."
+        },
+        "first_bad": {
+          "anyOf": [
+            {
+              "type": "object",
+              "description": "The first bad commit.",
+              "properties": {
+                "commit": {
+                  "type": "string",
+                  "description": "Commit."
+                },
+                "subject": {
+                  "type": "string",
+                  "description": "Subject."
+                },
+                "date": {
+                  "type": "string",
+                  "format": "date-time",
+                  "description": "Commit date."
+                }
+              },
+              "required": [
+                "commit",
+                "subject",
+                "date"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Null when only skipped commits remain."
+        },
+        "log": {
+          "type": "string",
+          "description": "bisect.log."
+        }
+      },
+      "required": [
+        "id",
+        "good",
+        "bad",
+        "on",
+        "steps",
+        "first_bad"
+      ]
+    }
+  ],
+  "examples": [
+    {
+      "schema_version": 1,
+      "command": "bisect",
+      "ok": true,
+      "id": "KnightFalls",
+      "good": "v1.2.0",
+      "bad": "HEAD",
+      "on": "hash",
+      "steps": 6,
+      "skipped": [],
+      "first_bad": {
+        "commit": "7c1e0a9",
+        "subject": "Armor rounds damage down",
+        "date": "2026-10-09T11:20:00Z"
+      },
+      "log": "/Users/alex/orchard/.scion/bisect/20261011-180000/bisect.log",
+      "next_step": "read: git show 7c1e0a9"
+    }
+  ]
+}

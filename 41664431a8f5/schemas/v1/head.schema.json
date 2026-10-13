@@ -1,0 +1,199 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jand-s.github.io/scion/schemas/v1/head.schema.json",
+  "title": "Judge head (head.json)",
+  "description": "scion/judge/heads/<head>/head.json: one question the Judge answers, its eyes, version and calibration.",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "description": "Format version of this file. Always 1 in Scion 1.x."
+    },
+    "name": {
+      "type": "string",
+      "description": "Head name."
+    },
+    "version": {
+      "type": "integer",
+      "description": "Increments on each promoted training.",
+      "minimum": 0
+    },
+    "eyes": {
+      "type": "string",
+      "description": "Eye model id."
+    },
+    "view": {
+      "enum": [
+        "full",
+        "hud",
+        "corners",
+        "actor"
+      ],
+      "description": "Crop before the eyes."
+    },
+    "question": {
+      "$ref": "#/$defs/question"
+    },
+    "trained_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "votes": {
+      "type": "integer",
+      "description": "Votes used."
+    },
+    "calibration": {
+      "type": "object",
+      "description": "Calibration.",
+      "properties": {
+        "gold_set": {
+          "type": "string",
+          "description": "Gold set."
+        },
+        "agreement": {
+          "type": "number",
+          "description": "Agreement with the gold set."
+        },
+        "ceiling": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "Human self-agreement on the gold set, or null."
+        }
+      },
+      "required": [
+        "gold_set",
+        "agreement"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "schema_version",
+    "name",
+    "version",
+    "eyes",
+    "view",
+    "question"
+  ],
+  "additionalProperties": true,
+  "$defs": {
+    "question": {
+      "type": "object",
+      "description": "One question.",
+      "properties": {
+        "type": {
+          "enum": [
+            "noul",
+            "score",
+            "choice"
+          ],
+          "description": "noul: yes or no as 0 to 1; score: 2 to 10 levels; choice: up to 255 options."
+        },
+        "instructions": {
+          "type": "string",
+          "description": "The question."
+        },
+        "criteria": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "What to look at."
+        },
+        "levels": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "description": "One score level.",
+            "properties": {
+              "what": {
+                "type": "string",
+                "description": "What this level means."
+              },
+              "examples": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Example image paths or descriptions."
+              }
+            },
+            "required": [
+              "what"
+            ],
+            "additionalProperties": false
+          },
+          "description": "Score levels, worst first (score).",
+          "minItems": 2,
+          "maxItems": 10
+        },
+        "options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "description": "One option.",
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "Option id."
+              },
+              "description": {
+                "type": "string",
+                "description": "What it means."
+              }
+            },
+            "required": [
+              "id",
+              "description"
+            ],
+            "additionalProperties": false
+          },
+          "description": "Options (choice).",
+          "minItems": 2,
+          "maxItems": 255
+        }
+      },
+      "required": [
+        "type",
+        "instructions"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "examples": [
+    {
+      "schema_version": 1,
+      "name": "readability",
+      "version": 3,
+      "eyes": "siglip2-so400m",
+      "view": "hud",
+      "question": {
+        "type": "score",
+        "instructions": "How readable is the HUD at 1x?",
+        "levels": [
+          {
+            "what": "hard to read"
+          },
+          {
+            "what": "readable with effort"
+          },
+          {
+            "what": "clear at a glance"
+          }
+        ]
+      },
+      "trained_at": "2026-10-10T09:00:00Z",
+      "votes": 212,
+      "calibration": {
+        "gold_set": "ui_v1",
+        "agreement": 0.78,
+        "ceiling": 0.9
+      }
+    }
+  ]
+}

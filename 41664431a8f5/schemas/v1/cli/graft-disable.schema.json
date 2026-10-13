@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jand-s.github.io/scion/schemas/v1/cli/graft-disable.schema.json",
+  "title": "graft disable output",
+  "description": "Output of dotnet scion graft disable: one slot emptied in each warm copy.",
+  "allOf": [
+    {
+      "$ref": "https://jand-s.github.io/scion/schemas/v1/envelope.schema.json"
+    },
+    {
+      "type": "object",
+      "properties": {
+        "command": {
+          "const": "graft disable"
+        },
+        "slot": {
+          "type": "string",
+          "description": "Slot id."
+        },
+        "copies": {
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "type": "object",
+                "description": "Result in one copy.",
+                "properties": {
+                  "pid": {
+                    "type": "integer",
+                    "description": "Process id."
+                  },
+                  "ok": {
+                    "type": "boolean",
+                    "description": "Succeeded in this copy."
+                  },
+                  "found": {
+                    "type": "boolean",
+                    "description": "The slot exists."
+                  }
+                },
+                "required": [
+                  "pid",
+                  "ok",
+                  "found"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "$ref": "https://jand-s.github.io/scion/schemas/v1/envelope.schema.json#/$defs/more"
+              }
+            ]
+          },
+          "description": "Per copy."
+        }
+      },
+      "required": [
+        "slot",
+        "copies"
+      ]
+    }
+  ],
+  "examples": [
+    {
+      "schema_version": 1,
+      "command": "graft disable",
+      "ok": true,
+      "slot": "A__Orchard_Presentation_HitPresenter__Play__HitEvent",
+      "copies": [
+        {
+          "pid": 4242,
+          "ok": true,
+          "found": true
+        }
+      ],
+      "next_step": "run: dotnet scion trial run SlashHit --warm"
+    }
+  ]
+}

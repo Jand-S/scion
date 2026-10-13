@@ -1,0 +1,175 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jand-s.github.io/scion/schemas/v1/multiverse.schema.json",
+  "title": "multiverse.json",
+  "description": "The result of multiverse run: where each variant of a forked match diverged from the base.",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "description": "Format version of this file. Always 1 in Scion 1.x."
+    },
+    "match": {
+      "type": "string",
+      "description": "Match file."
+    },
+    "at_turn": {
+      "type": "integer",
+      "description": "Fork turn.",
+      "minimum": 0
+    },
+    "turns": {
+      "type": "integer",
+      "description": "Turns played after the fork.",
+      "minimum": 1
+    },
+    "base": {
+      "type": "object",
+      "description": "The unchanged match.",
+      "properties": {
+        "hash_by_turn": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "State hash per turn after the fork."
+        }
+      },
+      "required": [
+        "hash_by_turn"
+      ],
+      "additionalProperties": false
+    },
+    "variants": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "description": "One variant.",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Variant name."
+          },
+          "kind": {
+            "enum": [
+              "grafts",
+              "tunables",
+              "preset",
+              "bot"
+            ]
+          },
+          "diverged": {
+            "type": "boolean",
+            "description": "Rules state differs from the base."
+          },
+          "first_turn": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "First turn whose hash differs, or null."
+          },
+          "field": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "First differing field, for example units[2].hp, or null."
+          },
+          "before": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Base value of the field."
+          },
+          "after": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Variant value of the field."
+          },
+          "hash_by_turn": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "State hash per turn."
+          },
+          "image": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Mosaic or window image, or null."
+          }
+        },
+        "required": [
+          "name",
+          "kind",
+          "diverged",
+          "first_turn",
+          "field",
+          "hash_by_turn"
+        ],
+        "additionalProperties": false
+      },
+      "description": "Variants."
+    }
+  },
+  "required": [
+    "schema_version",
+    "match",
+    "at_turn",
+    "turns",
+    "base",
+    "variants"
+  ],
+  "additionalProperties": true,
+  "examples": [
+    {
+      "schema_version": 1,
+      "match": "scion/recipes/captured/goblin-ambush.match.json",
+      "at_turn": 4,
+      "turns": 3,
+      "base": {
+        "hash_by_turn": [
+          "1A2B3C4D5E6F7081",
+          "2B3C4D5E6F708192",
+          "3C4D5E6F708192A3"
+        ]
+      },
+      "variants": [
+        {
+          "name": "heavy-feel",
+          "kind": "grafts",
+          "diverged": false,
+          "first_turn": null,
+          "field": null,
+          "hash_by_turn": [
+            "1A2B3C4D5E6F7081",
+            "2B3C4D5E6F708192",
+            "3C4D5E6F708192A3"
+          ],
+          "image": "mosaic.png"
+        },
+        {
+          "name": "crit-plus-10",
+          "kind": "tunables",
+          "diverged": true,
+          "first_turn": 5,
+          "field": "units[3].hp",
+          "before": "6",
+          "after": "0",
+          "hash_by_turn": [
+            "1A2B3C4D5E6F7081",
+            "77AB3C4D5E6F7011",
+            "88BC4D5E6F708122"
+          ],
+          "image": "mosaic.png"
+        }
+      ]
+    }
+  ]
+}

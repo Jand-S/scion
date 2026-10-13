@@ -1,0 +1,337 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jand-s.github.io/scion/schemas/v1/cli/trial-run.schema.json",
+  "title": "trial run output",
+  "description": "Output of dotnet scion trial run: counts, failed pairs, changed recipes and determinism.",
+  "allOf": [
+    {
+      "$ref": "https://jand-s.github.io/scion/schemas/v1/envelope.schema.json"
+    },
+    {
+      "type": "object",
+      "properties": {
+        "command": {
+          "const": "trial run"
+        },
+        "run": {
+          "type": "string",
+          "description": "Absolute path of the run folder."
+        },
+        "build_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[0-9a-f]{12}$"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Build id of the test build."
+        },
+        "copies": {
+          "type": "integer",
+          "description": "Player processes used.",
+          "minimum": 1
+        },
+        "wall_s": {
+          "type": "number",
+          "description": "Wall seconds of the whole run."
+        },
+        "mosaic": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "description": "Arenas per process, or null."
+        },
+        "runs": {
+          "type": "object",
+          "description": "Counts.",
+          "properties": {
+            "recipes": {
+              "type": "integer",
+              "description": "Recipes run."
+            },
+            "rounds": {
+              "type": "integer",
+              "description": "Rounds per recipe."
+            },
+            "total": {
+              "type": "integer",
+              "description": "(recipe, round) pairs."
+            },
+            "ok": {
+              "type": "integer",
+              "description": "Pairs that passed."
+            },
+            "failed": {
+              "type": "integer",
+              "description": "Pairs that failed."
+            },
+            "changed": {
+              "type": "integer",
+              "description": "Recipes changed."
+            },
+            "within": {
+              "type": "integer",
+              "description": "Recipes within tolerance."
+            },
+            "px_changed": {
+              "type": "integer",
+              "description": "Recipes whose pixel hashes changed (no images kept)."
+            },
+            "new": {
+              "type": "integer",
+              "description": "Recipes without a baseline."
+            },
+            "stale": {
+              "type": "integer",
+              "description": "Recipes with a stale baseline."
+            }
+          },
+          "required": [
+            "recipes",
+            "rounds",
+            "total",
+            "ok",
+            "failed",
+            "changed",
+            "px_changed",
+            "new",
+            "stale"
+          ],
+          "additionalProperties": false
+        },
+        "failed": {
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "type": "object",
+                "description": "A failed pair.",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "Recipe id."
+                  },
+                  "round": {
+                    "type": "integer",
+                    "description": "Round."
+                  },
+                  "copy": {
+                    "type": "integer",
+                    "description": "Copy index q<i>."
+                  },
+                  "error": {
+                    "type": "string",
+                    "description": "Failure reason."
+                  },
+                  "report": {
+                    "type": "string",
+                    "description": "report.md, relative to run."
+                  }
+                },
+                "required": [
+                  "id",
+                  "round",
+                  "copy",
+                  "error",
+                  "report"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "$ref": "https://jand-s.github.io/scion/schemas/v1/envelope.schema.json#/$defs/more"
+              }
+            ]
+          },
+          "description": "Failed pairs, at most 5 in the envelope."
+        },
+        "changed": {
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "type": "object",
+                "description": "A recipe that differs from its baseline.",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "Recipe id."
+                  },
+                  "vs_approved": {
+                    "enum": [
+                      "changed",
+                      "stale",
+                      "px_changed",
+                      "within"
+                    ],
+                    "description": "Verdict."
+                  },
+                  "hash": {
+                    "enum": [
+                      "same",
+                      "changed"
+                    ],
+                    "description": "State hash compared with the baseline."
+                  },
+                  "image": {
+                    "type": "string",
+                    "description": "One image to look at, relative to run."
+                  },
+                  "diff": {
+                    "type": "string",
+                    "description": "diff.png relative to run, when images were compared."
+                  }
+                },
+                "required": [
+                  "id",
+                  "vs_approved",
+                  "hash",
+                  "image"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "$ref": "https://jand-s.github.io/scion/schemas/v1/envelope.schema.json#/$defs/more"
+              }
+            ]
+          },
+          "description": "Recipes that differ from their baseline."
+        },
+        "determinism": {
+          "type": "object",
+          "description": "Round agreement.",
+          "properties": {
+            "hash_stable": {
+              "type": "boolean",
+              "description": "Every recipe kept one hash over its passing rounds."
+            },
+            "frame_jitter": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Recipes whose frame count varied by one, as \"<id> <a>/<b>\"."
+            }
+          },
+          "required": [
+            "hash_stable",
+            "frame_jitter"
+          ],
+          "additionalProperties": false
+        },
+        "spec": {
+          "type": "object",
+          "description": "Present with --spec.",
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "Spec name."
+            },
+            "ok": {
+              "type": "boolean",
+              "description": "Every expectation held."
+            },
+            "variants": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "description": "One variant.",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "Variant."
+                  },
+                  "ok": {
+                    "type": "boolean",
+                    "description": "Passed."
+                  },
+                  "failed": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Expectations that failed."
+                  }
+                },
+                "required": [
+                  "name",
+                  "ok",
+                  "failed"
+                ],
+                "additionalProperties": false
+              },
+              "description": "Per variant."
+            },
+            "verdict": {
+              "type": "string",
+              "description": "Path of spec.json, relative to run."
+            }
+          },
+          "required": [
+            "name",
+            "ok",
+            "variants",
+            "verdict"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "run",
+        "copies",
+        "runs",
+        "failed",
+        "changed",
+        "determinism"
+      ]
+    }
+  ],
+  "examples": [
+    {
+      "schema_version": 1,
+      "command": "trial run",
+      "ok": false,
+      "run": "/Users/alex/orchard/.scion/runs/20261011-143200",
+      "build_id": "4c49a1e0b2f3",
+      "copies": 4,
+      "wall_s": 21.4,
+      "runs": {
+        "recipes": 5,
+        "rounds": 2,
+        "total": 10,
+        "ok": 9,
+        "failed": 1,
+        "changed": 0,
+        "within": 1,
+        "px_changed": 0,
+        "new": 1,
+        "stale": 0
+      },
+      "failed": [
+        {
+          "id": "KnightFalls",
+          "round": 2,
+          "copy": 1,
+          "error": "timeout (30s): knight down",
+          "report": "q1/KnightFalls/r2/report.md"
+        }
+      ],
+      "changed": [
+        {
+          "id": "SlashHit",
+          "vs_approved": "within",
+          "hash": "same",
+          "image": "q0/SlashHit/r1/window.png"
+        }
+      ],
+      "determinism": {
+        "hash_stable": true,
+        "frame_jitter": []
+      },
+      "next_step": "read /Users/alex/orchard/.scion/runs/20261011-143200/q1/KnightFalls/r2/report.md"
+    }
+  ]
+}

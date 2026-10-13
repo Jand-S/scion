@@ -1,0 +1,129 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jand-s.github.io/scion/schemas/v1/envelope.schema.json",
+  "title": "CLI envelope",
+  "description": "Fields shared by the JSON object that every dotnet scion command prints on stdout.",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "description": "Format version of this file. Always 1 in Scion 1.x."
+    },
+    "command": {
+      "type": "string",
+      "description": "The command as resolved, for example \"trial run\" (also when typed as \"trials run\")."
+    },
+    "ok": {
+      "type": "boolean",
+      "description": "True only on exit 0."
+    },
+    "next_step": {
+      "type": "string",
+      "description": "One concrete action: a command to run or a file to read, with absolute paths."
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "description": "A problem that did not stop the command.",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "Warning code."
+          },
+          "message": {
+            "type": "string",
+            "description": "What happened."
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "description": "At most 5 warnings; they never change the exit code."
+    },
+    "error": {
+      "type": "object",
+      "description": "Present only on exits 2 and 3.",
+      "properties": {
+        "code": {
+          "type": "string",
+          "description": "A snake_case CLI or player code, or an SCN diagnostic id."
+        },
+        "message": {
+          "type": "string",
+          "description": "What happened, with the path or value."
+        },
+        "hint": {
+          "type": "string",
+          "description": "What to do next."
+        },
+        "did_you_mean": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Close names when a name was not found; may be empty."
+        }
+      },
+      "required": [
+        "code",
+        "message",
+        "hint",
+        "did_you_mean"
+      ],
+      "additionalProperties": false
+    },
+    "truncated": {
+      "type": "integer",
+      "description": "Number of whole fields dropped to keep the JSON under 1536 bytes.",
+      "minimum": 1
+    }
+  },
+  "required": [
+    "schema_version",
+    "command",
+    "ok",
+    "next_step"
+  ],
+  "additionalProperties": true,
+  "$defs": {
+    "more": {
+      "type": "object",
+      "description": "Last item of a list cut to respect the size limit.",
+      "properties": {
+        "more": {
+          "type": "integer",
+          "description": "Items left out of the list; the full list is in a file.",
+          "minimum": 1
+        }
+      },
+      "required": [
+        "more"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "examples": [
+    {
+      "schema_version": 1,
+      "command": "trial list",
+      "ok": true,
+      "next_step": "run one: dotnet scion trial run SlashHit"
+    },
+    {
+      "schema_version": 1,
+      "command": "trial run",
+      "ok": false,
+      "next_step": "run: dotnet scion build test",
+      "error": {
+        "code": "build_not_found",
+        "message": "no test build at /Users/alex/orchard/.scion/builds/test/Orchard.app",
+        "hint": "run: dotnet scion build test",
+        "did_you_mean": []
+      }
+    }
+  ]
+}

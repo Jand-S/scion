@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jand-s.github.io/scion/schemas/v1/cli/graft-new.schema.json",
+  "title": "graft new output",
+  "description": "Output of dotnet scion graft new: the draft graft file created.",
+  "allOf": [
+    {
+      "$ref": "https://jand-s.github.io/scion/schemas/v1/envelope.schema.json"
+    },
+    {
+      "type": "object",
+      "properties": {
+        "command": {
+          "const": "graft new"
+        },
+        "file": {
+          "type": "string",
+          "description": "Created file."
+        },
+        "target": {
+          "type": "string",
+          "description": "Type.Method."
+        },
+        "kind": {
+          "enum": [
+            "before",
+            "after"
+          ]
+        },
+        "signature": {
+          "type": "string",
+          "description": "Generated signature."
+        },
+        "dry_run": {
+          "type": "boolean",
+          "description": "Nothing written."
+        }
+      },
+      "required": [
+        "file",
+        "target",
+        "kind",
+        "signature"
+      ]
+    }
+  ],
+  "examples": [
+    {
+      "schema_version": 1,
+      "command": "graft new",
+      "ok": true,
+      "file": "scion/grafts/CritShake.cs",
+      "target": "Orchard.Presentation.HitPresenter.Play",
+      "kind": "after",
+      "signature": "public static void After(HitPresenter presenter, HitEvent e, ref Call<float> c)",
+      "next_step": "edit scion/grafts/CritShake.cs, then: dotnet scion graft check scion/grafts/CritShake.cs"
+    }
+  ]
+}

@@ -1,0 +1,145 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jand-s.github.io/scion/schemas/v1/scion-build.schema.json",
+  "title": "scion-build.json",
+  "description": "Written next to every player that ScionBuild makes: what the build is and how it was made.",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "description": "Format version of this file. Always 1 in Scion 1.x."
+    },
+    "build_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{12}$"
+    },
+    "main_assembly": {
+      "type": "string",
+      "description": "Assembly whose DLL defines the build id."
+    },
+    "git_commit": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Commit."
+    },
+    "git_dirty": {
+      "type": "boolean",
+      "description": "Uncommitted changes."
+    },
+    "unity": {
+      "type": "string",
+      "description": "Unity version."
+    },
+    "target": {
+      "enum": [
+        "osx",
+        "win",
+        "linux"
+      ],
+      "description": "Target OS."
+    },
+    "backend": {
+      "enum": [
+        "mono",
+        "il2cpp"
+      ],
+      "description": "Backend."
+    },
+    "defines": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Scion defines present (SCION_SLOTS, SCION_TRIALS, SCION_NETCLOCK, SCION_VERBOSE)."
+    },
+    "scion": {
+      "type": "string",
+      "description": "Scion version."
+    },
+    "abi": {
+      "type": "integer",
+      "description": "Slot ABI."
+    },
+    "player": {
+      "type": "string",
+      "description": "Player executable, relative to this file."
+    },
+    "slots": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Anchor slot ids (test builds)."
+    },
+    "recipes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Recipe names found by Cecil."
+    },
+    "built_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Build time, UTC."
+    },
+    "seconds": {
+      "type": "number",
+      "description": "Build seconds."
+    }
+  },
+  "required": [
+    "schema_version",
+    "build_id",
+    "main_assembly",
+    "git_commit",
+    "git_dirty",
+    "unity",
+    "target",
+    "backend",
+    "defines",
+    "scion",
+    "abi",
+    "player",
+    "slots",
+    "recipes",
+    "built_at",
+    "seconds"
+  ],
+  "additionalProperties": true,
+  "examples": [
+    {
+      "schema_version": 1,
+      "build_id": "4c49a1e0b2f3",
+      "main_assembly": "Orchard.Runtime",
+      "git_commit": "0ed3af7",
+      "git_dirty": false,
+      "unity": "6000.3.25f1",
+      "target": "osx",
+      "backend": "mono",
+      "defines": [
+        "SCION_SLOTS",
+        "SCION_TRIALS"
+      ],
+      "scion": "1.0.0",
+      "abi": 1,
+      "player": "Orchard.app/Contents/MacOS/Orchard",
+      "slots": [
+        "A__Orchard_Presentation_HitPresenter__Play__HitEvent",
+        "B__Orchard_Presentation_Hud__ShowTurn__Int32"
+      ],
+      "recipes": [
+        "CoopTurn",
+        "FireballArea",
+        "HudStates",
+        "KnightFalls",
+        "SlashHit",
+        "UnitGallery"
+      ],
+      "built_at": "2026-10-11T14:30:00Z",
+      "seconds": 35.2
+    }
+  ]
+}

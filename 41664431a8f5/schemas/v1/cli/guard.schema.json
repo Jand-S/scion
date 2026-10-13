@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jand-s.github.io/scion/schemas/v1/cli/guard.schema.json",
+  "title": "guard output",
+  "description": "Output of dotnet scion guard without --hook input: the decision for one path or command.",
+  "allOf": [
+    {
+      "$ref": "https://jand-s.github.io/scion/schemas/v1/envelope.schema.json"
+    },
+    {
+      "type": "object",
+      "properties": {
+        "command": {
+          "const": "guard"
+        },
+        "decision": {
+          "enum": [
+            "allow",
+            "ask",
+            "deny"
+          ]
+        },
+        "reason": {
+          "type": "string",
+          "description": "Why."
+        },
+        "path": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Path checked."
+        },
+        "approve": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Approve command checked."
+        }
+      },
+      "required": [
+        "decision",
+        "reason"
+      ]
+    }
+  ],
+  "examples": [
+    {
+      "schema_version": 1,
+      "command": "guard",
+      "ok": true,
+      "decision": "deny",
+      "reason": "scion/baselines/ is written only by dotnet scion trial approve",
+      "path": "scion/baselines/SlashHit/baseline.json",
+      "approve": null,
+      "next_step": "approve through the CLI: dotnet scion trial approve --new --reason \"...\""
+    }
+  ]
+}

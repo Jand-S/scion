@@ -1,0 +1,956 @@
+# Scion 1.0.0 documentation: For AI agents
+
+> Every page below is also at its own URL plus `.md`. Index: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# For AI agents
+
+This is the start page for AI coding agents (Claude Code, Codex, Cursor, GitHub Copilot and others) that work on a
+game with Scion. It gives the loop (`graft check`, `graft inject`, `trial run`, `trial show`, `trial approve --new`),
+the rules every agent must follow, the reading order that keeps token use low, and the machine-readable files:
+`llms.txt`, the Markdown twin of every page, the JSON Schemas and the docs inside the installed package.
+
+## When to use
+
+- Read this page before your first Scion command in a project, and whenever a command's result surprises you.
+- For one exit code or error code, go straight to [What to do next](/scion/agents/next-action/).
+
+## Rules
+
+These rules are also at the top of [/scion/llms.txt](/scion/llms.txt). Follow them in every session:
+
+- Run `dotnet scion doctor` first. Exit 0 means usable; exit 3 means fix what `error.hint` says.
+- Every command prints one JSON object on stdout (`schema_version`, `ok`, `next_step`, `error` on exits 2 and 3). Parse it; do not scrape text. Follow `next_step`.
+- Exit codes: 0 ok, 1 a check failed, 2 usage error (see `did_you_mean`), 3 environment. Next actions: https://jand-s.github.io/scion/agents/next-action.md
+- You may approve only `new` baselines (`trial approve --new --reason "..."`). Never approve `changed`, `stale` or `px_changed`, and never edit `scion/baselines/` by hand: ask a person.
+- Read `report.md` only for failed or changed recipes; open images only when pixels changed or the task is visual.
+
+Two more that follow from the design:
+
+- Grafts are visual only. A change to damage, range, turn order or any other rule goes into the game's core as a
+  `RuleModifier<T>`, never into a graft ([Grafts are visual only](/scion/grafts/visual-only/)).
+- Never fake a terminal (`script`, `expect`, a pseudo-TTY) to get past `human_required`. Tell the person what changed
+  and give them the command from `next_step`.
+
+## Steps
+
+### 1. Orient yourself
+
+```sh
+dotnet scion doctor
+dotnet scion index
+```
+
+`index` prints the project index (under 2 KB): Scion version, adoption level, graft folders, anchor categories,
+recipe names and the commands. With the Claude Code plugin it arrives on its own at session start.
+
+### 2. Find where to hang the change
+
+```sh
+dotnet scion anchor list --search hit
+dotnet scion anchor show presentation.hit
+```
+
+`anchor show` returns the signature and a ready graft declaration (`example`). Never guess a signature.
+
+### 3. Write and check the graft
+
+```sh
+dotnet scion graft new CritShake --after Orchard.Presentation.HitPresenter.Play
+dotnet scion graft check scion/grafts/CritShake.cs
+```
+
+Apply every `hint` and `did_you_mean` until `graft check` exits 0. With the plugin, the `PostToolUse` hook runs the
+check after each edit and returns the errors to you.
+
+### 4. Try it in the real build
+
+```sh
+dotnet scion trial serve -j 2
+dotnet scion graft build && dotnet scion graft inject
+dotnet scion trial run SlashHit KnightFalls --warm
+```
+
+Warm runs compare state hashes and frame counts. For images, run a cold run with the graft:
+`dotnet scion trial run SlashHit --grafts <dll from graft build>`.
+
+### 5. Read the results
+
+Follow [Reading results](/scion/agents/reading-results/): the JSON, then `report.md` of failed or changed recipes,
+then images only when pixels changed or the task is visual.
+
+### 6. Hand over
+
+- New recipes: `dotnet scion trial approve --new --reason "..."`, then commit the staged baselines.
+- Changed recipes: stop and report. Give the person `trial show --changed` output, the reason and the exact approve
+  command from `next_step`.
+- Promote a graft only when the person agrees: `dotnet scion graft promote CritShake`.
+
+## Reference
+
+### Machine-readable files
+
+| File | URL | Use |
+|---|---|---|
+| Page index | [/scion/llms.txt](/scion/llms.txt) | Every page as a link to its Markdown, with one line each; the rules first |
+| Full docs | [/scion/llms-full.txt](/scion/llms-full.txt) | Every page in one file, in sidebar order |
+| Section files | `/scion/<section>/llms-full.txt` | One section in one file, for example [/scion/grafts/llms-full.txt](/scion/grafts/llms-full.txt) |
+| Markdown twin | `<page URL>.md` or `<page URL>/index.md` | The page as Markdown with frontmatter (`title`, `type`, `url`, `related`) |
+| JSON Schemas | [JSON Schemas](/scion/reference/schemas/) | Every file format and every CLI output, draft 2020-12 |
+
+### Version-matched local docs
+
+The installed package carries the Markdown of its own version. Prefer it over the website when the project may not
+run the latest version:
+
+```text
+Packages/me.jandson.scion/Documentation~/site/src/content/docs/                        embedded or local package
+Library/PackageCache/me.jandson.scion@<hash>/Documentation~/site/src/content/docs/    Git URL or OpenUPM package
+```
+
+`dotnet scion mcp` serves the same files through its `docs_search` and `docs_read` tools.
+
+### Token budget
+
+| Read | Cost |
+|---|---|
+| A command's JSON | under 1.5 KB, always |
+| `report.md` of one recipe | about 1,200 tokens |
+| `window.png` (12 frames) | about 1,000 tokens |
+| `context.png` (6 frames) | about 1,900 tokens |
+| 120 captures opened blindly | about 1 million tokens: never do this |
+
+With more than about 5 images to look at, hand them to the `scion-triage` subagent, which returns one line per
+recipe ([The Scion skill](/scion/agents/skill/)).
+
+## Errors
+
+| Signal | Next action |
+|---|---|
+| Exit 1, `failed[]` | Read `failed[].report`, fix, run again. |
+| Exit 1, `changed[]` | Explain the change with `trial show --changed`; ask a person to approve or fix it. |
+| Exit 2 | Fix the call with `error.hint` and `did_you_mean`; never retry unchanged. |
+| Exit 3 | Fix the environment with `error.hint`; `doctor` names the failing check. |
+
+Every signal, with its exact next action: [What to do next](/scion/agents/next-action/).
+
+## Examples
+
+### A complete session
+
+```sh
+dotnet scion doctor
+dotnet scion anchor list --search shake
+dotnet scion graft new CritShake --after Orchard.Presentation.HitPresenter.Play
+dotnet scion graft check scion/grafts/CritShake.cs
+dotnet scion build test
+dotnet scion trial run --grafts .scion/grafts/ScionGrafts_51c2.dll
+dotnet scion trial show --changed
+```
+
+The run reports `SlashHit` as `changed` with `hash: same`: only pixels moved. The agent reports to the person:
+"CritShake adds a 0.3 shake on critical hits; SlashHit changed in pixels only (window.png). To accept, promote the
+graft, rebuild, run and approve at your terminal: `dotnet scion trial approve SlashHit --reason "crit shake"`."
+
+## See also
+
+- [Set up your agent](/scion/agents/setup/)
+- [What to do next](/scion/agents/next-action/)
+- [Reading results](/scion/agents/reading-results/)
+- [MCP server](/scion/agents/mcp/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# Set up your agent
+
+This guide connects an AI coding agent to Scion. Claude Code gets everything from the `scion` plugin (skill, hooks,
+MCP server, `scion-triage` subagent). Codex, Cursor and GitHub Copilot get the `dotnet scion mcp` server in their MCP
+configuration and the Scion block in `AGENTS.md`. Any other agent reads `/scion/llms.txt`, uses GitMCP or Context7, or
+calls the CLI directly. `dotnet scion init --agent <name>` writes the files for you.
+
+## When to use
+
+- Use it once per project and agent, after [Install](/scion/start/install/).
+- Agents that only run shell commands need nothing more than the CLI and the `AGENTS.md` block; MCP is optional.
+
+## Before you begin
+
+- `dotnet scion doctor` passes in the project.
+- Run the commands below from the project root.
+
+## Steps
+
+### Claude Code
+
+Install the plugin from the Scion marketplace:
+
+```sh
+/plugin marketplace add Jand-S/scion
+/plugin install scion@scion
+```
+
+The plugin brings the [skill](/scion/agents/skill/), the four [hooks](/scion/agents/hooks/), the
+[MCP server](/scion/agents/mcp/) and the `scion-triage` subagent. It does not edit your repository. Optionally, keep
+the project index in `CLAUDE.md` too:
+
+```sh
+dotnet scion index --write CLAUDE.md
+```
+
+If the project uses `AGENTS.md`, make `CLAUDE.md` import it with a line `@AGENTS.md`, and write the block there
+instead.
+
+### Codex
+
+```sh
+dotnet scion init --agent codex
+```
+
+writes the Scion block into `AGENTS.md` and prints the MCP entry to add to `~/.codex/config.toml`:
+
+```toml
+[mcp_servers.scion]
+command = "dotnet"
+args = ["scion", "mcp"]
+```
+
+Codex reads `AGENTS.md` at the start of every task, and the MCP server gives it one tool per command.
+
+### Cursor
+
+```sh
+dotnet scion init --agent cursor
+```
+
+writes `AGENTS.md` and `.cursor/mcp.json`:
+
+```json
+{"mcpServers":{"scion":{"command":"dotnet","args":["scion","mcp"]}}}
+```
+
+### GitHub Copilot
+
+```sh
+dotnet scion init --agent copilot
+```
+
+writes `AGENTS.md` and `.vscode/mcp.json` for agent mode in VS Code:
+
+```json
+{"servers":{"scion":{"type":"stdio","command":"dotnet","args":["scion","mcp"]}}}
+```
+
+### Any other agent
+
+- Give it the shell: every command prints one JSON object, and the [rules](/scion/agents/) cover the rest.
+- Point it at [/scion/llms.txt](/scion/llms.txt), or at the version-matched Markdown inside the package
+  (`Library/PackageCache/me.jandson.scion@<hash>/Documentation~/site/src/content/docs/`).
+- For agents that speak MCP but cannot run local tools, use GitMCP: add the remote server
+  `https://jand-s.gitmcp.io/scion`, which reads `llms.txt` and serves the docs.
+- Context7 indexes the Scion repository; ask for `me.jandson.scion` docs by name.
+
+## Reference
+
+### The AGENTS.md block
+
+`init --agent` and `index --write AGENTS.md` keep this block between markers, regenerated on each run. Text outside
+the markers is yours.
+
+```md
+<!-- scion:begin -->
+## Scion
+
+This project uses Scion 1.0.0 (adoption level 3). Docs: https://jand-s.github.io/scion/llms.txt
+- Run `dotnet scion doctor` first. Every command prints one JSON object; follow `next_step`.
+- New presentation code goes in grafts (`scion/grafts/*.cs`, `[Before]`/`[After]`); rules change in Orchard.Core with `RuleModifier<T>`.
+- Find anchors with `dotnet scion anchor list --search <word>`; check grafts with `dotnet scion graft check <file>`.
+- Run recipes with `dotnet scion trial run`; read `report.md` of failed or changed recipes only.
+- Approve only `new` baselines (`dotnet scion trial approve --new --reason "..."`); never edit `scion/baselines/`.
+<!-- scion:end -->
+```
+
+### Files per agent
+
+| Agent | Instructions | MCP configuration | Written by |
+|---|---|---|---|
+| Claude Code | plugin skill; optional `CLAUDE.md` block | plugin | `/plugin install scion@scion` |
+| Codex | `AGENTS.md` | `~/.codex/config.toml` (printed, not written) | `init --agent codex` |
+| Cursor | `AGENTS.md` | `.cursor/mcp.json` | `init --agent cursor` |
+| GitHub Copilot | `AGENTS.md` | `.vscode/mcp.json` | `init --agent copilot` |
+
+### Scoped rules for Claude Code
+
+The plugin also installs path-scoped rules that load only when the agent touches matching files. You can add your
+own in `.claude/rules/` with a `paths:` frontmatter:
+
+```md
+---
+paths:
+  - "Assets/Orchard/Grafts/**"
+  - "scion/grafts/**"
+---
+Grafts here are visual only. Use the Fx facade (Fx.Shake, Fx.Flash, Fx.Sound) instead of calling CameraRig or
+AudioHub directly, so trials record every effect.
+```
+
+## Errors
+
+| Code | Exit | Cause | Next action |
+|---|---|---|---|
+| `bad_value` | 2 | Unknown agent name in `--agent`. | Use `claude`, `codex`, `cursor` or `copilot`. |
+| `out_not_writable` | 3 | `AGENTS.md` or the MCP file cannot be written. | Fix permissions; the command is idempotent. |
+| `version_mismatch` (warning) | 0 | The plugin, the CLI and the package are not the same version. | Update the one `doctor` names. |
+
+## Examples
+
+### Two agents on one project
+
+```sh
+dotnet scion init --agent codex --agent cursor
+git add AGENTS.md .cursor/mcp.json && git commit -m "Scion agent setup"
+```
+
+Both agents read the same `AGENTS.md` block; each has its own MCP file.
+
+## See also
+
+- [MCP server](/scion/agents/mcp/)
+- [The Scion skill](/scion/agents/skill/)
+- [Hooks](/scion/agents/hooks/)
+- [Project index and manifest](/scion/agents/project-index/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# The Scion skill
+
+The Claude Code plugin ships one skill, `scion`, one subagent, `scion-triage`, and path-scoped rules. This page lists
+what each contains and when it loads, so you can predict what the agent knows. Other agents get the same content from
+`AGENTS.md` and the MCP `docs_read` tool.
+
+## The scion skill
+
+| Field | Value |
+|---|---|
+| Name | `scion` |
+| Loads when | The task mentions Scion, the test build, trials, recipes, baselines, grafts, anchors, visual regression, a state hash or frame count that changed, or checking a gameplay change in the real build |
+| Files | `SKILL.md` (the loop and the rules, about 120 lines) and `reference/cli.md` (every command, option, output field and code) |
+| Version | Same as the plugin; the plugin and the CLI must match the package version |
+
+What `SKILL.md` covers, in order:
+
+1. What Scion is in four lines (grafts, trials, baselines, the CLI).
+2. Setup once per clone: `dotnet tool restore`, `dotnet scion doctor`.
+3. The loop: edit, `graft check`, `build test` or `graft inject`, `trial run`, read the JSON, `trial show`, approve.
+4. The fields of the `trial run` JSON and the verdicts.
+5. The approval rules: agents approve only `new`; `changed`, `stale` and `px_changed` need a person.
+6. The live loop with warm copies (`trial serve`, `graft inject`, `trial run --warm`).
+7. Exit codes and the common error codes with their fix.
+8. Reading order and the image budget.
+
+The skill is facts and commands, not a long tutorial: every detail it does not hold is one `docs_read` call away.
+
+## The scion-triage subagent
+
+`scion-triage` reads images so the main agent does not have to. Use it when more than about 5 images need a look.
+
+| Field | Value |
+|---|---|
+| Input | A run folder and a list of recipe ids (usually `changed[]` of a `trial run`) |
+| Reads | `compare.json`, each recipe's `report.md`, then `window.png` or `grid.png` |
+| Returns | One line per recipe: id, verdict, what changed in the frames, whether it looks intended, and the file it looked at |
+| Never does | Approve, edit files or run commands other than `trial show` |
+
+Example return:
+
+```text
+SlashHit      changed   white flash on the goblin, frames 12-14; looks intended (HitFlash)   diff/SlashHit/r1/grid.png
+FireballArea  within    no visible change                                                     q1/FireballArea/r1/window.png
+KnightFalls   changed   knight falls one frame later; hash same; check HitStop                diff/KnightFalls/r1/grid.png
+```
+
+## Scoped rules
+
+The plugin installs rules in its own folder that load only when the agent reads or edits matching paths:
+
+| Rule | Paths | Says |
+|---|---|---|
+| `grafts` | `**/Grafts/**`, `scion/grafts/**` | Grafts are visual; use `Fx`; run `graft check`; no rule state |
+| `recipes` | `**/Trials/**`, `scion/recipes/**` | Recipes are data; set properties in the constructor; seed every RNG |
+| `baselines` | `scion/baselines/**` | Never edit; only `trial approve` writes here |
+| `core` | the folders of `rule_paths` | Integers only, no `float` (SCN004); changes go through `RuleModifier<T>` |
+
+Projects add their own in `.claude/rules/*.md` with a `paths:` frontmatter ([Set up your agent](/scion/agents/setup/)).
+
+## Keeping it current
+
+- `dotnet scion doctor` warns `version_mismatch` when the plugin, the CLI and the package differ.
+- `/plugin update scion` updates the plugin; the CLI and the package update as in [Install](/scion/start/install/).
+- For agents without the plugin, `dotnet scion index --write AGENTS.md` refreshes the `AGENTS.md` block.
+
+## See also
+
+- [Set up your agent](/scion/agents/setup/)
+- [Hooks](/scion/agents/hooks/)
+- [Reading results](/scion/agents/reading-results/)
+- [MCP server](/scion/agents/mcp/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# Hooks
+
+The Scion plugin registers four Claude Code hooks: `SessionStart` runs `dotnet scion index --hook`, `PostToolUse` on
+`Edit|Write` runs `dotnet scion graft check --hook`, `PreToolUse` on `Bash` runs `dotnet scion guard --approve --hook`
+and `PreToolUse` on `Edit|Write` runs `dotnet scion guard --hook`. This page gives their configuration, their input and
+output, and their failure rules. Each hook finishes in under a second and does nothing outside a Scion project.
+
+## Configuration
+
+The plugin installs this configuration. Without the plugin, put the same block in `.claude/settings.json`:
+
+```json
+{
+  "hooks": {
+    "SessionStart": [
+      { "hooks": [{ "type": "command", "command": "dotnet scion index --hook", "timeout": 5 }] }
+    ],
+    "PostToolUse": [
+      { "matcher": "Edit|Write", "hooks": [{ "type": "command", "command": "dotnet scion graft check --hook", "timeout": 5 }] }
+    ],
+    "PreToolUse": [
+      { "matcher": "Bash", "hooks": [{ "type": "command", "command": "dotnet scion guard --approve --hook", "timeout": 5 }] },
+      { "matcher": "Edit|Write", "hooks": [{ "type": "command", "command": "dotnet scion guard --hook", "timeout": 5 }] }
+    ]
+  }
+}
+```
+
+Each hook reads the event JSON that Claude Code writes on stdin and prints the hook JSON that Claude Code expects on
+stdout. Outside a Scion project (no `scion.json` above the working folder), each one exits 0 and prints nothing.
+
+## SessionStart: index
+
+`dotnet scion index --hook` injects the project index as context, written as facts, under 2 KB:
+
+```json
+{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":"This project uses Scion 1.0.0 (adoption level 3). Grafts: Assets/Orchard/Grafts (promoted), scion/grafts (drafts). Anchor categories: presentation (14), hud (9), camera (3). Recipes: SlashHit, FireballArea, KnightFalls, CoopTurn (4 players), HudStates, UnitGallery. Commands: dotnet scion anchor list|show, graft new|check|build|inject, trial run|show|approve. Approve only new baselines."}}
+```
+
+The index lists categories and counts, not every anchor: the agent asks `anchor list` for details. See
+[Project index and manifest](/scion/agents/project-index/).
+
+## PostToolUse: graft check
+
+After an `Edit` or `Write`, `dotnet scion graft check --hook` checks the edited file when it is under
+`grafts.promoted` or `grafts.staging`, and ignores every other file. Errors return to the agent as context, with
+the fix:
+
+```json
+{"hookSpecificOutput":{"hookEventName":"PostToolUse","additionalContext":"Scion graft check: scion/grafts/CritShake.cs(7,6): SCN103 HitPresenter.Ply does not exist. Hint: Did you mean 'Play'?"}}
+```
+
+A file without problems produces no output. The check reads the test build's DLLs with Mono.Cecil and compiles the
+file with Roslyn; it does not start Unity.
+
+## PreToolUse Bash: approval guard
+
+Before a `Bash` call, `dotnet scion guard --approve --hook` looks for `scion trial approve` in the command. Any other
+command passes untouched. For an approval it runs the approve as `--dry-run` and decides:
+
+| The approval would replace | Decision | Effect |
+|---|---|---|
+| Only `new` recipes | allow | The command runs. |
+| Any `changed`, `stale` or `px_changed` recipe | ask | Claude Code asks the person, showing the reason. |
+| A run made with `--grafts`, or a refused recipe | deny | The command does not run; the reason says why. |
+
+```json
+{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"ask","permissionDecisionReason":"This approves SlashHit (changed: image) and replaces a baseline a person approved. Review: dotnet scion trial show SlashHit --grid"}}
+```
+
+The CLI itself also refuses such approvals without a terminal (`human_required`); the guard explains it before the
+command runs.
+
+## PreToolUse Edit and Write: baseline guard
+
+`dotnet scion guard --hook` denies any `Edit` or `Write` to a file under `trials.baselines` (`scion/baselines/**`),
+`scion.manifest.json` or `GRAFTS.md`, and explains the right command:
+
+```json
+{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"scion/baselines/ is written only by dotnet scion trial approve. GRAFTS.md and scion.manifest.json are generated: edit the [Anchor] in the .cs file and run dotnet scion gen."}}
+```
+
+## Failure rules
+
+| Hook | Time limit | When the CLI fails or times out |
+|---|---|---|
+| index | under 1 s (5 s timeout) | Fails open: no context, the session starts normally |
+| graft check | under 1 s for one file | Fails open: no output |
+| approval guard | under 1 s | Fails open: the CLI still refuses with `human_required` |
+| baseline guard | under 100 ms (no build access) | Fails closed: an edit under `scion/baselines/` is denied |
+
+Run any hook by hand to see what it does: `echo '{"tool_name":"Write","tool_input":{"file_path":"scion/baselines/SlashHit/baseline.json"}}' | dotnet scion guard --hook`.
+
+## See also
+
+- [index, guard](/scion/cli/index-and-guard/)
+- [graft](/scion/cli/graft/)
+- [Baselines and approval](/scion/trials/baselines/)
+- [Set up your agent](/scion/agents/setup/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# MCP server
+
+`dotnet scion mcp` is a Model Context Protocol server over stdio, built into the CLI. It exposes one tool per CLI
+command (`scion_trial_run`, `scion_graft_check` and so on) that returns the same JSON envelope as the command, plus
+`docs_search` and `docs_read` over the Markdown docs of the installed package version. For agents that cannot run
+local processes, GitMCP serves the website docs at `https://jand-s.gitmcp.io/scion`.
+
+## Configuration
+
+The server runs from the project root, like every command, and needs nothing else. Per client:
+
+**Claude Code** (the plugin registers it; by hand):
+
+```sh
+claude mcp add scion -- dotnet scion mcp
+```
+
+**Codex** (`~/.codex/config.toml`):
+
+```toml
+[mcp_servers.scion]
+command = "dotnet"
+args = ["scion", "mcp"]
+```
+
+**Cursor** (`.cursor/mcp.json`) and any client that uses the `mcpServers` shape:
+
+```json
+{"mcpServers":{"scion":{"command":"dotnet","args":["scion","mcp"]}}}
+```
+
+**VS Code with GitHub Copilot** (`.vscode/mcp.json`):
+
+```json
+{"servers":{"scion":{"type":"stdio","command":"dotnet","args":["scion","mcp"]}}}
+```
+
+## Tools
+
+Every command tool takes the command's options as a JSON object (snake_case names, positional arguments as
+`patterns` or `ids`) and returns the command's envelope as structured content and as text. The exit code is in
+`exit_code`. Tool descriptions repeat the first line of the command's help.
+
+| Tool | Command | Notes |
+|---|---|---|
+| `scion_doctor` | `doctor` | |
+| `scion_build_test`, `scion_build_final` | `build test`, `build final` | Long: progress goes to MCP progress notifications |
+| `scion_trial_list` | `trial list` | |
+| `scion_trial_run` | `trial run` | Progress notifications per finished pair |
+| `scion_trial_show` | `trial show` | |
+| `scion_trial_approve` | `trial approve` | No terminal: only `new` recipes can be approved (`human_required` otherwise) |
+| `scion_trial_serve` | `trial serve` | |
+| `scion_trial_diff` | `trial diff` | |
+| `scion_trial_eval` | `trial eval` | `export` and `import` modes for agent evaluators |
+| `scion_anchor_list`, `scion_anchor_show` | `anchor list`, `anchor show` | |
+| `scion_graft_new`, `scion_graft_check`, `scion_graft_build`, `scion_graft_inject`, `scion_graft_restore`, `scion_graft_disable`, `scion_graft_promote` | `graft ...` | |
+| `scion_bisect` | `bisect` | Long |
+| `scion_diagnose` | `diagnose` | |
+| `scion_index`, `scion_gen` | `index`, `gen` | |
+| `scion_judge_list`, `scion_judge_show`, `scion_judge_train`, `scion_judge_run` | `judge ...` | `judge vote` is for people and has no tool |
+| `scion_multiverse_run`, `scion_multiverse_show` | `multiverse ...` | |
+| `scion_hunt_run`, `scion_search_run` | `hunt run`, `search run` | Long |
+
+Commands that need a person or never end have no tool: `trial loop`, `graft watch`, `judge vote`, `uninstall`.
+
+Example call and result:
+
+```json
+{"name":"scion_trial_run","arguments":{"patterns":["SlashHit"],"rounds":2}}
+```
+
+```json
+{"structuredContent":{"schema_version":1,"command":"trial run","ok":true,"exit_code":0,"run":"/Users/alex/orchard/.scion/runs/20261011-143200","copies":2,"runs":{"recipes":1,"rounds":2,"total":2,"ok":2,"failed":0,"changed":0,"within":0,"px_changed":0,"new":0,"stale":0},"failed":[],"changed":[],"determinism":{"hash_stable":true,"frame_jitter":[]},"next_step":"nothing changed"},"isError":false}
+```
+
+`isError` is true for exit codes 2 and 3; exit code 1 is a normal result with `ok: false`.
+
+## Docs tools
+
+| Tool | Arguments | Returns |
+|---|---|---|
+| `docs_search` | `query` (text), `limit` (default 8) | `[{title, path, url, snippet}]`, best first, from the docs of the installed package version |
+| `docs_read` | `path` (a page id such as `grafts/anchors`, or a URL of this site) | The page as Markdown, with its frontmatter |
+
+The docs come from `Documentation~/site/src/content/docs/` inside the package, so they always match the version the
+project runs. `docs_read` with an anchor (`grafts/anchors#automatic-anchors`) returns only that section.
+
+## GitMCP
+
+GitMCP turns the public site into a remote MCP server with no setup: `https://jand-s.gitmcp.io/scion`. It reads
+`/scion/llms.txt` first and serves pages on request. Use it when the agent runs in the cloud and cannot start
+`dotnet scion mcp`; it documents the latest release, not necessarily the version installed in your project.
+
+## Limits
+
+- One server per project and agent session; it runs commands one at a time and queues the rest.
+- Long commands report MCP progress; a client that cancels a call stops the command as Ctrl-C would.
+- The server never calls an AI model and never approves anything a terminal rule protects.
+
+## See also
+
+- [mcp](/scion/cli/mcp/)
+- [Set up your agent](/scion/agents/setup/)
+- [For AI agents](/scion/agents/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# What to do next
+
+Look up the exit code and the signal a Scion command returned, and do the action in the last column. The signals are
+the envelope fields (`error.code`, `warnings[].code`, `failed[]`, `changed[]`, `vs_approved`, `determinism`), the
+`SCNxxx` ids of diagnostics and the control-protocol errors. Every code links to its full entry in
+[Error and warning codes](/scion/reference/errors/). When two rows apply, handle the higher exit code first.
+
+## Exit 0
+
+| Signal | Meaning | Next action |
+|---|---|---|
+| `warnings` empty | Done. | Follow `next_step`. |
+| `vs_approved: same` | Hash, frames and images match the baseline. | Nothing to do. |
+| `vs_approved: new` | The recipe has no baseline yet. | Read its `report.md`; if it shows what the recipe should, `dotnet scion trial approve --new --reason "..."` and commit the staged files. |
+| `vs_approved: within` | Pixels differ, inside the recipe's tolerance. | Nothing to approve. Mention it if the task was visual. |
+| `vs_approved: px_changed` | Pixel hashes changed for a recipe that keeps no images. Informative. | Open `window.png` only if the task is visual; if intended, a person may approve it. |
+| `vs_approved: stale` | The baseline was approved on another platform, Unity version, fps or player arguments; images were not compared. | Tell the person; a person approves on this platform when the result looks right. |
+| warning [`build_stale`](/scion/reference/errors/#build_stale) | Sources or rule files changed after the build. | `dotnet scion build test`, then run again before trusting the result. |
+| warning [`build_info_missing`](/scion/reference/errors/#build_info_missing) | No `scion-build.json` next to the build. | `dotnet scion build test`. |
+| warning [`frame_jitter`](/scion/reference/errors/#frame_jitter) | A frame count is one off its baseline (allowed). | Nothing; if it repeats, see [Verify determinism](/scion/determinism/verify/). |
+| warning [`px_unstable`](/scion/reference/errors/#px_unstable) | Pixels vary between rounds of this run. | Treat `px_changed` as noise; see [Particles, animators, UI and physics](/scion/determinism/control/). |
+| warning [`low_memory`](/scion/reference/errors/#low_memory) | Fewer copies fit in free RAM than requested. | Use `suggested_copies` from `doctor` for `-j`. |
+| warning [`version_mismatch`](/scion/reference/errors/#version_mismatch) | CLI, package and plugin versions differ. | Update the one the message names. |
+| warning [`recycle`](/scion/reference/errors/#recycle) | A warm copy loaded 50 graft DLLs. | `dotnet scion trial serve --stop`, then `trial serve` again. |
+| other warnings | Something did not stop the command. | Read its entry in [Error and warning codes](/scion/reference/errors/#warnings). |
+
+## Exit 1
+
+| Signal | Meaning | Next action |
+|---|---|---|
+| `failed[]` | A (recipe, round) failed: timeout, `Fail`, a check, a logged error, a graft that threw. | Read `failed[].report`; fix the cause; run again. |
+| `vs_approved: changed` | Hash, frames (off by more than one), images outside tolerance or the rule digest changed. | If intended: explain it with `trial show --changed` (and `--grid`) and ask a person to approve. If not: fix the code. |
+| `determinism.hash_stable: false` | Rounds of one recipe disagree, or no round passed. | Check `failed[]` first. Then `dotnet scion trial run <Id> --rounds 4 --check`; read `determinism.tsv`; see [Verify determinism](/scion/determinism/verify/). |
+| [`refused`](/scion/reference/errors/#refused) in `trial approve` | A selected recipe has a failed round, an unstable hash or was run with `--grafts`. Nothing was written. | Fix that recipe; `next_step` gives the command that approves the others. |
+| `diagnostics[]` in `graft check` or `graft build` | Graft errors with SCN ids. | Apply each `hint` and `did_you_mean`; check again. |
+| `errors[]` in `build test` | Compiler (`CSxxxx`) or Scion (`SCNxxx`) errors. | Fix the file and line; build again. |
+| `spec.ok: false` in `trial run --spec` | An expectation of the spec failed. | Read `spec.json`; never edit the spec to make it pass. |
+
+## Exit 2
+
+| Signal | Meaning | Next action |
+|---|---|---|
+| [`usage`](/scion/reference/errors/#usage), [`unknown_command`](/scion/reference/errors/#unknown_command), [`unknown_option`](/scion/reference/errors/#unknown_option), [`bad_value`](/scion/reference/errors/#bad_value) | Wrong call. | Use `did_you_mean` and `error.hint`, or `<command> --help`. Never retry unchanged. |
+| [`no_match`](/scion/reference/errors/#no_match) | No recipe, run or anchor with that name. | `dotnet scion trial list` (or `anchor list`); use `did_you_mean`. |
+| [`human_required`](/scion/reference/errors/#human_required) | The approval replaces a baseline a person approved, and there is no terminal. | Stop. Tell the person what changed and the exact command from `next_step`. Never fake a terminal. |
+| [`not_supported`](/scion/reference/errors/#not_supported) | The build lacks the define the command needs (control op without `SCION_SLOTS` or `SCION_TRIALS`). | `dotnet scion build test`. |
+| [`missing_out`](/scion/reference/errors/#missing_out), [`unknown_flag`](/scion/reference/errors/#unknown_flag) | A player started by hand got a bad command line. | Fix the `-scion-*` flags; see [Player command line](/scion/reference/player-flags/). |
+
+## Exit 3
+
+| Signal | Meaning | Next action |
+|---|---|---|
+| [`config_not_found`](/scion/reference/errors/#config_not_found) | No `scion.json` above the current folder. | `cd` into the project, or `dotnet scion init`. |
+| [`config_invalid`](/scion/reference/errors/#config_invalid) | A bad key, type or JSON line. | Fix the key the message names; validate with [`scion-config.schema.json`](/scion/schemas/v1/scion-config.schema.json). |
+| [`build_not_found`](/scion/reference/errors/#build_not_found), [`build_wrong_mode`](/scion/reference/errors/#build_wrong_mode) | No usable test build. | `dotnet scion build test`. |
+| [`unity_not_found`](/scion/reference/errors/#unity_not_found) | The project's Unity version is not installed. | Install it, or set `unity.editor` in `scion.local.json`. |
+| [`editor_open`](/scion/reference/errors/#editor_open) | The editor holds the project and has no `com.unity.pipeline`. | Close the editor, or add `com.unity.pipeline` to the project. |
+| [`unity_failed`](/scion/reference/errors/#unity_failed) | Unity ended without building and without a compiler error. | Read the log named in the message. |
+| [`player_crashed`](/scion/reference/errors/#player_crashed), [`copy_timeout`](/scion/reference/errors/#copy_timeout), [`watchdog`](/scion/reference/errors/#watchdog) | A copy died or stalled. | Read `q<i>/player.log`; rebuild if the build is old; raise `--timeout` only for slow recipes. |
+| [`no_adapter`](/scion/reference/errors/#no_adapter), [`prepare_failed`](/scion/reference/errors/#prepare_failed) | No valid adapter, or an adapter's `Prepare` failed. | Read `error.message` (it names SCN202 or SCN203 when relevant) and the player log. |
+| [`capture_broken`](/scion/reference/errors/#capture_broken) | Frame capture failed. | Read the player log; run once with `--window` to compare. |
+| [`out_not_writable`](/scion/reference/errors/#out_not_writable), [`no_free_port`](/scion/reference/errors/#no_free_port) | The machine blocks the run. | Fix permissions or `trials.out`; close programs that hold ports, or use fewer copies. |
+| [`shard_ignored`](/scion/reference/errors/#shard_ignored) | The build predates sharding. | `dotnet scion build test`. |
+| [`no_copies`](/scion/reference/errors/#no_copies) | `graft inject`, `--warm` or `trial loop` found no warm copy. | `dotnet scion trial serve -j 2`. |
+| [`no_simulation`](/scion/reference/errors/#no_simulation), [`not_forkable`](/scion/reference/errors/#not_forkable) | A level 3 command without an `ISimulation`. | Register one; see [Add Scion to an existing game](/scion/start/existing-project/). |
+| [`mosaic_unsupported`](/scion/reference/errors/#mosaic_unsupported) | `--mosaic` with an adapter that is not an `IMosaicAdapter`. | Run without `--mosaic`, or see [Mosaic](/scion/trials/mosaic/). |
+| [`model_missing`](/scion/reference/errors/#model_missing) | A Judge eye model is not downloaded and the machine is offline. | Connect once, or copy the model into `~/.scion/models/`. |
+| [`SCN130`](/scion/reference/diagnostics/builds-and-injection/#scn130) | The graft DLL was built for another build. | `dotnet scion graft build`, then inject again. |
+| [`SCN131`](/scion/reference/diagnostics/builds-and-injection/#scn131) | The graft DLL or the build has another Scion ABI. | Use the same Scion version for the CLI and the build. |
+| [`SCN202`](/scion/reference/diagnostics/trials/#scn202), [`SCN203`](/scion/reference/diagnostics/trials/#scn203) | Invalid adapter, or two adapters for one recipe type. | Fix the adapter as the hint says. |
+| [`interrupted`](/scion/reference/errors/#interrupted) | Ctrl-C stopped the command. | Run it again. |
+| [`internal_error`](/scion/reference/errors/#internal_error) | A bug in Scion. | Report it with the stack trace; do not loop. |
+
+## Exit 125
+
+| Signal | Meaning | Next action |
+|---|---|---|
+| A `bisect` step | The step cannot be judged: the build, the recipe or its rounds broke at that commit. | Nothing: `bisect` skips the commit and goes on. |
+
+## Control protocol
+
+| Signal | Meaning | Next action |
+|---|---|---|
+| [`busy`](/scion/reference/errors/#busy) | A queue is already running in that copy. | Wait for it, or send `quit`. |
+| [`bad_token`](/scion/reference/errors/#bad_token) | Wrong or stale token. | Re-read `control.json` of that copy. |
+| [`not_supported`](/scion/reference/errors/#not_supported) | The copy lacks `SCION_SLOTS` or `SCION_TRIALS`. | Rebuild with `dotnet scion build test`. |
+| [`bad_json`](/scion/reference/errors/#bad_json), [`line_too_long`](/scion/reference/errors/#line_too_long), [`unknown_op`](/scion/reference/errors/#unknown_op), [`bad_args`](/scion/reference/errors/#bad_args), [`shutting_down`](/scion/reference/errors/#shutting_down) | A malformed request, or the copy is quitting. | Fix the request; see [Control protocol](/scion/reference/control-protocol/). |
+
+## Diagnostics
+
+| Signal | Next action |
+|---|---|
+| `SCN001`-`SCN005` | Standard warnings and SCN003 (error). [Standard diagnostics](/scion/reference/diagnostics/standard/). |
+| `SCN101`-`SCN114` | Graft errors; apply the hint. [Graft diagnostics](/scion/reference/diagnostics/grafts/). |
+| `SCN120`-`SCN131` | Build mode and injection. [Build and injection diagnostics](/scion/reference/diagnostics/builds-and-injection/). |
+| `SCN201`-`SCN203` | Recipes and adapters. [Trials diagnostics](/scion/reference/diagnostics/trials/). |
+| `SCN301`-`SCN307` | Determinism scan, in `diagnose` only. [Determinism diagnostics](/scion/reference/diagnostics/determinism/). |
+
+## See also
+
+- [Error and warning codes](/scion/reference/errors/)
+- [Exit codes](/scion/reference/exit-codes/)
+- [Reading results](/scion/agents/reading-results/)
+- [Diagnostics](/scion/reference/diagnostics/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# Reading results
+
+A trial run writes far more than an agent should read. This guide gives the reading order (the `trial run` JSON, then
+`report.md` of failed or changed recipes, then `window.png` only when pixels changed or the task is visual, then
+`context.png`, never `frames/`), the image rules that keep a 1-texel shake visible to a vision model, the motion pack
+for judging feel, the two-pass review and what each step costs in tokens.
+
+## When to use
+
+- After every `dotnet scion trial run`, `trial run --warm` or `trial loop` pass.
+- When reviewing a visual change: hit effects, HUD states, rooms, animations.
+
+## Steps
+
+### 1. Read the JSON
+
+The envelope is always under 1.5 KB. Decide from it alone whether anything needs a look:
+
+| Field | Look further when |
+|---|---|
+| `failed[]` | not empty: read each `report` |
+| `changed[]` | not empty: these recipes differ from their baseline |
+| `runs.new` | above 0: read `report.md` before approving |
+| `determinism.hash_stable` | `false`: see [What to do next](/scion/agents/next-action/) |
+| `warnings[]` | not empty |
+
+Paths inside lists are relative to `run`; `next_step` uses absolute paths.
+
+### 2. Read report.md of failed and changed recipes only
+
+`dotnet scion trial show --failed` and `trial show --changed` print the paths. Each recipe's `report.md` (about 1,200
+tokens) has the verdict, the checks that did not pass, the images with their frames, the timeline of marks, the
+probes, notes and logged errors. Most failures are explained here, without an image.
+
+### 3. Open window.png only for pixel changes or visual tasks
+
+Open an image when `changed[].hash` is `same` (only pixels moved), when the verdict is `px_changed` or `within` and the
+task is visual, or when the task itself is about the look. `window.png` holds up to 12 consecutive frames around the
+impact, 3 columns, numbered with their game time and marks. Prefer `grid.png` from `trial show <Id> --grid` for a
+`changed` recipe: baseline, current and difference rows in one image.
+
+### 4. Open context.png only if the window is not enough
+
+`context.png` shows 6 key frames chosen by the marks (announcement, action, impact, peak of the number, death,
+after), 3 by 2. It answers "what happened before and after"; the window answers "how did the hit feel".
+
+### 5. Never open frames/
+
+`frames/NNNN.png` exists only with `--frames`, and a recipe has dozens to hundreds of them. Open single frames only
+when a person asks for them.
+
+### 6. Delegate when there are many images
+
+With more than about 5 images to judge, give the run folder and the ids to the `scion-triage` subagent (Claude Code)
+or a separate agent. It returns one line per recipe ([The Scion skill](/scion/agents/skill/)).
+
+## Reference
+
+### Image rules
+
+Scion writes every image so a vision model sees what matters without recompression:
+
+| Rule | Value | Why |
+|---|---|---|
+| Longest side | at most 2000 px for sheets (`window.png`, `context.png`, `sheet.png`); at most 1568 px for motion pack images, which crop the action area | Above about 1568 px some readers recompress images as JPEG, which erases 1-texel shake: use `--motion` when shake matters |
+| File size | under 500 KB | Same |
+| Images per request | at most 20 | API limit of most vision models |
+| Scaling of crops | 2x nearest neighbor | Pixel art keeps its pixels |
+| Frame labels | `f07 +117ms IMPACT` on each cell | The model knows time and events without guessing |
+| Fixed crosshair | drawn on `window.png` when `--motion` is on | Reveals camera shake |
+
+Sheets for people (`sheet.png`, `preview.gif`) may be larger; agents should not open `preview.gif` (models read only
+its first frame).
+
+### The motion pack
+
+Vision models are poor at fine motion even when they see every frame. For feel (hit-stop, shake, flash, easing),
+run with `--motion` and read the numbers first:
+
+| File | Content | Tokens |
+|---|---|---|
+| `metrics.json` | Measured hit-stop, shake, flash, anticipation and number easing, with targets | about 300 |
+| `report.md` | Per-frame timeline plus a measured, target and status table | about 1,200 |
+| `window.png` | 12 frames around the impact, 2x nearest neighbor, numbered, with a crosshair | about 1,000 |
+| `motion-diff.png` | The same layout with the frame-to-frame difference amplified (a black cell is a hit-stop frame) | about 1,000 |
+| `tracks.png` | Luminance, camera offset, 1 - SSIM and number height over time, with lines at the marks | about 1,250 |
+| `context.png` | 6 key frames | about 1,900 |
+
+See [The motion pack](/scion/evaluation/motion-pack/).
+
+### Two-pass review
+
+For a visual judgment, do two passes:
+
+1. **Blind:** only the images. "Describe the impact frame by frame." About 4,000 tokens.
+2. **With numbers:** `tracks.png`, `metrics.json` and `report.md`; check where the description and the numbers
+   disagree. About 7,500 tokens.
+
+For A/B choices, see [A/B comparisons](/scion/evaluation/ab-comparison/): variants aligned on the impact, blind labels,
+asked in both orders.
+
+## Errors
+
+| Situation | Next action |
+|---|---|
+| `report.md` missing for a failed pair | The copy crashed: read `q<i>/player.log` (`player_crashed`). |
+| `window.png` missing | The recipe never called `MarkImpact` and had no cut; read `report.md` and the recipe. |
+| An image is blank or magenta | The `blank` or `magenta` check failed too; it is in `report.md`. |
+| `grid.png` missing | The recipe keeps no images (`Tolerance = null`); compare `window.png` of both runs with `trial diff`. |
+
+## Examples
+
+### Deciding without an image
+
+```json
+{"changed":[{"id":"KnightFalls","vs_approved":"changed","hash":"changed","image":"q1/KnightFalls/r1/window.png"}]}
+```
+
+`hash: changed` means the rules changed. The image will not explain why: read `report.md`, the probes and the diff of
+the rule code first.
+
+### A pixel-only change
+
+```json
+{"changed":[{"id":"SlashHit","vs_approved":"changed","hash":"same","image":"q0/SlashHit/r1/window.png","diff":"diff/SlashHit/r1/window.diff.png"}]}
+```
+
+`hash: same`: the rules did not change. Open `grid.png` (`trial show SlashHit --grid`) to see the visual change and
+report it to the person.
+
+## See also
+
+- [What to do next](/scion/agents/next-action/)
+- [Capture and outputs](/scion/trials/capture/)
+- [The motion pack](/scion/evaluation/motion-pack/)
+- [report.md](/scion/reference/files/report-md/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# Project index and manifest
+
+Agents learn a Scion project in three layers: the **index** (under 2 KB, always loaded), the **commands** they query on
+demand (`anchor list`, `trial list`), and the **rules** the hooks enforce. This page covers the index that
+`dotnet scion index` prints, the `<!-- scion:begin -->` block it keeps in `CLAUDE.md` or `AGENTS.md`, and the
+manifest that `dotnet scion gen` generates from the code: `scion.manifest.json` for tools and `GRAFTS.md` for people.
+
+## The index
+
+`dotnet scion index` writes a short description of the project as facts, not instructions, so it never reads like a
+prompt injection. It lists categories and counts, never every anchor:
+
+```text
+This project uses Scion 1.0.0 (adoption level 3).
+Grafts: new presentation code in Assets/Orchard/Grafts/*.cs (promoted) and scion/grafts/*.cs (drafts), hung on anchors with [Before]/[After].
+Anchor categories: presentation (14), hud (9), camera (3), audio (4).
+Rules change in Orchard.Core with RuleModifier<T>; tunables: 7 visual, 3 rule.
+Recipes: SlashHit, FireballArea, KnightFalls, CoopTurn (4 players), HudStates, UnitGallery. Specs: SlimeIsThreatening, DifficultyCurve.
+Commands: dotnet scion anchor list|show, graft new|check|build|inject|promote, trial run|show|approve, doctor.
+The manifest is queried through commands, not read whole.
+```
+
+Anchor categories come from the first segment of `[Anchor]` ids (`presentation.hit` is in `presentation`); anchors
+without an id count under their type's namespace. With `--hook` the same text is wrapped as Claude Code
+`SessionStart` context ([Hooks](/scion/agents/hooks/)).
+
+## The block in CLAUDE.md or AGENTS.md
+
+`dotnet scion index --write <file>` keeps the index plus the agent rules between two markers. Everything outside the
+markers is yours and never touched:
+
+```md
+<!-- scion:begin -->
+## Scion
+This project uses Scion 1.0.0 (adoption level 3). Docs: https://jand-s.github.io/scion/llms.txt
+...
+<!-- scion:end -->
+```
+
+If the project keeps its instructions in `AGENTS.md`, `CLAUDE.md` should import it with the line `@AGENTS.md`, so
+Claude Code and the other agents read the same block.
+
+## The manifest
+
+`dotnet scion gen` reads the code (attributes, recipes, tunables, probes) and writes two files at the project root:
+
+| File | For | Content |
+|---|---|---|
+| `scion.manifest.json` | tools and agents, through commands | Every anchor with its id, target, signature and doc; every graft with file, line, kind, priority and target; every tunable with type, range, value and layer; every recipe; every probe. Schema: [`manifest.schema.json`](/scion/schemas/v1/manifest.schema.json) |
+| `GRAFTS.md` | people and pull requests | A readable table of the same data, grouped by anchor |
+
+Both are generated: nobody edits them by hand, and the baseline guard denies agent edits to them
+([Hooks](/scion/agents/hooks/)). The source of truth is the code: `[Anchor(Id, Doc)]`, `[Before]`/`[After]`,
+`[Tunable]`, `[Probe]` and the recipe classes.
+
+`gen` reads source with Roslyn when the Unity project has not compiled, and the build's DLLs with Mono.Cecil when a
+test build exists; `generated_from` in the manifest says which.
+
+## Keep them current in CI
+
+```sh
+dotnet scion gen && git diff --exit-code scion.manifest.json GRAFTS.md
+dotnet scion graft check --strict
+```
+
+The first line fails the job when someone changed an anchor or graft without regenerating. The second fails on
+warnings too. See [Run Scion in CI](/scion/cookbook/ci/).
+
+## Querying instead of reading
+
+Agents never read the manifest whole. They ask:
+
+| Question | Command |
+|---|---|
+| Where can I hang a hit effect? | `dotnet scion anchor list --search hit` |
+| What is the exact signature? | `dotnet scion anchor show presentation.hit` |
+| Which grafts run on this anchor, in what order? | `dotnet scion anchor show presentation.hit` (`grafts`) |
+| Which recipes exist? | `dotnet scion trial list` |
+| Which tunables can I change? | `dotnet scion gen --list tunables` |
+
+## See also
+
+- [index, guard](/scion/cli/index-and-guard/)
+- [gen](/scion/cli/gen/)
+- [scion.manifest.json and GRAFTS.md](/scion/reference/files/manifest/)
+- [Hooks](/scion/agents/hooks/)

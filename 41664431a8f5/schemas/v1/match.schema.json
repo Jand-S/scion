@@ -1,0 +1,141 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jand-s.github.io/scion/schemas/v1/match.schema.json",
+  "title": "Captured match (.match.json)",
+  "description": "A match saved with F9 in the test player, or found by the rare-moment hunter: setup, seed and command log.",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "description": "Format version of this file. Always 1 in Scion 1.x."
+    },
+    "name": {
+      "type": "string",
+      "description": "Match name (file name without .match.json)."
+    },
+    "captured_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "UTC."
+    },
+    "build_id": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^[0-9a-f]{12}$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "source": {
+      "enum": [
+        "f9",
+        "hunt",
+        "manual"
+      ],
+      "description": "How it was made."
+    },
+    "seed": {
+      "type": "integer",
+      "description": "Run seed."
+    },
+    "players": {
+      "type": "integer",
+      "description": "Players.",
+      "minimum": 1,
+      "maximum": 4
+    },
+    "setup": {
+      "type": "object",
+      "description": "Game-defined setup, written by IMatchCapture."
+    },
+    "commands": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "description": "One command.",
+        "properties": {
+          "turn": {
+            "type": "integer",
+            "description": "Turn.",
+            "minimum": 0
+          },
+          "player": {
+            "type": "integer",
+            "description": "Player, 0 to 3.",
+            "minimum": 0,
+            "maximum": 3
+          },
+          "data": {
+            "type": "string",
+            "description": "Serialized command."
+          }
+        },
+        "required": [
+          "turn",
+          "player",
+          "data"
+        ],
+        "additionalProperties": false
+      },
+      "description": "Command log."
+    },
+    "turns": {
+      "type": "integer",
+      "description": "Turns in the log."
+    },
+    "feature": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Coverage feature that made the hunter keep it, or null."
+    }
+  },
+  "required": [
+    "schema_version",
+    "name",
+    "captured_at",
+    "source",
+    "seed",
+    "players",
+    "setup",
+    "commands",
+    "turns"
+  ],
+  "additionalProperties": true,
+  "examples": [
+    {
+      "schema_version": 1,
+      "name": "goblin-ambush",
+      "captured_at": "2026-10-11T16:02:11Z",
+      "build_id": "4c49a1e0b2f3",
+      "source": "f9",
+      "seed": 7,
+      "players": 2,
+      "setup": {
+        "map": "orchard-01",
+        "party": [
+          "Knight",
+          "Mage"
+        ]
+      },
+      "commands": [
+        {
+          "turn": 1,
+          "player": 0,
+          "data": "move 3 4"
+        },
+        {
+          "turn": 1,
+          "player": 1,
+          "data": "cast fireball 5 5"
+        }
+      ],
+      "turns": 6,
+      "feature": null
+    }
+  ]
+}

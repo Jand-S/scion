@@ -1,0 +1,383 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jand-s.github.io/scion/schemas/v1/telemetry-line.schema.json",
+  "title": "telemetry.jsonl line",
+  "description": "One line of telemetry.jsonl; the kind field selects the shape.",
+  "oneOf": [
+    {
+      "type": "object",
+      "description": "A Unity log line.",
+      "properties": {
+        "f": {
+          "type": "integer",
+          "description": "Cut frame, -1 outside the cut.",
+          "minimum": -1
+        },
+        "t": {
+          "type": "number",
+          "description": "Game seconds since the recipe began."
+        },
+        "kind": {
+          "const": "log"
+        },
+        "type": {
+          "enum": [
+            "Error",
+            "Assert",
+            "Exception",
+            "Warning"
+          ]
+        },
+        "msg": {
+          "type": "string",
+          "description": "Message."
+        },
+        "stack": {
+          "type": "string",
+          "description": "Stack, at most 2 KB."
+        },
+        "thread": {
+          "enum": [
+            "main",
+            "worker"
+          ]
+        }
+      },
+      "required": [
+        "f",
+        "t",
+        "kind",
+        "type",
+        "msg",
+        "stack",
+        "thread"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "description": "TrialSession.Note.",
+      "properties": {
+        "f": {
+          "type": "integer",
+          "description": "Cut frame, -1 outside the cut.",
+          "minimum": -1
+        },
+        "t": {
+          "type": "number",
+          "description": "Game seconds since the recipe began."
+        },
+        "kind": {
+          "const": "note"
+        },
+        "msg": {
+          "type": "string",
+          "description": "The note."
+        }
+      },
+      "required": [
+        "f",
+        "t",
+        "kind",
+        "msg"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "description": "A mark.",
+      "properties": {
+        "f": {
+          "type": "integer",
+          "description": "Cut frame, -1 outside the cut.",
+          "minimum": -1
+        },
+        "t": {
+          "type": "number",
+          "description": "Game seconds since the recipe began."
+        },
+        "kind": {
+          "const": "mark"
+        },
+        "label": {
+          "type": "string",
+          "description": "Label."
+        }
+      },
+      "required": [
+        "f",
+        "t",
+        "kind",
+        "label"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "description": "TrialSession.Probe.",
+      "properties": {
+        "f": {
+          "type": "integer",
+          "description": "Cut frame, -1 outside the cut.",
+          "minimum": -1
+        },
+        "t": {
+          "type": "number",
+          "description": "Game seconds since the recipe began."
+        },
+        "kind": {
+          "const": "probe"
+        },
+        "key": {
+          "type": "string",
+          "description": "Key."
+        },
+        "value": {
+          "type": "number",
+          "description": "Value."
+        }
+      },
+      "required": [
+        "f",
+        "t",
+        "kind",
+        "key",
+        "value"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "description": "A check result.",
+      "properties": {
+        "f": {
+          "type": "integer",
+          "description": "Cut frame, -1 outside the cut.",
+          "minimum": -1
+        },
+        "t": {
+          "type": "number",
+          "description": "Game seconds since the recipe began."
+        },
+        "kind": {
+          "const": "check"
+        },
+        "id": {
+          "type": "string",
+          "description": "Check id."
+        },
+        "status": {
+          "enum": [
+            "pass",
+            "warn",
+            "fail",
+            "skipped"
+          ]
+        },
+        "reason": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Reason."
+        },
+        "frame": {
+          "type": "integer",
+          "description": "Frame.",
+          "minimum": -1
+        }
+      },
+      "required": [
+        "f",
+        "t",
+        "kind",
+        "id",
+        "status",
+        "reason",
+        "frame"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "description": "A graft that threw.",
+      "properties": {
+        "f": {
+          "type": "integer",
+          "description": "Cut frame, -1 outside the cut.",
+          "minimum": -1
+        },
+        "t": {
+          "type": "number",
+          "description": "Game seconds since the recipe began."
+        },
+        "kind": {
+          "const": "fault"
+        },
+        "source": {
+          "type": "string",
+          "description": "Graft as Ns.Type.Method."
+        },
+        "type": {
+          "type": "string",
+          "description": "Exception type."
+        },
+        "msg": {
+          "type": "string",
+          "description": "Message."
+        }
+      },
+      "required": [
+        "f",
+        "t",
+        "kind",
+        "source",
+        "type",
+        "msg"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "description": "TrialSession.Event with the caller fields.",
+      "properties": {
+        "f": {
+          "type": "integer",
+          "description": "Cut frame, -1 outside the cut.",
+          "minimum": -1
+        },
+        "t": {
+          "type": "number",
+          "description": "Game seconds since the recipe began."
+        },
+        "kind": {
+          "const": "event"
+        },
+        "name": {
+          "type": "string",
+          "description": "Event name."
+        }
+      },
+      "required": [
+        "f",
+        "t",
+        "kind",
+        "name"
+      ],
+      "additionalProperties": true
+    },
+    {
+      "type": "object",
+      "description": "An Fx call.",
+      "properties": {
+        "f": {
+          "type": "integer",
+          "description": "Cut frame, -1 outside the cut.",
+          "minimum": -1
+        },
+        "t": {
+          "type": "number",
+          "description": "Game seconds since the recipe began."
+        },
+        "kind": {
+          "const": "fx"
+        },
+        "verb": {
+          "enum": [
+            "Sound",
+            "Shake",
+            "Text",
+            "Flash",
+            "HitStop",
+            "Vfx",
+            "Mark"
+          ]
+        },
+        "args": {
+          "type": "array",
+          "items": {},
+          "description": "Arguments."
+        },
+        "by": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Graft that made the call (Fx.Source)."
+        }
+      },
+      "required": [
+        "f",
+        "t",
+        "kind",
+        "verb",
+        "args",
+        "by"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "description": "An injection applied at a boundary.",
+      "properties": {
+        "f": {
+          "type": "integer",
+          "description": "Cut frame, -1 outside the cut.",
+          "minimum": -1
+        },
+        "t": {
+          "type": "number",
+          "description": "Game seconds since the recipe began."
+        },
+        "kind": {
+          "const": "inject"
+        },
+        "version": {
+          "type": "integer",
+          "description": "Injection.Version."
+        },
+        "bound": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Slots bound."
+        }
+      },
+      "required": [
+        "f",
+        "t",
+        "kind",
+        "version",
+        "bound"
+      ],
+      "additionalProperties": false
+    }
+  ],
+  "examples": [
+    {
+      "f": 412,
+      "t": 13.733,
+      "kind": "fx",
+      "verb": "Shake",
+      "args": [
+        0.3
+      ],
+      "by": "Orchard.Grafts.CritShake.After"
+    },
+    {
+      "f": 12,
+      "t": 0.4,
+      "kind": "mark",
+      "label": "IMPACT"
+    },
+    {
+      "f": -1,
+      "t": 2.1,
+      "kind": "event",
+      "name": "turn",
+      "turn": 3,
+      "hash": "9F3A0C11D2E4B5A6"
+    }
+  ]
+}

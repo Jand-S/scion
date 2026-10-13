@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jand-s.github.io/scion/schemas/v1/cli/gen.schema.json",
+  "title": "gen output",
+  "description": "Output of dotnet scion gen: the manifest and GRAFTS.md regenerated from the code.",
+  "allOf": [
+    {
+      "$ref": "https://jand-s.github.io/scion/schemas/v1/envelope.schema.json"
+    },
+    {
+      "type": "object",
+      "properties": {
+        "command": {
+          "const": "gen"
+        },
+        "manifest": {
+          "type": "string",
+          "description": "scion.manifest.json."
+        },
+        "grafts_md": {
+          "type": "string",
+          "description": "GRAFTS.md."
+        },
+        "anchors": {
+          "type": "integer",
+          "description": "Anchors."
+        },
+        "grafts": {
+          "type": "integer",
+          "description": "Grafts."
+        },
+        "tunables": {
+          "type": "integer",
+          "description": "Tunables."
+        },
+        "changed": {
+          "type": "boolean",
+          "description": "Files changed."
+        }
+      },
+      "required": [
+        "manifest",
+        "grafts_md",
+        "changed"
+      ]
+    }
+  ],
+  "examples": [
+    {
+      "schema_version": 1,
+      "command": "gen",
+      "ok": true,
+      "manifest": "scion.manifest.json",
+      "grafts_md": "GRAFTS.md",
+      "anchors": 18,
+      "grafts": 5,
+      "tunables": 7,
+      "changed": true,
+      "next_step": "commit scion.manifest.json and GRAFTS.md"
+    }
+  ]
+}

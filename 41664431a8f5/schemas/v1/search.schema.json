@@ -1,0 +1,124 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jand-s.github.io/scion/schemas/v1/search.schema.json",
+  "title": "search.json",
+  "description": "The gallery of a guided search: diverse good tunable sets, the duels asked and the best options.",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "description": "Format version of this file. Always 1 in Scion 1.x."
+    },
+    "spec": {
+      "type": "string",
+      "description": "Spec name."
+    },
+    "tunables": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Searched keys."
+    },
+    "evaluated": {
+      "type": "integer",
+      "description": "Candidates played."
+    },
+    "duels": {
+      "type": "integer",
+      "description": "Duels asked to people."
+    },
+    "gallery": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "description": "One elite.",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Candidate name."
+          },
+          "values": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "number"
+            }
+          },
+          "niche": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "MAP-Elites cell, as feature=bucket."
+          },
+          "score": {
+            "type": "number",
+            "description": "Preference score."
+          },
+          "image": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Window image."
+          }
+        },
+        "required": [
+          "name",
+          "values",
+          "niche",
+          "score"
+        ],
+        "additionalProperties": false
+      },
+      "description": "One elite per niche."
+    },
+    "best": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Candidate names, best first."
+    }
+  },
+  "required": [
+    "schema_version",
+    "spec",
+    "tunables",
+    "evaluated",
+    "duels",
+    "gallery",
+    "best"
+  ],
+  "additionalProperties": true,
+  "examples": [
+    {
+      "schema_version": 1,
+      "spec": "SlashFeelsHeavy",
+      "tunables": [
+        "CritShake.Strength",
+        "HitStop.Seconds"
+      ],
+      "evaluated": 64,
+      "duels": 12,
+      "gallery": [
+        {
+          "name": "c17",
+          "values": {
+            "CritShake.Strength": 0.45,
+            "HitStop.Seconds": 0.08
+          },
+          "niche": [
+            "shake=mid",
+            "hit_stop=long"
+          ],
+          "score": 0.71,
+          "image": "q2/SlashHit[preset=c17]/r1/window.png"
+        }
+      ],
+      "best": [
+        "c17"
+      ]
+    }
+  ]
+}

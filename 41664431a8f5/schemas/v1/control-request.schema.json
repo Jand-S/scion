@@ -1,0 +1,228 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jand-s.github.io/scion/schemas/v1/control-request.schema.json",
+  "title": "Control request",
+  "description": "One request line sent to the control server (one JSON object per line, at most 64 KiB).",
+  "oneOf": [
+    {
+      "type": "object",
+      "description": "The hello request.",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "description": "Request id, echoed in the response."
+        },
+        "token": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$",
+          "description": "Token from control.json."
+        },
+        "op": {
+          "const": "hello",
+          "description": "Operation."
+        }
+      },
+      "required": [
+        "id",
+        "token",
+        "op"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "description": "The status request.",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "description": "Request id, echoed in the response."
+        },
+        "token": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$",
+          "description": "Token from control.json."
+        },
+        "op": {
+          "const": "status",
+          "description": "Operation."
+        }
+      },
+      "required": [
+        "id",
+        "token",
+        "op"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "description": "The inject request.",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "description": "Request id, echoed in the response."
+        },
+        "token": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$",
+          "description": "Token from control.json."
+        },
+        "op": {
+          "const": "inject",
+          "description": "Operation."
+        },
+        "dll": {
+          "type": "string",
+          "description": "Absolute path of the graft DLL."
+        },
+        "isolate": {
+          "type": "boolean",
+          "description": "Run only the injected grafts on their anchors."
+        }
+      },
+      "required": [
+        "id",
+        "token",
+        "op",
+        "dll"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "description": "The restore request.",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "description": "Request id, echoed in the response."
+        },
+        "token": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$",
+          "description": "Token from control.json."
+        },
+        "op": {
+          "const": "restore",
+          "description": "Operation."
+        }
+      },
+      "required": [
+        "id",
+        "token",
+        "op"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "description": "The disable request.",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "description": "Request id, echoed in the response."
+        },
+        "token": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$",
+          "description": "Token from control.json."
+        },
+        "op": {
+          "const": "disable",
+          "description": "Operation."
+        },
+        "slot": {
+          "type": "string",
+          "description": "Anchor slot id."
+        }
+      },
+      "required": [
+        "id",
+        "token",
+        "op",
+        "slot"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "description": "The run request.",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "description": "Request id, echoed in the response."
+        },
+        "token": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$",
+          "description": "Token from control.json."
+        },
+        "op": {
+          "const": "run",
+          "description": "Operation."
+        },
+        "only": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Comma-separated patterns, or null for every non-Explicit recipe."
+        },
+        "rounds": {
+          "type": "integer",
+          "description": "Rounds.",
+          "minimum": 1
+        },
+        "out": {
+          "type": "string",
+          "description": "Output folder for this queue."
+        }
+      },
+      "required": [
+        "id",
+        "token",
+        "op",
+        "out"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "description": "The quit request.",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "description": "Request id, echoed in the response."
+        },
+        "token": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$",
+          "description": "Token from control.json."
+        },
+        "op": {
+          "const": "quit",
+          "description": "Operation."
+        }
+      },
+      "required": [
+        "id",
+        "token",
+        "op"
+      ],
+      "additionalProperties": false
+    }
+  ],
+  "examples": [
+    {
+      "id": 7,
+      "token": "9c1f0e7a2b3c4d5e6f708192a3b4c5d6",
+      "op": "status"
+    },
+    {
+      "id": 8,
+      "token": "9c1f0e7a2b3c4d5e6f708192a3b4c5d6",
+      "op": "inject",
+      "dll": "/Users/alex/orchard/.scion/grafts/ScionGrafts_51c2.dll",
+      "isolate": false
+    }
+  ]
+}

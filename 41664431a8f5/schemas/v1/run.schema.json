@@ -1,0 +1,298 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jand-s.github.io/scion/schemas/v1/run.schema.json",
+  "title": "run.json",
+  "description": "What one player process ran, on what, and how it ended. Written at the start and rewritten at the end.",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "description": "Format version of this file. Always 1 in Scion 1.x."
+    },
+    "scion": {
+      "type": "string",
+      "description": "Scion package version of the build."
+    },
+    "abi": {
+      "type": "integer",
+      "description": "Slot ABI of the build (Anchors.AbiVersion)."
+    },
+    "build_id": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^[0-9a-f]{12}$"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "From scion-build.json next to the build; null when it is missing."
+    },
+    "git_commit": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Commit the build was made from."
+    },
+    "git_dirty": {
+      "type": [
+        "boolean",
+        "null"
+      ],
+      "description": "True when the build had uncommitted changes."
+    },
+    "unity": {
+      "type": "string",
+      "description": "Unity version."
+    },
+    "backend": {
+      "enum": [
+        "mono",
+        "il2cpp"
+      ],
+      "description": "Scripting backend."
+    },
+    "platform": {
+      "type": "string",
+      "description": "Platform id <os>-<gfx>-<W>x<H>-<offscreen|screen>.",
+      "pattern": "^(osx|win|linux)-[a-z0-9]+-[0-9]+x[0-9]+-(offscreen|screen)$"
+    },
+    "size": {
+      "type": "array",
+      "items": {
+        "type": "integer",
+        "minimum": 1
+      },
+      "minItems": 2,
+      "maxItems": 2,
+      "description": "Capture size [width, height] in pixels."
+    },
+    "machine": {
+      "type": "object",
+      "description": "The machine.",
+      "properties": {
+        "os": {
+          "type": "string",
+          "description": "Operating system and version."
+        },
+        "cpu": {
+          "type": "string",
+          "description": "CPU model."
+        },
+        "cores": {
+          "type": "integer",
+          "description": "Logical cores."
+        },
+        "ram_mb": {
+          "type": "integer",
+          "description": "Total RAM in MB."
+        }
+      },
+      "required": [
+        "os",
+        "cpu",
+        "cores",
+        "ram_mb"
+      ],
+      "additionalProperties": false
+    },
+    "args": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Command-line arguments of the process."
+    },
+    "shard": {
+      "type": "array",
+      "items": {
+        "type": "integer",
+        "minimum": 0
+      },
+      "minItems": 2,
+      "maxItems": 2,
+      "description": "[i, n] from -scion-shard."
+    },
+    "role": {
+      "type": "string",
+      "description": "host or client:<i>.",
+      "pattern": "^(host|client:[1-3])$"
+    },
+    "rounds": {
+      "type": "integer",
+      "description": "Total rounds (-scion-rounds).",
+      "minimum": 1
+    },
+    "run_seed": {
+      "type": "integer",
+      "description": "The run seed (-scion-seed)."
+    },
+    "mode": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "The capture mode (-scion-mode), or null."
+    },
+    "mosaic": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "description": "Arenas per process (-scion-mosaic), or null."
+    },
+    "ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Recipe ids selected for this process, before sharding."
+    },
+    "started_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Start time, UTC."
+    },
+    "ended_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time",
+      "description": "End time, UTC; null while running."
+    },
+    "wall_s": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "description": "Wall seconds from start to end; null while running."
+    },
+    "exit_code": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "enum": [
+        0,
+        1,
+        2,
+        3,
+        null
+      ],
+      "description": "Exit code; null while running."
+    },
+    "error": {
+      "anyOf": [
+        {
+          "type": "object",
+          "description": "Present only on exits 2 and 3.",
+          "properties": {
+            "code": {
+              "type": "string",
+              "description": "A snake_case CLI or player code, or an SCN diagnostic id."
+            },
+            "message": {
+              "type": "string",
+              "description": "What happened, with the path or value."
+            },
+            "hint": {
+              "type": "string",
+              "description": "What to do next."
+            },
+            "did_you_mean": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Close names when a name was not found; may be empty."
+            }
+          },
+          "required": [
+            "code",
+            "message",
+            "hint",
+            "did_you_mean"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Set on exit codes 2 and 3."
+    }
+  },
+  "required": [
+    "schema_version",
+    "scion",
+    "abi",
+    "build_id",
+    "unity",
+    "backend",
+    "platform",
+    "size",
+    "args",
+    "shard",
+    "role",
+    "rounds",
+    "run_seed",
+    "ids",
+    "started_at",
+    "exit_code",
+    "error"
+  ],
+  "additionalProperties": true,
+  "examples": [
+    {
+      "schema_version": 1,
+      "scion": "1.0.0",
+      "abi": 1,
+      "build_id": "4c49a1e0b2f3",
+      "git_commit": "0ed3af7",
+      "git_dirty": false,
+      "unity": "6000.3.25f1",
+      "backend": "mono",
+      "platform": "osx-metal-1280x720-offscreen",
+      "size": [
+        1280,
+        720
+      ],
+      "machine": {
+        "os": "macOS 26.5",
+        "cpu": "Apple M5",
+        "cores": 10,
+        "ram_mb": 16384
+      },
+      "args": [
+        "-batchmode",
+        "-scion-trials",
+        "-scion-out",
+        "/Users/alex/orchard/.scion/runs/20261011-143200/q0",
+        "-scion-shard",
+        "0/4"
+      ],
+      "shard": [
+        0,
+        4
+      ],
+      "role": "host",
+      "rounds": 2,
+      "run_seed": 1,
+      "mode": null,
+      "mosaic": null,
+      "ids": [
+        "FireballArea",
+        "KnightFalls",
+        "SlashHit"
+      ],
+      "started_at": "2026-10-11T14:32:00Z",
+      "ended_at": "2026-10-11T14:32:09Z",
+      "wall_s": 9.4,
+      "exit_code": 0,
+      "error": null
+    }
+  ]
+}

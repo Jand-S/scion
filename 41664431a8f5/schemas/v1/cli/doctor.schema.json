@@ -1,0 +1,128 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jand-s.github.io/scion/schemas/v1/cli/doctor.schema.json",
+  "title": "doctor output",
+  "description": "Output of dotnet scion doctor: checks, adoption level and suggested copies.",
+  "allOf": [
+    {
+      "$ref": "https://jand-s.github.io/scion/schemas/v1/envelope.schema.json"
+    },
+    {
+      "type": "object",
+      "properties": {
+        "command": {
+          "const": "doctor"
+        },
+        "level": {
+          "type": "integer",
+          "description": "Check depth, 1 to 3.",
+          "minimum": 1,
+          "maximum": 3
+        },
+        "version": {
+          "type": "string",
+          "description": "CLI version."
+        },
+        "adoption_level": {
+          "type": "integer",
+          "description": "What the project can use: 1 Grafts, 2 Trials, 3 Multiverse.",
+          "minimum": 0,
+          "maximum": 3
+        },
+        "adoption_next": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "What is missing for the next level, or null."
+        },
+        "checks": {
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "type": "object",
+                "description": "One check.",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "Check id."
+                  },
+                  "status": {
+                    "enum": [
+                      "ok",
+                      "warn",
+                      "fail"
+                    ]
+                  },
+                  "detail": {
+                    "type": "string",
+                    "description": "What was found."
+                  },
+                  "hint": {
+                    "type": "string",
+                    "description": "What to do."
+                  }
+                },
+                "required": [
+                  "id",
+                  "status",
+                  "detail"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "$ref": "https://jand-s.github.io/scion/schemas/v1/envelope.schema.json#/$defs/more"
+              }
+            ]
+          },
+          "description": "Problems first."
+        },
+        "suggested_copies": {
+          "type": "integer",
+          "description": "Copies this machine supports (cores and free RAM), at most 8.",
+          "minimum": 1,
+          "maximum": 8
+        }
+      },
+      "required": [
+        "level",
+        "version",
+        "adoption_level",
+        "checks",
+        "suggested_copies"
+      ]
+    }
+  ],
+  "examples": [
+    {
+      "schema_version": 1,
+      "command": "doctor",
+      "ok": true,
+      "level": 2,
+      "version": "1.0.0",
+      "adoption_level": 2,
+      "adoption_next": "level 3: register an ISimulation with [assembly: Simulation] in Orchard.Core",
+      "checks": [
+        {
+          "id": "build_stale",
+          "status": "warn",
+          "detail": "2 files changed since the build",
+          "hint": "run: dotnet scion build test"
+        },
+        {
+          "id": "config",
+          "status": "ok",
+          "detail": "/Users/alex/orchard/scion.json"
+        },
+        {
+          "id": "machine",
+          "status": "ok",
+          "detail": "10 cores, 9.1 GB free of 16.0 GB"
+        }
+      ],
+      "suggested_copies": 4,
+      "next_step": "run: dotnet scion build test"
+    }
+  ]
+}

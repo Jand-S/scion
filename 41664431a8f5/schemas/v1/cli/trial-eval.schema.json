@@ -1,0 +1,121 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jand-s.github.io/scion/schemas/v1/cli/trial-eval.schema.json",
+  "title": "trial eval output",
+  "description": "Output of dotnet scion trial eval: evaluators run or exported, scores written to evals.tsv.",
+  "allOf": [
+    {
+      "$ref": "https://jand-s.github.io/scion/schemas/v1/envelope.schema.json"
+    },
+    {
+      "type": "object",
+      "properties": {
+        "command": {
+          "const": "trial eval"
+        },
+        "run": {
+          "type": "string",
+          "description": "Run folder."
+        },
+        "evaluators": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Evaluators used."
+        },
+        "items": {
+          "type": "integer",
+          "description": "Items judged."
+        },
+        "exported": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "eval-in.json written for an agent evaluator, or null."
+        },
+        "imported": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "eval-out.json imported, or null."
+        },
+        "evals": {
+          "type": "string",
+          "description": "evals.tsv."
+        },
+        "scores": {
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "type": "object",
+                "description": "One score.",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "Recipe id."
+                  },
+                  "evaluator": {
+                    "type": "string",
+                    "description": "Evaluator."
+                  },
+                  "question": {
+                    "type": "string",
+                    "description": "Question id."
+                  },
+                  "score": {
+                    "type": "number",
+                    "description": "Score."
+                  }
+                },
+                "required": [
+                  "id",
+                  "evaluator",
+                  "question",
+                  "score"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "$ref": "https://jand-s.github.io/scion/schemas/v1/envelope.schema.json#/$defs/more"
+              }
+            ]
+          },
+          "description": "Scores."
+        }
+      },
+      "required": [
+        "run",
+        "evaluators",
+        "evals"
+      ]
+    }
+  ],
+  "examples": [
+    {
+      "schema_version": 1,
+      "command": "trial eval",
+      "ok": true,
+      "run": "/Users/alex/orchard/.scion/runs/20261011-143200",
+      "evaluators": [
+        "judge"
+      ],
+      "items": 6,
+      "exported": null,
+      "imported": null,
+      "evals": "/Users/alex/orchard/.scion/runs/20261011-143200/evals.tsv",
+      "scores": [
+        {
+          "id": "SlashHit",
+          "evaluator": "judge",
+          "question": "impact",
+          "score": 1.6
+        }
+      ],
+      "next_step": "read /Users/alex/orchard/.scion/runs/20261011-143200/evals.tsv"
+    }
+  ]
+}

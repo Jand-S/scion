@@ -1,0 +1,135 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jand-s.github.io/scion/schemas/v1/cli/graft-watch.schema.json",
+  "title": "graft watch output",
+  "description": "Output of dotnet scion graft watch when it stops; each cycle is also printed on stderr.",
+  "allOf": [
+    {
+      "$ref": "https://jand-s.github.io/scion/schemas/v1/envelope.schema.json"
+    },
+    {
+      "type": "object",
+      "properties": {
+        "command": {
+          "const": "graft watch"
+        },
+        "cycles": {
+          "type": "integer",
+          "description": "Build-inject-run cycles."
+        },
+        "recipes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Recipes run each cycle."
+        },
+        "last": {
+          "type": "object",
+          "description": "The last cycle.",
+          "properties": {
+            "ok": {
+              "type": "boolean",
+              "description": "Last cycle passed."
+            },
+            "seconds": {
+              "type": "number",
+              "description": "Seconds of the last cycle."
+            },
+            "run": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "Last run folder."
+            },
+            "diagnostics": {
+              "type": "array",
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "description": "One compiler or Scion diagnostic.",
+                    "properties": {
+                      "file": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Source file relative to the project root, or null."
+                      },
+                      "line": {
+                        "type": "integer",
+                        "description": "1-based line, 0 when the diagnostic has no position.",
+                        "minimum": 0
+                      },
+                      "code": {
+                        "type": "string",
+                        "description": "SCNxxx for Scion diagnostics, CSxxxx for compiler errors, build for a failed build."
+                      },
+                      "message": {
+                        "type": "string",
+                        "description": "The message."
+                      },
+                      "hint": {
+                        "type": "string",
+                        "description": "The fix, when the diagnostic has one."
+                      },
+                      "did_you_mean": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        },
+                        "description": "Close names, for SCN103."
+                      }
+                    },
+                    "required": [
+                      "file",
+                      "line",
+                      "code",
+                      "message"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "$ref": "https://jand-s.github.io/scion/schemas/v1/envelope.schema.json#/$defs/more"
+                  }
+                ]
+              },
+              "description": "Last problems."
+            }
+          },
+          "required": [
+            "ok",
+            "seconds",
+            "run",
+            "diagnostics"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "cycles",
+        "last"
+      ]
+    }
+  ],
+  "examples": [
+    {
+      "schema_version": 1,
+      "command": "graft watch",
+      "ok": true,
+      "cycles": 9,
+      "recipes": [
+        "SlashHit"
+      ],
+      "last": {
+        "ok": true,
+        "seconds": 1.1,
+        "run": "/Users/alex/orchard/.scion/runs/20261011-171503",
+        "diagnostics": []
+      },
+      "next_step": "promote when ready: dotnet scion graft promote CritShake"
+    }
+  ]
+}

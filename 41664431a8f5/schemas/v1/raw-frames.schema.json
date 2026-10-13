@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jand-s.github.io/scion/schemas/v1/raw-frames.schema.json",
+  "title": "raw.json",
+  "description": "frames/raw.json: the layout of the raw frames kept with -scion-raw.",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "description": "Format version of this file. Always 1 in Scion 1.x."
+    },
+    "width": {
+      "type": "integer",
+      "description": "Width.",
+      "minimum": 1
+    },
+    "height": {
+      "type": "integer",
+      "description": "Height.",
+      "minimum": 1
+    },
+    "layout": {
+      "enum": [
+        "RGBA8",
+        "ARGB8",
+        "BGRA8"
+      ],
+      "description": "Byte order as captured."
+    },
+    "rows": {
+      "const": "bottom-up",
+      "description": "Row order."
+    }
+  },
+  "required": [
+    "schema_version",
+    "width",
+    "height",
+    "layout",
+    "rows"
+  ],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "schema_version": 1,
+      "width": 1280,
+      "height": 720,
+      "layout": "RGBA8",
+      "rows": "bottom-up"
+    }
+  ]
+}

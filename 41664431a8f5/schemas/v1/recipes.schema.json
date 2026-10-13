@@ -1,0 +1,142 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jand-s.github.io/scion/schemas/v1/recipes.schema.json",
+  "title": "recipes.json",
+  "description": "The recipes selected by a player started with -scion-list, after variants, modes and filters.",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "description": "Format version of this file. Always 1 in Scion 1.x."
+    },
+    "recipes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "description": "One selected recipe.",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Recipe id."
+          },
+          "name": {
+            "type": "string",
+            "description": "Recipe name."
+          },
+          "variant": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Variant arguments or null."
+          },
+          "mode": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Mode or null."
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Tags."
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "One line, or null."
+          },
+          "players": {
+            "type": "integer",
+            "description": "Players, 1 to 4.",
+            "minimum": 1,
+            "maximum": 4
+          },
+          "explicit": {
+            "type": "boolean",
+            "description": "Runs only when named."
+          },
+          "fps": {
+            "type": "integer",
+            "description": "Capture rate."
+          },
+          "seed": {
+            "type": "integer",
+            "description": "Recipe seed."
+          },
+          "timeout_s": {
+            "type": "number",
+            "description": "Run timeout in game seconds."
+          },
+          "type": {
+            "type": "string",
+            "description": "Full name of the recipe class."
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "variant",
+          "mode",
+          "tags",
+          "description",
+          "players",
+          "explicit",
+          "fps",
+          "seed",
+          "timeout_s"
+        ],
+        "additionalProperties": false
+      },
+      "description": "Selected recipes, sorted by id."
+    }
+  },
+  "required": [
+    "schema_version",
+    "recipes"
+  ],
+  "additionalProperties": true,
+  "examples": [
+    {
+      "schema_version": 1,
+      "recipes": [
+        {
+          "id": "CoopTurn",
+          "name": "CoopTurn",
+          "variant": null,
+          "mode": null,
+          "tags": [
+            "coop"
+          ],
+          "description": "Four players each act once.",
+          "players": 4,
+          "explicit": false,
+          "fps": 30,
+          "seed": 1,
+          "timeout_s": 60,
+          "type": "Orchard.Trials.CoopTurn"
+        },
+        {
+          "id": "SlashHit[Attacker=Knight]@360p",
+          "name": "SlashHit",
+          "variant": "Attacker=Knight",
+          "mode": "360p",
+          "tags": [
+            "combat"
+          ],
+          "description": "A knight slashes a goblin.",
+          "players": 1,
+          "explicit": false,
+          "fps": 30,
+          "seed": 1,
+          "timeout_s": 30
+        }
+      ]
+    }
+  ]
+}

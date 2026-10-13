@@ -1,0 +1,109 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jand-s.github.io/scion/schemas/v1/cli/trial-loop.schema.json",
+  "title": "trial loop output",
+  "description": "Output of dotnet scion trial loop when the loop stops.",
+  "allOf": [
+    {
+      "$ref": "https://jand-s.github.io/scion/schemas/v1/envelope.schema.json"
+    },
+    {
+      "type": "object",
+      "properties": {
+        "command": {
+          "const": "trial loop"
+        },
+        "run": {
+          "type": "string",
+          "description": "Loop folder."
+        },
+        "id": {
+          "type": "string",
+          "description": "Recipe or match id."
+        },
+        "span": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Span played, for example 3..5."
+        },
+        "passes": {
+          "type": "integer",
+          "description": "Passes played."
+        },
+        "injects": {
+          "type": "integer",
+          "description": "Injections applied."
+        },
+        "last": {
+          "type": "object",
+          "description": "The last pass.",
+          "properties": {
+            "ok": {
+              "type": "boolean",
+              "description": "Last pass passed."
+            },
+            "hash": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "Hash."
+            },
+            "frames": {
+              "type": "integer",
+              "description": "Frames."
+            },
+            "window": {
+              "type": "string",
+              "description": "window.png of the last pass."
+            }
+          },
+          "required": [
+            "ok",
+            "hash",
+            "frames",
+            "window"
+          ],
+          "additionalProperties": false
+        },
+        "stopped_by": {
+          "enum": [
+            "passes",
+            "stop",
+            "interrupt",
+            "error"
+          ]
+        }
+      },
+      "required": [
+        "run",
+        "id",
+        "passes",
+        "last",
+        "stopped_by"
+      ]
+    }
+  ],
+  "examples": [
+    {
+      "schema_version": 1,
+      "command": "trial loop",
+      "ok": true,
+      "run": "/Users/alex/orchard/.scion/loops/20261011-170000",
+      "id": "goblin-ambush",
+      "span": "3..5",
+      "passes": 14,
+      "injects": 5,
+      "last": {
+        "ok": true,
+        "hash": "3C4D5E6F708192A3",
+        "frames": 120,
+        "window": "p14/window.png"
+      },
+      "stopped_by": "stop",
+      "next_step": "promote the graft when it feels right: dotnet scion graft promote CritShake"
+    }
+  ]
+}
