@@ -24,7 +24,7 @@ These rules are also at the top of [/scion/llms.txt](/scion/41664431a8f5/llms.tx
 
 - Run `dotnet scion doctor` first. Exit 0 means usable; exit 3 means fix what `error.hint` says.
 - Every command prints one JSON object on stdout (`schema_version`, `ok`, `next_step`, `error` on exits 2 and 3). Parse it; do not scrape text. Follow `next_step`.
-- Exit codes: 0 ok, 1 a check failed, 2 usage error (see `did_you_mean`), 3 environment. Next actions: https://jand-s.github.io/scion/41664431a8f5/agents/next-action.md
+- Exit codes: 0 ok, 1 a check failed, 2 usage error (see `did_you_mean`), 3 environment. Next actions: `https://jand-s.github.io/scion/41664431a8f5/agents/next-action.md`
 - You may approve only `new` baselines (`trial approve --new --reason "..."`). Never approve `changed`, `stale` or `px_changed`, and never edit `scion/baselines/` by hand: ask a person.
 - Read `report.md` only for failed or changed recipes; open images only when pixels changed or the task is visual.
 

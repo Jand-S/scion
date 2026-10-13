@@ -8,7 +8,7 @@ Docs version: 1.0.0. Every page below is Markdown. Append `.md` to any page URL 
 
 - Run `dotnet scion doctor` first. Exit 0 means usable; exit 3 means fix what `error.hint` says.
 - Every command prints one JSON object on stdout (`schema_version`, `ok`, `next_step`, `error` on exits 2 and 3). Parse it; do not scrape text. Follow `next_step`.
-- Exit codes: 0 ok, 1 a check failed, 2 usage error (see `did_you_mean`), 3 environment. Next actions: https://jand-s.github.io/scion/41664431a8f5/agents/next-action.md
+- Exit codes: 0 ok, 1 a check failed, 2 usage error (see `did_you_mean`), 3 environment. Next actions: `https://jand-s.github.io/scion/41664431a8f5/agents/next-action.md`
 - You may approve only `new` baselines (`trial approve --new --reason "..."`). Never approve `changed`, `stale` or `px_changed`, and never edit `scion/baselines/` by hand: ask a person.
 - Read `report.md` only for failed or changed recipes; open images only when pixels changed or the task is visual.
 
@@ -149,46 +149,45 @@ Docs version: 1.0.0. Every page below is Markdown. Append `.md` to any page URL 
 - [SCN120-SCN131](https://jand-s.github.io/scion/41664431a8f5/reference/diagnostics/builds-and-injection.md): Build guard and injection diagnostics - slots on IL2CPP, test defines in a final build, and graft DLLs built for another build or ABI.
 - [SCN201-SCN203](https://jand-s.github.io/scion/41664431a8f5/reference/diagnostics/trials.md): Trials diagnostics - recipes that cannot be created, invalid adapters, and two adapters claiming the same recipe type.
 - [SCN301-SCN307](https://jand-s.github.io/scion/41664431a8f5/reference/diagnostics/determinism.md): Determinism scan findings - redirected reads and creations, wall-clock reads, threads, unordered collections, hash-code seeds and Guids.
-- [run-folder](https://jand-s.github.io/scion/41664431a8f5/reference/files/run-folder.md): Page in progress.
-- [run-json](https://jand-s.github.io/scion/41664431a8f5/reference/files/run-json.md): Page in progress.
-- [result-json](https://jand-s.github.io/scion/41664431a8f5/reference/files/result-json.md): Page in progress.
-- [tables](https://jand-s.github.io/scion/41664431a8f5/reference/files/tables.md): Page in progress.
-- [telemetry-jsonl](https://jand-s.github.io/scion/41664431a8f5/reference/files/telemetry-jsonl.md): Page in progress.
-- [report-md](https://jand-s.github.io/scion/41664431a8f5/reference/files/report-md.md): Page in progress.
-- [recipes-json](https://jand-s.github.io/scion/41664431a8f5/reference/files/recipes-json.md): Page in progress.
-- [raw-frames](https://jand-s.github.io/scion/41664431a8f5/reference/files/raw-frames.md): Page in progress.
-- [summary](https://jand-s.github.io/scion/41664431a8f5/reference/files/summary.md): Page in progress.
-- [baselines](https://jand-s.github.io/scion/41664431a8f5/reference/files/baselines.md): Page in progress.
-- [scion-build-json](https://jand-s.github.io/scion/41664431a8f5/reference/files/scion-build-json.md): Page in progress.
-- [control-json](https://jand-s.github.io/scion/41664431a8f5/reference/files/control-json.md): Page in progress.
-- [inject-report](https://jand-s.github.io/scion/41664431a8f5/reference/files/inject-report.md): Page in progress.
-- [evals](https://jand-s.github.io/scion/41664431a8f5/reference/files/evals.md): Page in progress.
-- [manifest](https://jand-s.github.io/scion/41664431a8f5/reference/files/manifest.md): Page in progress.
-- [judge-data](https://jand-s.github.io/scion/41664431a8f5/reference/files/judge-data.md): Page in progress.
-- [control-protocol](https://jand-s.github.io/scion/41664431a8f5/reference/control-protocol.md): Page in progress.
-- [schemas](https://jand-s.github.io/scion/41664431a8f5/reference/schemas.md): Page in progress.
-- [glossary](https://jand-s.github.io/scion/41664431a8f5/reference/glossary.md): Page in progress.
-- [api](https://jand-s.github.io/scion/41664431a8f5/reference/api.md): Page in progress.
-- [grafts](https://jand-s.github.io/scion/41664431a8f5/reference/api/grafts.md): Page in progress.
-- [injection](https://jand-s.github.io/scion/41664431a8f5/reference/api/injection.md): Page in progress.
-- [determinism](https://jand-s.github.io/scion/41664431a8f5/reference/api/determinism.md): Page in progress.
-- [recipes](https://jand-s.github.io/scion/41664431a8f5/reference/api/recipes.md): Page in progress.
-- [adapters](https://jand-s.github.io/scion/41664431a8f5/reference/api/adapters.md): Page in progress.
-- [session](https://jand-s.github.io/scion/41664431a8f5/reference/api/session.md): Page in progress.
-- [checks](https://jand-s.github.io/scion/41664431a8f5/reference/api/checks.md): Page in progress.
-- [fx](https://jand-s.github.io/scion/41664431a8f5/reference/api/fx.md): Page in progress.
-- [testing](https://jand-s.github.io/scion/41664431a8f5/reference/api/testing.md): Page in progress.
-- [compare](https://jand-s.github.io/scion/41664431a8f5/reference/api/compare.md): Page in progress.
-- [editor](https://jand-s.github.io/scion/41664431a8f5/reference/api/editor.md): Page in progress.
-- [specs](https://jand-s.github.io/scion/41664431a8f5/reference/api/specs.md): Page in progress.
-- [core](https://jand-s.github.io/scion/41664431a8f5/reference/api/core.md): Page in progress.
+- [The run folder](https://jand-s.github.io/scion/41664431a8f5/reference/files/run-folder.md): The folder tree a trial run writes - per-copy outputs, per-recipe and per-round files, CLI summaries and diffs - with one line per file.
+- [run.json](https://jand-s.github.io/scion/41664431a8f5/reference/files/run-json.md): The per-process record a test player writes at start and rewrites at the end - build, machine, arguments, shard, ids, timing, exit code and error.
+- [result.json](https://jand-s.github.io/scion/41664431a8f5/reference/files/result-json.md): The verdict of one recipe round - ok, error, state and pixel hashes, frames, checks, probes, images, masks and timing.
+- [results.tsv, frames.tsv, determinism.tsv](https://jand-s.github.io/scion/41664431a8f5/reference/files/tables.md): The tab-separated tables a test player writes - one line per recipe round, one line per captured frame, and one line per round comparison.
+- [telemetry.jsonl](https://jand-s.github.io/scion/41664431a8f5/reference/files/telemetry-jsonl.md): The per-recipe event log - one JSON line per log message, note, mark, probe, check, fault, game event, Fx call and injection.
+- [report.md](https://jand-s.github.io/scion/41664431a8f5/reference/files/report-md.md): The human and agent readable report of a process and of each recipe - results, failed checks, images, timeline, notes and log errors.
+- [recipes.json](https://jand-s.github.io/scion/41664431a8f5/reference/files/recipes-json.md): The list of selected and expanded recipe ids a test player writes with -scion-list, with variants, modes, tags, players and settings.
+- [Raw frames](https://jand-s.github.io/scion/41664431a8f5/reference/files/raw-frames.md): The raw frame files kept with -scion-raw - the exact bytes each frame hash was computed from, and raw.json with size, layout and row order.
+- [summary.json, summary.tsv, compare.json](https://jand-s.github.io/scion/41664431a8f5/reference/files/summary.md): The CLI's run summaries - the full trial run envelope with copies, one line per id round copy, and the per-id comparison with baselines.
+- [baseline.json and platform.json](https://jand-s.github.io/scion/41664431a8f5/reference/files/baselines.md): The approved state of a recipe id - hash, frames and approval in baseline.json, and per platform the frame hashes, images and tolerance.
+- [scion-build.json](https://jand-s.github.io/scion/41664431a8f5/reference/files/scion-build-json.md): The description of a player build written next to it - build id, git commit, Unity, backend, defines, ABI, player path, slots and recipe names.
+- [control.json and live files](https://jand-s.github.io/scion/41664431a8f5/reference/files/control-json.md): The connection file a copy writes when its control server listens - pid, port, token, build, ABI, output and role - in its folder and in the live folder.
+- [InjectReport JSON](https://jand-s.github.io/scion/41664431a8f5/reference/files/inject-report.md): The JSON form of an injection result - version, ok, pending, bound slots, errors and the recycle flag - returned per copy by graft inject.
+- [eval-in.json, eval-out.json, evals.tsv](https://jand-s.github.io/scion/41664431a8f5/reference/files/evals.md): The files evaluators exchange with the CLI - blind questions and items in, answers out, and the scores table - in the judge's question and answer shapes.
+- [scion.manifest.json and GRAFTS.md](https://jand-s.github.io/scion/41664431a8f5/reference/files/manifest.md): The generated inventory of anchors, grafts, tunables, recipes and probes, as JSON for tools and as Markdown tables for people.
+- [Judge data files](https://jand-s.github.io/scion/41664431a8f5/reference/files/judge-data.md): Where the judge keeps heads, questions, votes and gold sets, and the shape of a head file and a vote line.
+- [Control protocol](https://jand-s.github.io/scion/41664431a8f5/reference/control-protocol.md): The local TCP protocol of a running test build - transport, token, execution model, every op with its arguments and answers, and every error.
+- [Glossary](https://jand-s.github.io/scion/41664431a8f5/reference/glossary.md): Short definitions of every Scion term, from anchor and slot to verdict, warm copy, multiverse and adoption level, with links to the pages that explain them.
+- [C# API](https://jand-s.github.io/scion/41664431a8f5/reference/api.md): Scion's public C# API by assembly, namespace and scripting define, with one line per type and a link to its reference.
+- [Grafts API](https://jand-s.github.io/scion/41664431a8f5/reference/api/grafts.md): The attributes and types grafts use - Before, After, Anchor, AnchorScope, Call, Call of T, Faults, Anchors, WallClock and ScionPromoted.
+- [Injection API](https://jand-s.github.io/scion/41664431a8f5/reference/api/injection.md): Injection and InjectReport - load draft graft DLLs into a running test build, restore promoted grafts, disable slots and read the result.
+- [Determinism API](https://jand-s.github.io/scion/41664431a8f5/reference/api/determinism.md): Clock, VirtualScreen, VirtualWaitForSecondsRealtime, SeededRandom, Determinism and NetClock - the virtual time, screen and random of test builds.
+- [Recipes API](https://jand-s.github.io/scion/41664431a8f5/reference/api/recipes.md): TrialRecipe with its data, overrides and masks, the Vary attribute, TrialArgs, TrialModes, ITrialModeAware and the CapturedMatch recipe.
+- [Adapters API](https://jand-s.github.io/scion/41664431a8f5/reference/api/adapters.md): ITrialAdapter, TrialAdapter of TRecipe, the TrialAdapter attribute, static trials and views, match capture and the mosaic adapter interface.
+- [Session API](https://jand-s.github.io/scion/41664431a8f5/reference/api/session.md): The TrialSession class with every property and method signature, and the TrialRole struct for co-op hosts and clients.
+- [Checks API](https://jand-s.github.io/scion/41664431a8f5/reference/api/checks.md): TrialChecks for declared checks and gates, ITrialCheck and its attribute for custom checks, CheckResult, CheckStatus and FrameView.
+- [Fx API](https://jand-s.github.io/scion/41664431a8f5/reference/api/fx.md): The Fx facade and the IFxSink interface the game implements - sound, shake, text, flash, hit-stop, VFX and marks.
+- [Testing API](https://jand-s.github.io/scion/41664431a8f5/reference/api/testing.md): The Scion.Testing NuGet package - Scion.Runtime for plain .NET, FxRecorder and FxCall - for unit tests of grafts without Unity.
+- [Compare API](https://jand-s.github.io/scion/41664431a8f5/reference/api/compare.md): ImageTolerance and the Scion.Compare library - Image, NormRect, PixelRect, Mask, ImageDiff, DiffStatus and DiffResult - for perceptual image comparison.
+- [Editor API](https://jand-s.github.io/scion/41664431a8f5/reference/api/editor.md): ScionBuild entry points for test and final players from scripts, batchmode and the open editor, and the ScionBuildEntry stub the CLI uses.
+- [Specs API](https://jand-s.github.io/scion/41664431a8f5/reference/api/specs.md): TrialSpec, SpecBuilder with balance, visual, judge, metamorphic and curve parts, the Gates ids and the Metamorphic properties.
+- [Core API](https://jand-s.github.io/scion/41664431a8f5/reference/api/core.md): The engine-free rules API - RuleModifier and Stage, Tunable and Probe attributes, ISimulation with bots and capabilities, and Tunables.
 
 ## Cookbook
 
-- [ci](https://jand-s.github.io/scion/41664431a8f5/cookbook/ci.md): Page in progress.
-- [hud-states](https://jand-s.github.io/scion/41664431a8f5/cookbook/hud-states.md): Page in progress.
-- [tune-hit-feel](https://jand-s.github.io/scion/41664431a8f5/cookbook/tune-hit-feel.md): Page in progress.
-- [level-rooms](https://jand-s.github.io/scion/41664431a8f5/cookbook/level-rooms.md): Page in progress.
+- [Run Scion in CI](https://jand-s.github.io/scion/41664431a8f5/cookbook/ci.md): GitHub Actions with a dotnet job for analyzers, graft checks and generated files, a Unity job for trials, a baseline guard and a nightly batch.
+- [Capture every HUD state](https://jand-s.github.io/scion/41664431a8f5/cookbook/hud-states.md): A static trial over 20 HUD states at two resolutions, with gates for overflow, contrast and grid, a contact sheet, and judge ranking.
+- [Tune a hit effect](https://jand-s.github.io/scion/41664431a8f5/cookbook/tune-hit-feel.md): Tune a critical hit's feel end to end - live loop, draft graft, motion metrics, presets, a judge duel, promotion and approval.
+- [Audit level rooms](https://jand-s.github.io/scion/41664431a8f5/cookbook/level-rooms.md): Capture every room template in two views with a static trial, probe props and doors, fail on custom gates, and recapture only changed rooms.
 
 ## Machine-readable
 
@@ -211,9 +210,9 @@ Docs version: 1.0.0. Every page below is Markdown. Append `.md` to any page URL 
 
 ## Optional
 
-- [troubleshooting](https://jand-s.github.io/scion/41664431a8f5/help/troubleshooting.md): Page in progress.
-- [faq](https://jand-s.github.io/scion/41664431a8f5/help/faq.md): Page in progress.
-- [changelog](https://jand-s.github.io/scion/41664431a8f5/help/changelog.md): Page in progress.
-- [license](https://jand-s.github.io/scion/41664431a8f5/help/license.md): Page in progress.
-- [architecture](https://jand-s.github.io/scion/41664431a8f5/contribute/architecture.md): Page in progress.
-- [compatibility](https://jand-s.github.io/scion/41664431a8f5/contribute/compatibility.md): Page in progress.
+- [Troubleshooting](https://jand-s.github.io/scion/41664431a8f5/help/troubleshooting.md): Symptoms, causes and fixes for common problems - copies that do not start, stale verdicts, editor_open, missing slots, IL2CPP and empty captures.
+- [FAQ](https://jand-s.github.io/scion/41664431a8f5/help/faq.md): Short answers about shipping, Mono and IL2CPP, dependencies, platforms, Harmony and MonoMod, agent costs, the license and offline use.
+- [Changelog](https://jand-s.github.io/scion/41664431a8f5/help/changelog.md): Notable changes to Scion by version, in Keep a Changelog format, starting with the 1.0.0 release grouped by module.
+- [License](https://jand-s.github.io/scion/41664431a8f5/help/license.md): Scion is licensed under Apache-2.0, with a NOTICE file, third-party notices for Mono.Cecil, and license notes for the judge's models.
+- [Architecture](https://jand-s.github.io/scion/41664431a8f5/contribute/architecture.md): How Scion is built - runtime, editor, weaver and tools, the data flow from build to verdict, the generated ABI, and how the package is tested.
+- [Versioning and compatibility](https://jand-s.github.io/scion/41664431a8f5/contribute/compatibility.md): What Scion's version numbers promise for the C# API, the weaver ABI, player flags, file formats, CLI output, SCN ids and the CLI and package pairing.

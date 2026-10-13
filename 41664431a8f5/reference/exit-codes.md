@@ -7,7 +7,7 @@ markdown_url: https://jand-s.github.io/scion/41664431a8f5/reference/exit-codes.m
 version: 1.0.0
 related:
   - https://jand-s.github.io/scion/41664431a8f5/reference/errors.md
-  - https://jand-s.github.io/scion/41664431a8f5/cli/index.md
+  - https://jand-s.github.io/scion/41664431a8f5/cli.md
   - https://jand-s.github.io/scion/41664431a8f5/agents/next-action.md
 ---
 

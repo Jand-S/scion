@@ -6,30 +6,285 @@
 
 > Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
 
-# troubleshooting
+# Troubleshooting
 
-_This page is still being written._
+Each entry starts from what you see, names the usual cause and gives the fix. Run `dotnet scion doctor --level 3`
+first: it catches most setup problems with a hint. Error codes link to [Error and warning codes](/scion/41664431a8f5/reference/errors/).
+
+## No copies start
+
+**Symptom.** `trial run` ends at once with `build_not_found` or `player_crashed`.
+
+**Cause.** No test build at the discovered path, a build from another machine (paths in `scion-build.json`), or a
+macOS quarantine flag on a downloaded build.
+
+**Fix.** `dotnet scion build test`; or `--build <path>`; on macOS, `xattr -dr com.apple.quarantine <app>`.
+
+## Every verdict is stale
+
+**Symptom.** All ids are `stale` after switching machines or Unity versions.
+
+**Cause.** Images are compared per platform (OS, graphics API, size, capture), and the baseline has no folder for
+this platform, or Unity, fps or player args changed.
+
+**Fix.** The hash is still compared, so `stale` with the same hash is safe. A person approves once on the new
+platform: `dotnet scion trial approve --changed --reason "baselines for linux-vulkan"`.
+
+## editor_open when building
+
+**Symptom.** `build test` exits 3 with `editor_open`.
+
+**Cause.** The project is open in Unity and `com.unity.pipeline` is not installed, so the CLI cannot build through the
+editor and cannot start a second one on the same project.
+
+**Fix.** Close the editor, or install the pipeline package and build again.
+
+## SCN113 when injecting
+
+**Symptom.** `graft inject` reports `SCN113: HitPresenter.PlayCritical has no slot in this build.`
+
+**Cause.** The test build has no slot for that method: no promoted graft on it and no `AnchorScope` covering it.
+
+**Fix.** Add `[assembly: AnchorScope(typeof(HitPresenter))]`, `dotnet scion build test`, inject again.
+
+## SCN120 on a test build
+
+**Symptom.** The build fails with `SCION_SLOTS needs a JIT backend (Mono)`.
+
+**Cause.** The test defines were set in Player Settings and the project builds with IL2CPP.
+
+**Fix.** Remove the defines from Player Settings; build tests with `dotnet scion build test`, which sets Mono and the
+defines only for the build.
+
+## Empty captures in batchmode
+
+**Symptom.** Exit 3 `capture_broken`, or black `window.png`.
+
+**Cause.** A player started by hand with `-batchmode` and without offscreen capture, or a camera that renders only
+to the screen.
+
+**Fix.** Let the CLI start players, or add `-scion-offscreen`. Cameras with a target texture of their own need to be
+captured with a `TrialView`.
+
+## Ports already in use
+
+**Symptom.** `no_free_port`, or co-op clients that never connect.
+
+**Cause.** Another server holds ports, or `port_arg` is missing, so every group uses the game's default port.
+
+**Fix.** Set `trials.port_arg` to the game's port flag; close stray servers (`dotnet scion trial serve --stop`).
+
+## px_unstable warnings
+
+**Symptom.** `px_unstable` and `px_changed` verdicts that come and go.
+
+**Cause.** Something visual is not deterministic: particles started before the recipe, an animator on unscaled real
+time, a shader reading `_Time` from a non-redirected source.
+
+**Fix.** Keep `Control = DeterminismControl.All`; run `--rounds 3 --check` and read `determinism.tsv`; mask only what is
+random on purpose.
+
+## Frame count off by one
+
+**Symptom.** `frame_jitter: ["CoopTurn 212/213"]`.
+
+**Cause.** The Netcode tick runs on the real clock.
+
+**Fix.** Turn on `SCION_NETCLOCK` with `netclock_assemblies` ([Netcode clock](/scion/41664431a8f5/determinism/netclock/)).
+
+## Low memory
+
+**Symptom.** `low_memory` warnings, copies killed by the OS, `player_crashed`.
+
+**Cause.** `-j` above what free memory allows (about 550 MB per copy for Orchard).
+
+**Fix.** Lower `-j` to `doctor`'s `suggested_copies`, or use warm copies or the mosaic.
+
+## A recipe passes alone and fails in the queue
+
+**Symptom.** `trial run SlashHit` passes; `trial run` fails it.
+
+**Cause.** State leaks from an earlier recipe: a static, `Time.timeScale`, a pool, a scene left loaded.
+
+**Fix.** Reset it in the adapter's `Teardown` or on `TrialSession.Boundary`.
+
+## See also
+
+- [Error and warning codes](/scion/41664431a8f5/reference/errors/)
+- [What to do next](/scion/41664431a8f5/agents/next-action/)
+- [doctor](/scion/41664431a8f5/cli/doctor/)
 
 ---
 
 > Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
 
-# faq
+# FAQ
 
-_This page is still being written._
+Short answers to the questions people ask first. Each links to the page with the details.
+
+## Questions
+
+### Does Scion ship to players
+
+Only as direct calls. The final build calls promoted grafts directly (call mode): no slots, no injection, no trials,
+no lab code, no reflection. A final build with test defines fails (SCN121). See [Build modes](/scion/41664431a8f5/grafts/build-modes/).
+
+### Why does the test build need Mono
+
+Slots are replaced while the game runs, which needs a JIT. IL2CPP compiles ahead of time. The test build is Mono; the
+final build can be IL2CPP.
+
+### Do I need Netcode or URP
+
+No. Neither is a dependency. Scion knows how to redirect their time reads when you list them in `ScionSettings.json`,
+and co-op trials work with any networking that takes command-line flags.
+
+### Which platforms
+
+The editor and the CLI run on macOS, Windows and Linux. Test builds run on the desktop platforms. See
+[Requirements](/scion/41664431a8f5/start/requirements/).
+
+### Why not Harmony or MonoMod
+
+They patch at run time, which IL2CPP does not support, and their errors appear only when the code runs. Scion weaves
+at compile time: errors come with file and line, and final builds have plain direct calls.
+
+### Can grafts change rules
+
+No. Grafts are visual; rules change in the core through `RuleModifier<T>`. See
+[Grafts are visual only](/scion/41664431a8f5/grafts/visual-only/).
+
+### How much does an agent spend
+
+The CLI returns compact JSON (about 1.5 KB) with a `next_step`, and images are paths, not content, so an agent reads
+only what it needs. The project index is under 2 KB. The judge runs locally and costs nothing per image.
+
+### Does Scion call AI models
+
+No. The CLI, the MCP server and the judge never call a hosted model. Agent evaluators answer through files.
+
+### Does it work offline
+
+Yes. After installing the package, the CLI and (optionally) the judge's eye model, nothing needs the network.
+
+### What is the license
+
+Apache-2.0. See [License](/scion/41664431a8f5/help/license/).
+
+### Where do I report a bug
+
+On the GitHub repository's issues, with the output of `dotnet scion doctor --level 3` and the run's `report.md`.
+
+## See also
+
+- [What is Scion](/scion/41664431a8f5/start/overview/)
+- [Requirements](/scion/41664431a8f5/start/requirements/)
+- [License](/scion/41664431a8f5/help/license/)
 
 ---
 
 > Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
 
-# changelog
+# Changelog
 
-_This page is still being written._
+All notable changes to Scion are listed here, newest first, in the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
+format. Scion follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html); what counts as a breaking change is
+on [Versioning and compatibility](/scion/41664431a8f5/contribute/compatibility/). The same entries are in the package's
+`CHANGELOG.md`.
+
+## [1.0.0] - 2026-10-13
+
+First stable release.
+
+### Grafts
+
+- `[Before]` and `[After]` with `Priority` and `Observe`; compile-time weaver (ILPostProcessor on Mono.Cecil) with call
+  mode for final builds and slot mode for test builds.
+- `ref Call` and `ref Call<T>`: `Skip`, `Return`, `Result`, `Skipped`, `Tag`.
+- Anchors: `[Anchor(Id, Doc)]`, `[assembly: AnchorScope]`, `Anchors.Id`, `anchor list` and `anchor show`.
+- Live injection: `graft build`, `graft inject` (merge or isolate), `graft restore`, `graft disable`, `InjectReport`.
+- Draft lifecycle: `graft new`, `graft check`, `graft promote`, `graft watch`.
+- `Faults`, the `Fx` facade with `IFxSink`, `[Tunable]` with presets and blends.
+- Diagnostics SCN101 to SCN114, SCN120, SCN121, SCN130, SCN131.
+
+### Trials
+
+- Recipes, adapters, `TrialSession`, checks and `ITrialCheck`; variants with `[Vary]` and `Variants()`, modes and
+  seed ranges.
+- Static trials with views and sheets; co-op groups of 1 to 4 players; captured matches (F9); the mosaic.
+- Parallel copies with shards, warm copies with `trial serve`, `trial run`, `show`, `approve`, `diff`, `eval`, `loop`.
+- Baselines per platform with perceptual image comparison, masks and learned unstable masks.
+- Specs (`TrialSpec`) with balance, visual, judge, metamorphic and curve parts.
+- Diagnostics SCN201 to SCN203.
+
+### Determinism
+
+- Virtual clock, screen, random and real-time waits in test builds; `[WallClock]`; `DeterminismControl` for
+  particles, animators, UI Toolkit and physics; `SCION_NETCLOCK`.
+- `--check`, `--jitter`, `determinism.tsv`; `scion diagnose` with SCN301 to SCN307 and adoption levels.
+
+### Evaluation and the Judge
+
+- Gates: text overflow, UI grid, contrast, photosensitivity, regression, telemetry versus pixels, nothing changed,
+  palette.
+- The motion pack and metrics; blind A/B comparisons; file-based evaluators.
+- The Judge: eyes and heads, `judge list`, `show`, `new`, `vote`, `train`, `run`.
+
+### Exploration
+
+- The multiverse, the live loop, bisect, metamorphic tests, the rare-moment hunter, guided search, balance with the
+  simulator.
+
+### Standard and core
+
+- `Scion.Core`: `RuleModifier<T>`, `Stage`, `ISimulation`, bots and capabilities; analyzers SCN001 to SCN005.
+
+### Tools and agents
+
+- `dotnet scion` CLI with JSON envelopes and schemas; `init`, `new`, `uninstall`, `doctor`, `build`, `index`,
+  `guard`, `gen`, `mcp`.
+- Claude Code plugin with the skill and hooks; MCP server with docs tools; `llms.txt` and Markdown pages.
+- `Scion.Testing`, `Scion.Compare`, `Scion.Specs` and `Scion.Core` on NuGet.
+
+## See also
+
+- [Versioning and compatibility](/scion/41664431a8f5/contribute/compatibility/)
+- [Install](/scion/41664431a8f5/start/install/)
 
 ---
 
 > Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
 
-# license
+# License
 
-_This page is still being written._
+Scion is open source under the Apache License, Version 2.0. The package, the CLI and the NuGet packages carry the same
+license and the same `NOTICE`. Third-party code and models keep their own licenses.
+
+## Scion
+
+- License: Apache-2.0 (`LICENSE` in the package).
+- Notice: `NOTICE` in the package, to keep with redistributions.
+- You may use Scion in commercial games. Final builds contain only Scion's runtime attributes and generated
+  dispatchers, under the same license.
+
+## Third-party software
+
+| Component | Used by | License |
+|---|---|---|
+| Mono.Cecil (`com.unity.nuget.mono-cecil`) | The weaver, the CLI | MIT |
+| Roslyn (`Microsoft.CodeAnalysis`) | Analyzers, `graft check`, `graft build` | MIT |
+
+## Models
+
+The judge's eye models are downloaded separately and keep their licenses; check each model card before
+redistributing heads trained on them ([Models and licenses](/scion/41664431a8f5/judge/models/)). Heads trained on your own votes and
+captures are yours.
+
+## Documentation
+
+This documentation is part of the package and is licensed under Apache-2.0 too.
+
+## See also
+
+- [Models and licenses](/scion/41664431a8f5/judge/models/)
+- [FAQ](/scion/41664431a8f5/help/faq/)

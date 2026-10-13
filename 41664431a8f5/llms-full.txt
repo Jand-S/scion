@@ -932,7 +932,7 @@ These rules are also at the top of [/scion/llms.txt](/scion/41664431a8f5/llms.tx
 
 - Run `dotnet scion doctor` first. Exit 0 means usable; exit 3 means fix what `error.hint` says.
 - Every command prints one JSON object on stdout (`schema_version`, `ok`, `next_step`, `error` on exits 2 and 3). Parse it; do not scrape text. Follow `next_step`.
-- Exit codes: 0 ok, 1 a check failed, 2 usage error (see `did_you_mean`), 3 environment. Next actions: https://jand-s.github.io/scion/41664431a8f5/agents/next-action.md
+- Exit codes: 0 ok, 1 a check failed, 2 usage error (see `did_you_mean`), 3 environment. Next actions: `https://jand-s.github.io/scion/41664431a8f5/agents/next-action.md`
 - You may approve only `new` baselines (`trial approve --new --reason "..."`). Never approve `changed`, `stale` or `px_changed`, and never edit `scion/baselines/` by hand: ask a person.
 - Read `report.md` only for failed or changed recipes; open images only when pixels changed or the task is visual.
 
@@ -7276,11 +7276,14 @@ Switching eyes recomputes embeddings (10,000 images take about 5 to 10 minutes) 
 
 ## Hardware
 
-| Machine | Works |
+The judge runs the eyes with ONNX Runtime, on the GPU when one is available:
+
+| Machine | Runs on |
 |---|---|
-| Apple silicon (M1 or later) | Yes, on the GPU through Metal. |
-| Windows or Linux with an NVIDIA GPU (8 GB) | Yes, through CUDA. |
-| CPU only | Yes, about 5 to 10 times slower. |
+| macOS on Apple silicon | GPU and Neural Engine through CoreML. |
+| Windows with a DirectX 12 GPU | GPU through DirectML. |
+| Linux with an NVIDIA GPU | GPU through CUDA. |
+| Any machine without a supported GPU | CPU, about 5 to 10 times slower. |
 
 ## Where the data lives
 
@@ -11656,8 +11659,8 @@ Nothing to fix; it shows what the virtual clock covers.
 **Message:** `{0} reads the wall clock ({1}), which is not redirected.` **Hint:** `Use Time or Clock, or mark the
 method [WallClock] if it must be real time.`
 
-**Cause.** `Stopwatch`, `Environment.TickCount`, `DateTime.Now` in a `[WallClock]`-free path not covered, or a native
-time call.
+**Cause.** `Stopwatch`, `Environment.TickCount`, process times or a native time call: wall-clock sources the weaver
+does not redirect.
 
 **Fix.**
 
@@ -11740,342 +11743,3639 @@ Determinism.SeedFor).`
 
 > Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
 
-# run-folder
+# The run folder
 
-_This page is still being written._
+Every `dotnet scion trial run` creates one run folder under `trials.out`, named by its start time. Inside, each copy
+of the test build has its own folder `q<i>/` (the player's `-scion-out`), with one folder per id and round; the CLI
+adds its summaries and diffs at the top. The CLI never writes inside a copy's folder.
 
----
+## Location
 
-> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+```text
+<trials.out>/<yyyyMMdd-HHmmss>/        default .scion/runs/20261011-143200/
+```
 
-# run-json
+A player started by hand writes the `q<i>/` part directly into its `-scion-out`.
 
-_This page is still being written._
+## Written by and read by
 
----
+| Part | Written by | Read by |
+|---|---|---|
+| `q<i>/` and below | The test player | The CLI, agents, people |
+| `summary.*`, `compare.json`, `diff/`, `evals.tsv`, `judge.json` | The CLI | Agents, people, CI |
 
-> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+## Schema
 
-# result-json
+Each JSON file has its own schema ([JSON Schemas](/scion/41664431a8f5/reference/schemas/)); TSV files follow the rules in
+[results.tsv, frames.tsv, determinism.tsv](/scion/41664431a8f5/reference/files/tables/).
 
-_This page is still being written._
+## Fields
 
----
+```text
+20261011-143200/
+  summary.json  summary.tsv  compare.json      CLI: verdicts and the full envelope
+  evals.tsv  eval-in.json  eval-out.json       trial eval
+  judge.json                                   judge run
+  diff/<IdDir>/r<n>/<artifact>.diff.png        heatmaps against the baseline
+  diff/<IdDir>/r<n>/<artifact>.grid.png        trial show --grid
+  q0/                                          one copy (the player's -scion-out)
+    run.json  results.tsv  report.md  player.log
+    recipes.json                               only with -scion-list
+    control.json                               only with -scion-control
+    determinism.tsv                            only with -scion-check
+    SlashHit/r1/
+      result.json  report.md  frames.tsv  telemetry.jsonl  log.txt
+      window.png  context.png  before.png      stills by name
+      sheet.png                                static trials
+      motion-diff.png  tracks.png  metrics.json  preview.gif  idmask/   with --motion
+      frames/0000.png ...                      with --frames
+      frames/0000.raw ...  frames/raw.json     with --raw
+```
 
-> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+| File | Page |
+|---|---|
+| `run.json` | [run.json](/scion/41664431a8f5/reference/files/run-json/) |
+| `result.json` | [result.json](/scion/41664431a8f5/reference/files/result-json/) |
+| `results.tsv`, `frames.tsv`, `determinism.tsv` | [results.tsv, frames.tsv, determinism.tsv](/scion/41664431a8f5/reference/files/tables/) |
+| `telemetry.jsonl` | [telemetry.jsonl](/scion/41664431a8f5/reference/files/telemetry-jsonl/) |
+| `report.md` | [report.md](/scion/41664431a8f5/reference/files/report-md/) |
+| `recipes.json` | [recipes.json](/scion/41664431a8f5/reference/files/recipes-json/) |
+| `frames/*.raw`, `raw.json` | [Raw frames](/scion/41664431a8f5/reference/files/raw-frames/) |
+| `summary.*`, `compare.json` | [summary.json, summary.tsv, compare.json](/scion/41664431a8f5/reference/files/summary/) |
+| `control.json` | [control.json and live files](/scion/41664431a8f5/reference/files/control-json/) |
+| `eval-*.json`, `evals.tsv` | [eval-in.json, eval-out.json, evals.tsv](/scion/41664431a8f5/reference/files/evals/) |
+| images and `metrics.json` | [Capture and outputs](/scion/41664431a8f5/trials/capture/), [The motion pack](/scion/41664431a8f5/evaluation/motion-pack/) |
 
-# tables
+`<IdDir>` is the id with every character outside `[A-Za-z0-9_.,=@#[]-]` replaced by `_`.
 
-_This page is still being written._
+## Example
 
----
+```sh
+ls .scion/runs/20261011-143200/q0/SlashHit/r1
+```
 
-> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+```text
+before.png  context.png  frames.tsv  log.txt  report.md  result.json  telemetry.jsonl  window.png
+```
 
-# telemetry-jsonl
+## Compatibility
 
-_This page is still being written._
-
----
-
-> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
-
-# report-md
-
-_This page is still being written._
-
----
-
-> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
-
-# recipes-json
-
-_This page is still being written._
-
----
-
-> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
-
-# raw-frames
-
-_This page is still being written._
-
----
-
-> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
-
-# summary
-
-_This page is still being written._
-
----
-
-> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
-
-# baselines
-
-_This page is still being written._
-
----
-
-> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
-
-# scion-build-json
-
-_This page is still being written._
+New files may be added in minor versions; existing names and places never change within 1.x. Tools should ignore
+files they do not know.
 
 ---
 
 > Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
 
-# control-json
+# run.json
 
-_This page is still being written._
+`run.json` describes one process of the test player: which build and Scion version, which machine, which arguments,
+which shard and role, which ids it selected, when it started and ended, and how it exited. It is written as soon as
+the flags are parsed (proving the output folder is writable) and rewritten at the end.
 
----
+## Location
 
-> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+`<scion-out>/run.json`, for a CLI run `<run>/q<i>/run.json`.
 
-# inject-report
+## Written by and read by
 
-_This page is still being written._
+Written by the test player. Read by the CLI (exit codes, errors, build checks), agents (on exit 2 or 3) and CI.
 
----
+## Schema
 
-> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+`https://jand-s.github.io/scion/41664431a8f5/schemas/v1/run.schema.json`
 
-# evals
+## Fields
 
-_This page is still being written._
+| Field | Type | Meaning |
+|---|---|---|
+| `schema_version` | int | 1. |
+| `scion` | string | Package version. |
+| `abi` | int | Weaver ABI. |
+| `build_id`, `git_commit`, `git_dirty` | string, string, bool | From `scion-build.json` beside the build; null when missing. |
+| `unity`, `backend` | string | Unity version; `mono` or `il2cpp`. |
+| `platform`, `size` | string, [w, h] | Platform id and capture size. |
+| `machine` | object | `os`, `cpu`, `cores`, `ram_mb`. |
+| `args` | string[] | The full command line. |
+| `shard`, `role`, `rounds`, `run_seed`, `mode`, `mosaic` | | The process's share and settings. |
+| `ids` | string[] | Selected ids after filters. |
+| `started_at`, `ended_at`, `wall_s` | | Timing; `ended_at` null until the end. |
+| `exit_code` | 0-3 or null | The process's exit code. |
+| `error` | object or null | `code`, `message`, `hint`, `did_you_mean` on exit 2 or 3. |
 
----
+## Example
 
-> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+<!-- validate: run -->
+```json
+{"schema_version":1,"scion":"1.0.0","abi":1,"build_id":"4c49a1e0b2f3","git_commit":"0ed3af7","git_dirty":false,"unity":"6000.3.25f1","backend":"mono","platform":"osx-metal-1280x720-offscreen","size":[1280,720],"machine":{"os":"macOS 26.5","cpu":"Apple M5","cores":10,"ram_mb":16384},"args":["-batchmode","-scion-trials","-scion-out","/Users/alex/orchard/.scion/runs/20261011-143200/q0","-scion-shard","0/6"],"shard":[0,6],"role":"host","rounds":2,"run_seed":1,"mode":null,"mosaic":null,"ids":["CoopTurn","FireballArea","KnightFalls","SlashHit"],"started_at":"2026-10-11T14:32:00Z","ended_at":"2026-10-11T14:32:27Z","wall_s":27.1,"exit_code":0,"error":null}
+```
 
-# manifest
+## Compatibility
 
-_This page is still being written._
-
----
-
-> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
-
-# judge-data
-
-_This page is still being written._
-
----
-
-> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
-
-# control-protocol
-
-_This page is still being written._
-
----
-
-> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
-
-# schemas
-
-_This page is still being written._
+Fields may be added in minor versions; `schema_version` changes only when a field changes meaning or is removed.
 
 ---
 
 > Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
 
-# glossary
+# result.json
 
-_This page is still being written._
+`result.json` is the verdict of one id in one round: whether it passed and why not, the state hash and pixel hash,
+the frame count, every check with its status, the last value of every probe, the images with their frames and marks,
+the masks and the timing. It is the contract between the test player, the CLI and the judge.
 
----
+## Location
 
-> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+`<scion-out>/<IdDir>/r<round>/result.json`.
 
-# api
+## Written by and read by
 
-_This page is still being written._
+Written by the test player after the recipe's teardown, with the final verdict. Read by the CLI (summaries,
+baselines), `trial show`, agents and the judge.
 
----
+## Schema
 
-> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+`https://jand-s.github.io/scion/41664431a8f5/schemas/v1/result.schema.json`
 
-# grafts
+## Fields
 
-_This page is still being written._
+| Field | Meaning |
+|---|---|
+| `id`, `name`, `variant`, `mode`, `round`, `role`, `arena` | Which instance this is. |
+| `ok` | The verdict; equals the `ok` column of `results.tsv`. |
+| `error` | The first failure reason, or null. |
+| `hash` | The adapter's state hash, or null. |
+| `px_hash` | xxHash64 of the sequence of frame hashes (16 hex). |
+| `frames`, `fps` | Frames in the cut; capture rate. |
+| `seed`, `run_seed`, `size` | Seeds and capture size. |
+| `grafts` | `Injection.Version` (0 without injection). |
+| `checks[]` | `id`, `status` (`pass`, `warn`, `fail`, `skipped`), `reason`, `frame`, `region` ([x, y, w, h], top-left origin). |
+| `probes` | Last value per key. |
+| `images[]` | `file`, `role` (`window`, `context`, `still`, `sheet`, `motion-diff`, `tracks`, `preview`), `frames`, `marks`. |
+| `masks[]` | `artifact`, `rect` (pixels, top-left origin), `why`. |
+| `timing` | `seconds` and parts: `setup_s`, `cut_s`, `read_s`, `wait_s`, `outputs_s`, `switch_seconds`. |
 
----
+## Example
 
-> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+<!-- validate: result -->
+```json
+{"schema_version":1,"id":"KnightFalls","name":"KnightFalls","variant":null,"mode":null,"round":1,"role":"host","arena":null,"ok":false,"error":"timeout (30s): unit down animation","hash":"1B44E07AC9D20F13","px_hash":"0c1d2e3f4a5b6c7d","frames":52,"fps":30,"seed":1,"run_seed":1,"size":[1280,720],"grafts":0,"checks":[{"id":"log","status":"pass"},{"id":"order","status":"fail","reason":"unit_down was never marked","frame":-1,"region":null}],"probes":{"damage":3,"defender_hp":0},"images":[{"file":"window.png","role":"window","frames":[20,21,22,23,24,25,26,27,28,29,30,31],"marks":["IMPACT"]},{"file":"before.png","role":"still","frames":[],"marks":[]}],"masks":[{"artifact":"*","rect":[0,0,1280,40],"why":"turn timer"}],"timing":{"seconds":2.1,"setup_s":0.4,"cut_s":1.5,"read_s":0.1,"wait_s":0,"outputs_s":0.05,"switch_seconds":0.3}}
+```
 
-# injection
+## Compatibility
 
-_This page is still being written._
-
----
-
-> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
-
-# determinism
-
-_This page is still being written._
-
----
-
-> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
-
-# recipes
-
-_This page is still being written._
-
----
-
-> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
-
-# adapters
-
-_This page is still being written._
+Fields may be added in minor versions. Check ids are stable; new built-in checks get new ids.
 
 ---
 
 > Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
 
-# session
+# results.tsv, frames.tsv, determinism.tsv
 
-_This page is still being written._
+Three tables complement the JSON files: `results.tsv` has one line per (id, round) a process played, `frames.tsv` one
+line per captured frame of a recipe, `determinism.tsv` one line per round comparison with `--check`. All three are
+tab-separated with a header line, so they load in any spreadsheet or `awk`.
 
----
+## Location
 
-> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+| File | Path |
+|---|---|
+| `results.tsv` | `<scion-out>/results.tsv` |
+| `frames.tsv` | `<scion-out>/<IdDir>/r<n>/frames.tsv`, and `scion/baselines/<IdDir>/<platform>/frames.tsv` |
+| `determinism.tsv` | `<scion-out>/determinism.tsv` (with `-scion-check`) |
 
-# checks
+## Written by and read by
 
-_This page is still being written._
+Written by the test player (`frames.tsv` in baselines by `trial approve`). Read by the CLI (comparisons), agents and
+people.
 
----
+## Schema
 
-> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+TSV rules: the first line is the header; lines starting with `#` are comments; the format version is the
+`schema_version` of the sibling JSON (`run.json`); free text comes last, with tabs and line breaks replaced by spaces.
+Hashes are 16 lowercase hex digits.
 
-# fx
+## Fields
 
-_This page is still being written._
+### results.tsv columns
 
----
+`round id ok seconds switch_seconds frames hash px_hash objects mono_mb native_mb setup_s setup_fps cut_s read_s wait_s outputs_s checks grafts error`
 
-> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+| Column | Meaning |
+|---|---|
+| `ok` | 1 or 0, the same as `result.json`. |
+| `objects`, `mono_mb`, `native_mb` | Live objects and memory after the recipe. |
+| `setup_fps` | Frame rate during setup (real time). |
+| `checks` | Checks that did not pass, `id=status` comma-separated; empty when all passed. |
+| `grafts` | `Injection.Version`. |
+| `error` | Free text, last. |
 
-# testing
+Footer comment: `# prepare <s>s, total <s>s`.
 
-_This page is still being written._
+### frames.tsv columns
 
----
+`frame ms real_ms px rng unscaled time <sensors...> marks`
 
-> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+| Column | Meaning |
+|---|---|
+| `frame` | Index in the cut. |
+| `ms` | Game milliseconds since the cut began (integer). |
+| `real_ms` | Wall milliseconds; informative, never compared. |
+| `px` | xxHash64 (seed 0) of the frame's raw bytes; empty when hashing is off. |
+| `rng` | xxHash64 of the 16 bytes of `UnityEngine.Random.state`. |
+| `unscaled`, `time` | Virtual times minus the recipe start, seconds with 6 decimals. |
+| sensors | One per `Sensor`, decimal, in registration order; frozen at the first `BeginCut`. |
+| `marks` | Labels, comma-separated, last. |
 
-# compare
+### determinism.tsv columns
 
-_This page is still being written._
+`id round vs_round status frame cause detail`
 
----
+| Column | Meaning |
+|---|---|
+| `status` | `same` or `diff`. |
+| `frame` | First differing frame; -1 when only the count or final hash differs. |
+| `cause` | First differing of `state`, `tick`, `rng`, `unscaled`, `time`, `px`, `frames`; `none` when equal. |
+| `detail` | Free text. |
 
-> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+## Example
 
-# editor
+```tsv
+frame	ms	real_ms	px	rng	unscaled	time	state	tick	marks
+0	0	12	3f1c0a9b7e22d410	9a0b11c2d3e4f506	0.000000	0.000000	7781	0	
+14	466	201	a1b2c3d4e5f60718	9a0b11c2d3e4f506	0.466667	0.466667	7790	14	IMPACT
+```
 
-_This page is still being written._
+## Compatibility
 
----
-
-> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
-
-# specs
-
-_This page is still being written._
-
----
-
-> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
-
-# core
-
-_This page is still being written._
-
----
-
-> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
-
-# ci
-
-_This page is still being written._
-
----
-
-> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
-
-# hud-states
-
-_This page is still being written._
-
----
-
-> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
-
-# tune-hit-feel
-
-_This page is still being written._
+Columns may be added before the last column (`error` or `marks`) in minor versions; read columns by header name.
 
 ---
 
 > Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
 
-# level-rooms
+# telemetry.jsonl
 
-_This page is still being written._
+`telemetry.jsonl` records everything that happened during one recipe round, one JSON object per line, in order: Unity
+log messages, notes, marks, probes, check results, graft faults, the game's own events, every `Fx` call with the graft
+that made it, and injections. Co-op peers compare their `turn` events from it.
+
+## Location
+
+`<scion-out>/<IdDir>/r<n>/telemetry.jsonl`.
+
+## Written by and read by
+
+Written by the test player at the end of the recipe. Read by the CLI (co-op comparison), gates (`TelemetryVsPixel`),
+the motion metrics, agents and the judge.
+
+## Schema
+
+`https://jand-s.github.io/scion/41664431a8f5/schemas/v1/telemetry-line.schema.json` validates each line.
+
+## Fields
+
+Every line has `f` (frame of the cut, -1 outside it), `t` (game seconds since the recipe start) and `kind`.
+
+| kind | Fields |
+|---|---|
+| `log` | `type` (`Error`, `Assert`, `Exception`, `Warning`), `msg`, `stack` (up to 2 KB), `thread` (`main`, `worker`) |
+| `note` | `msg` |
+| `mark` | `label` |
+| `probe` | `key`, `value` |
+| `check` | `id`, `status`, `reason`, `frame` |
+| `fault` | `source`, `type`, `msg` |
+| `event` | `name` plus the caller's fields |
+| `fx` | `verb`, `args`, `by` (the graft, or null) |
+| `inject` | `version`, `bound` |
+
+## Example
+
+<!-- validate: telemetry-line -->
+```json
+{"f":14,"t":1.467,"kind":"fx","verb":"Shake","args":[0.3],"by":"Orchard.Grafts.CritShake.After"}
+```
+
+More lines:
+
+```jsonc
+{"f":-1,"t":0.1,"kind":"note","msg":"battle ready"}
+{"f":14,"t":1.467,"kind":"mark","label":"IMPACT"}
+{"f":14,"t":1.467,"kind":"probe","key":"damage","value":12}
+{"f":30,"t":2.0,"kind":"event","name":"turn","turn":1,"hash":"9F3A0C11D2E4B5A6"}
+```
+
+## Compatibility
+
+New kinds and fields may be added in minor versions; readers must skip kinds they do not know.
 
 ---
 
 > Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
 
-# troubleshooting
+# report.md
 
-_This page is still being written._
+`report.md` is the first file to read when a recipe fails. The process-level report indexes every recipe, failures
+first; the recipe-level report says what happened, which checks did not pass, which images exist with their frames,
+the timeline of marks, the notes and the log errors. It is short, in English and links only relative paths.
+
+## Location
+
+| Level | Path |
+|---|---|
+| Process | `<scion-out>/report.md` |
+| Recipe round | `<scion-out>/<IdDir>/r<n>/report.md` |
+
+## Written by and read by
+
+Written by the test player. Read by agents (the `next_step` of a failed run points to it) and people.
+
+## Schema
+
+Markdown. The first line is always `<!-- scion report v1 -->`; the version changes if the section order changes.
+
+## Fields
+
+Recipe report sections, in order:
+
+| Section | Content |
+|---|---|
+| Title | `# <Id> r<n>: passed` or `failed: <error>` |
+| Checks | Checks that did not pass, with reason, frame and region. |
+| Images | Each image with its frames and marks. |
+| Timeline | Marks by frame and game time. |
+| Notes | `TrialSession.Note` lines. |
+| Log | Errors and exceptions from `log.txt`, first lines of each stack. |
+| Motion | With `--motion`: the metrics table. |
+
+## Example
+
+```md
+<!-- scion report v1 -->
+# KnightFalls r1: failed: timeout (30s): unit down animation
+
+## Checks
+- order: fail: unit_down was never marked
+
+## Images
+- window.png: frames 20-31, marks IMPACT
+- before.png: still
+
+## Timeline
+- frame 0 (0.000 s): cut begins
+- frame 24 (0.800 s): IMPACT
+
+## Log
+- (none)
+```
+
+## Compatibility
+
+Section titles and order are stable within `scion report v1`; new sections may be added at the end.
 
 ---
 
 > Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
 
-# faq
+# recipes.json
 
-_This page is still being written._
+`recipes.json` lists every id the current selection would play, after variants, modes and seeds are expanded, with
+the settings the CLI needs to plan a run (players for co-op groups, explicit, fps, seed, timeout). The player writes
+it and exits 0 without playing.
+
+## Location
+
+`<scion-out>/recipes.json`, only with `-scion-list`.
+
+## Written by and read by
+
+Written by the test player. Read by `trial list --ids`, `trial run` (to plan groups) and agents.
+
+## Schema
+
+`https://jand-s.github.io/scion/41664431a8f5/schemas/v1/recipes.schema.json`
+
+## Fields
+
+| Field | Meaning |
+|---|---|
+| `recipes[].id`, `name`, `variant`, `mode` | The instance. |
+| `tags`, `description` | From the recipe. |
+| `players`, `explicit` | Co-op size; whether it runs only when named. |
+| `fps`, `seed`, `timeout_s` | Capture settings. |
+| `type` | The recipe's C# type. |
+
+## Example
+
+<!-- validate: recipes -->
+```json
+{"schema_version":1,"recipes":[{"id":"SlashHit[Attacker=mage,Distance=3]","name":"SlashHit","variant":"Attacker=mage,Distance=3","mode":null,"tags":["combat","melee"],"description":"The knight slashes a skeleton next to it.","players":1,"explicit":false,"fps":30,"seed":7,"timeout_s":30,"type":"Orchard.Trials.SlashHit"},{"id":"CoopTurn","name":"CoopTurn","variant":null,"mode":null,"tags":[],"description":"Four players each act once; every peer agrees on the state.","players":4,"explicit":false,"fps":30,"seed":1,"timeout_s":60,"type":"Orchard.Trials.CoopTurn"}]}
+```
+
+## Compatibility
+
+Fields may be added in minor versions.
 
 ---
 
 > Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
 
-# changelog
+# Raw frames
 
-_This page is still being written._
+With `-scion-raw` (`--raw`), the player keeps every captured frame of the cut as raw bytes: exactly the bytes the
+frame's `px` hash was computed from, in the format the GPU readback produced, without conversion. `raw.json` beside
+them says how to read them. `Scion.Compare` loads them directly.
+
+## Location
+
+`<scion-out>/<IdDir>/r<n>/frames/NNNN.raw` and `frames/raw.json`.
+
+## Written by and read by
+
+Written by the test player. Read by `Scion.Compare` (`Image.Load`), heatmaps and your own tools.
+
+## Schema
+
+`https://jand-s.github.io/scion/41664431a8f5/schemas/v1/raw-frames.schema.json` for `raw.json`. Each `.raw` file has no header:
+`width x height x 4` bytes.
+
+## Fields
+
+| Field | Meaning |
+|---|---|
+| `width`, `height` | Frame size in pixels. |
+| `layout` | `RGBA8`, `ARGB8` or `BGRA8`: the byte order captured. |
+| `rows` | Always `bottom-up`: the first row in the file is the bottom of the image. |
+
+Alpha is always 255.
+
+## Example
+
+<!-- validate: raw-frames -->
+```json
+{"schema_version":1,"width":1280,"height":720,"layout":"BGRA8","rows":"bottom-up"}
+```
+
+```csharp
+var img = Scion.Compare.Image.Load(".scion/runs/20261011-143200/q0/SlashHit/r1/frames/0014.raw");
+img.SavePng("/tmp/frame14.png");
+```
+
+## Compatibility
+
+The layout list may grow in minor versions; `rows` stays `bottom-up`.
 
 ---
 
 > Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
 
-# license
+# summary.json, summary.tsv, compare.json
 
-_This page is still being written._
+After every `trial run`, the CLI writes three files at the top of the run folder: `summary.json` (the full envelope,
+uncut, plus the copies), `summary.tsv` (one line per id, round and copy) and `compare.json` (per id, the verdict
+against the baseline with its reasons, hashes, frames and image results).
+
+## Location
+
+`<run>/summary.json`, `<run>/summary.tsv`, `<run>/compare.json`.
+
+## Written by and read by
+
+Written by the CLI. Read by `trial show`, `trial approve`, `trial eval`, agents and CI.
+
+## Schema
+
+- `https://jand-s.github.io/scion/41664431a8f5/schemas/v1/summary.schema.json`
+- `https://jand-s.github.io/scion/41664431a8f5/schemas/v1/compare.schema.json`
+- `summary.tsv` follows the [TSV rules](/scion/41664431a8f5/reference/files/tables/); its version is `summary.json`'s.
+
+## Fields
+
+### summary.json
+
+The `trial run` envelope without cuts, plus `copies[]`: `q`, `pid`, `role`, `group`, `exit`, `wall_s`, `out`, `log`.
+
+### summary.tsv columns
+
+`id round copy role ok hash frames vs_approved px_diff img_diff eval`
+
+| Column | Meaning |
+|---|---|
+| `px_diff` | Fraction of frames whose `px` differs from the baseline. |
+| `img_diff` | `Ratio` of the worst artifact in the image comparison. |
+| `eval` | Evaluator score, after `trial eval`. |
+
+Empty means not applicable.
+
+### compare.json
+
+Per id: `vs_approved`, `reasons` (`baseline`, `hash`, `frames`, `px`, `image`, `rule_hash`), `stale` (`platform`,
+`fps`, `player_args`, `unity`), `hash` (`approved`, `current[]`, `stable`), `frames` (`approved`, `current[]`),
+`px_diff`, `px_unstable`, `images[]` (`file`, `status`, `ratio`, `bounds`, `diff`).
+
+## Example
+
+<!-- validate: compare -->
+```json
+{"schema_version":1,"recipes":{"SlashHit":{"vs_approved":"changed","reasons":["image"],"stale":[],"hash":{"approved":"9F3A0C11D2E4B5A6","current":["9F3A0C11D2E4B5A6"],"stable":true},"frames":{"approved":46,"current":[46]},"px_diff":0.12,"px_unstable":0,"images":[{"file":"window.png","status":"changed","ratio":0.003,"bounds":[400,180,64,64],"diff":"diff/SlashHit/r1/window.diff.png"}]}}}
+```
+
+## Compatibility
+
+Fields may be added in minor versions. Verdict and reason values are stable within 1.x.
 
 ---
 
 > Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
 
-# architecture
+# baseline.json and platform.json
 
-_This page is still being written._
+A baseline has two parts. `baseline.json` holds what does not depend on the platform: the state hash, the frame
+count, fps, player arguments, the rule digest and who approved it, when and why. Each platform folder holds what does:
+`platform.json` (size, Unity, tolerance, images), `frames.tsv` with the frame hashes, the approved images and an
+optional learned mask.
+
+## Location
+
+```text
+scion/baselines/<IdDir>/baseline.json
+scion/baselines/<IdDir>/<platform>/platform.json
+scion/baselines/<IdDir>/<platform>/frames.tsv
+scion/baselines/<IdDir>/<platform>/window.png  context.png  <still>.png  unstable.png
+```
+
+## Written by and read by
+
+Written only by `trial approve` (the `guard` hook denies other edits). Read by every `trial run` for verdicts and by
+`trial show --grid`.
+
+## Schema
+
+- `https://jand-s.github.io/scion/41664431a8f5/schemas/v1/baseline.schema.json`
+- `https://jand-s.github.io/scion/41664431a8f5/schemas/v1/platform.schema.json`
+
+## Fields
+
+### baseline.json
+
+| Field | Meaning |
+|---|---|
+| `id`, `hash`, `frames`, `fps` | The approved id, state hash, frame count and capture rate. |
+| `player_args` | Normalized player arguments (without `-scion-out`, ports, shards, control, `-logFile`). |
+| `rule_digest` | 12 hex over the files in `rule_paths` at approval. |
+| `build_id` | The build the run used. |
+| `approved_by`, `approved_via`, `reason`, `approved_at` | Who (`tty` or `script`), why, when. |
+
+### platform.json
+
+| Field | Meaning |
+|---|---|
+| `platform`, `size`, `unity`, `build_id` | Where these images come from. |
+| `approved_by`, `approved_via`, `approved_at` | Approval on this platform. |
+| `tolerance` | `pixel`, `max_ratio`, `max_pixels`, or null when the recipe compares no images. |
+| `images[]` | `file`, `role`. |
+
+## Example
+
+<!-- validate: baseline -->
+```json
+{"schema_version":1,"id":"SlashHit","hash":"9F3A0C11D2E4B5A6","frames":46,"fps":30,"player_args":[],"rule_digest":"a1b2c3d4e5f6","build_id":"4c49a1e0b2f3","approved_by":"alex","approved_via":"tty","reason":"crit shake is stronger","approved_at":"2026-10-11T15:00:00Z"}
+```
+
+<!-- validate: platform -->
+```json
+{"schema_version":1,"platform":"osx-metal-1280x720-offscreen","size":[1280,720],"unity":"6000.3.25f1","build_id":"4c49a1e0b2f3","approved_by":"alex","approved_via":"tty","approved_at":"2026-10-11T15:00:00Z","tolerance":{"pixel":0.1,"max_ratio":0.001,"max_pixels":-1},"images":[{"file":"window.png","role":"window"},{"file":"context.png","role":"context"},{"file":"before.png","role":"still"}]}
+```
+
+## Compatibility
+
+A baseline written by any 1.x version is read by every later 1.x version. Store PNGs with Git LFS.
 
 ---
 
 > Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
 
-# compatibility
+# scion-build.json
 
-_This page is still being written._
+`scion-build.json` sits next to every player Scion builds and says what the build is: its id (a hash of the main
+game assembly), the git commit and whether the tree was dirty, the Unity version, the backend and defines, the
+Scion version and ABI, the path of the executable, the slots it has and the recipes it contains.
+
+## Location
+
+`<build output folder>/scion-build.json`, beside `Orchard.app` or `Orchard.exe`.
+
+## Written by and read by
+
+Written by `ScionBuild` at the end of a successful build. Read by the CLI (build discovery, `build_stale`,
+`build_wrong_mode`), the player (`run.json`), `graft build` (target `build_id`) and `anchor list`.
+
+## Schema
+
+`https://jand-s.github.io/scion/41664431a8f5/schemas/v1/scion-build.schema.json`
+
+## Fields
+
+| Field | Meaning |
+|---|---|
+| `build_id` | First 12 hex of the SHA-256 of `main_assembly` as built. |
+| `main_assembly` | From `ScionSettings.json` (`Assembly-CSharp` by default). |
+| `git_commit`, `git_dirty` | The commit and whether files were uncommitted. |
+| `unity`, `target`, `backend`, `defines` | Build settings. |
+| `scion`, `abi` | Package version and weaver ABI. |
+| `player` | The executable, relative to this file. |
+| `slots` | Slot ids (test builds). |
+| `recipes` | Recipe class names (ids with variants come from `-scion-list`). |
+| `built_at`, `seconds` | When and how long. |
+
+## Example
+
+<!-- validate: scion-build -->
+```json
+{"schema_version":1,"build_id":"4c49a1e0b2f3","main_assembly":"Orchard.Runtime","git_commit":"0ed3af7","git_dirty":false,"unity":"6000.3.25f1","target":"osx","backend":"mono","defines":["SCION_SLOTS","SCION_TRIALS"],"scion":"1.0.0","abi":1,"player":"Orchard.app/Contents/MacOS/Orchard","slots":["A__Orchard_Presentation_HitPresenter__Play__HitEvent","B__Orchard_Presentation_HitPresenter__Play__HitEvent"],"recipes":["CoopTurn","FireballArea","HudStates","KnightFalls","SlashHit","UnitGallery"],"built_at":"2026-10-11T14:30:00Z","seconds":35.2}
+```
+
+## Compatibility
+
+Fields may be added in minor versions. The `build_id` rule never changes within 1.x.
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# control.json and live files
+
+A copy started with `-scion-control` writes one small JSON object, twice: `control.json` in its output folder and
+`~/.scion/live/<pid>.json` in the user's live folder. It has everything a client needs to connect: the port, the
+token and which build it is. The CLI finds warm copies through the live folder.
+
+## Location
+
+| File | Path |
+|---|---|
+| `control.json` | `<scion-out>/control.json` |
+| live file | `~/.scion/live/<pid>.json` (`%USERPROFILE%\.scion\live\` on Windows) |
+
+## Written by and read by
+
+Written by the copy after the control server listens, with mode 0600 on macOS and Linux. The live file is deleted on
+`quit`; the CLI deletes live files of dead processes. Read by the CLI (`trial serve`, `trial run --warm`, `graft
+inject`) and any client of the [control protocol](/scion/41664431a8f5/reference/control-protocol/).
+
+## Schema
+
+`https://jand-s.github.io/scion/41664431a8f5/schemas/v1/control.schema.json`
+
+## Fields
+
+| Field | Meaning |
+|---|---|
+| `pid` | The process id. |
+| `port` | The local TCP port. |
+| `token` | 32 hex digits (128 bits); every request must carry it. |
+| `build_id`, `abi` | The build and the weaver ABI. |
+| `out` | The copy's output folder. |
+| `role` | `host` or `client:<i>`. |
+| `started_at` | When it started listening. |
+
+## Example
+
+<!-- validate: control -->
+```json
+{"schema_version":1,"pid":4242,"port":51234,"token":"9c1f0e7a2b3c4d5e6f708192a3b4c5d6","build_id":"4c49a1e0b2f3","abi":1,"out":"/Users/alex/orchard/.scion/serve/q0","role":"host","started_at":"2026-10-11T14:32:00Z"}
+```
+
+## Compatibility
+
+Fields may be added in minor versions. Treat the token as a secret: never log or commit it.
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# InjectReport JSON
+
+Every injection produces an `InjectReport`: the load counter after it, whether it succeeded, whether it waits for the
+next recipe boundary, which slots it bound, which errors it hit and whether the copy should be recycled.
+`InjectReport.ToJson()` gives this shape; the control protocol's `inject` op answers with it, and `graft inject`
+lists one per copy.
+
+## Location
+
+Not a file on disk by default: it travels in control responses and in the `copies[]` of `graft inject`. The `inject`
+line of `telemetry.jsonl` repeats `version` and `bound`.
+
+## Written by and read by
+
+Produced by `Injection.Inject` in the copy (`SCION_SLOTS`). Read by the CLI, agents and your own tools through
+`Injection.Applied`.
+
+## Schema
+
+`https://jand-s.github.io/scion/41664431a8f5/schemas/v1/inject-report.schema.json`
+
+## Fields
+
+| Field | Meaning |
+|---|---|
+| `version` | `Injection.Version` after this load. |
+| `ok` | No errors. |
+| `pending` | A recipe is running; the swap applies at the next boundary. |
+| `bound` | Slot ids that now run injected grafts. |
+| `errors` | `"SCNxxx: message"` lines (SCN113, SCN130, SCN131). |
+| `recycle` | True after 50 loads: restart the copy (Mono keeps every loaded assembly). |
+
+## Example
+
+<!-- validate: inject-report -->
+```json
+{"schema_version":1,"version":3,"ok":true,"pending":false,"bound":["A__Orchard_Presentation_HitPresenter__Play__HitEvent"],"errors":[],"recycle":false}
+```
+
+## Compatibility
+
+Fields may be added in minor versions.
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# eval-in.json, eval-out.json, evals.tsv
+
+Evaluators talk to Scion through files. `trial eval` writes `eval-in.json` (questions and blind items with image
+paths), the evaluator writes `eval-out.json` (answers per item and question), and the CLI writes `evals.tsv` with one
+score per line after mapping labels back to ids. The shapes are the judge's question and answer formats.
+
+## Location
+
+`<run>/eval-in.json`, `<run>/eval-out.json` (or any path given to `--import`), `<run>/evals.tsv`.
+
+## Written by and read by
+
+| File | Written by | Read by |
+|---|---|---|
+| `eval-in.json` | `trial eval` | Evaluators (scripts, agents) |
+| `eval-out.json` | Evaluators | `trial eval --import` |
+| `evals.tsv` | `trial eval` | People, CI, `summary.tsv` (`eval`) |
+
+## Schema
+
+- `eval-in.json`: `https://jand-s.github.io/scion/41664431a8f5/schemas/v1/judge-question.schema.json`
+- `eval-out.json`: `https://jand-s.github.io/scion/41664431a8f5/schemas/v1/judge-answer.schema.json`
+- `evals.tsv`: TSV rules; columns `id evaluator question score label`.
+
+## Fields
+
+`eval-in.json` adds to a question file: `run`, `blind`, `orders` (1 or 2), `items[]` (`label`, `images`, `frames`,
+`telemetry`, `metrics`) and `pairs[]` for duels. `eval-out.json` has `model`, `items.<label>.answers.<question>`,
+`escalate`, `preferences[]` and `usage`. Field meanings: [Questions and answers](/scion/41664431a8f5/judge/questions/).
+
+## Example
+
+<!-- validate: judge-question -->
+```json
+{"schema_version":1,"run":"/Users/alex/orchard/.scion/runs/20261011-150512","blind":true,"orders":2,"questions":{"hit_weight":{"type":"score","instructions":"How heavy does the hit feel?","levels":[{"what":"Light"},{"what":"Medium"},{"what":"Heavy"}]}},"items":[{"label":"X","images":["q0/SlashHit_preset=heavy_/r1/window.png"],"frames":[14],"telemetry":null,"metrics":"q0/SlashHit_preset=heavy_/r1/metrics.json"},{"label":"Y","images":["q1/SlashHit_preset=snappy_/r1/window.png"],"frames":[14],"telemetry":null,"metrics":null}],"pairs":[["X","Y"]]}
+```
+
+<!-- validate: judge-answer -->
+```json
+{"schema_version":1,"model":"agent","head_version":null,"items":{"X":{"answers":{"hit_weight":{"type":"score","score":1.8,"confidence":0.7}}},"Y":{"answers":{"hit_weight":{"type":"score","score":1.1,"confidence":0.6}}}},"preferences":[{"pair":["X","Y"],"winner":"X","strength":2}]}
+```
+
+## Compatibility
+
+Fields may be added in minor versions. Unknown fields in `eval-out.json` are ignored.
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# scion.manifest.json and GRAFTS.md
+
+`dotnet scion gen` writes two files at the project root from the code: `scion.manifest.json`, the inventory tools and
+agents read (every anchor, graft, tunable, recipe and probe), and `GRAFTS.md`, the same data as tables for people and
+pull requests. Both are generated: edit the code, then run `gen`.
+
+## Location
+
+`scion.manifest.json` and `GRAFTS.md` at the project root (next to `scion.json`), versioned.
+
+## Written by and read by
+
+Written only by `dotnet scion gen` (the `guard` hook denies hand edits). Read by `index`, the MCP server, agents,
+reviewers and CI (`gen --check`).
+
+## Schema
+
+`https://jand-s.github.io/scion/41664431a8f5/schemas/v1/manifest.schema.json`. `GRAFTS.md` has no schema: one table per anchor.
+
+## Fields
+
+| Field | Items |
+|---|---|
+| `anchors[]` | `id`, `target`, `signature`, `doc`, `slot`, `used_by` (graft names) |
+| `grafts[]` | `name`, `file`, `line`, `kind`, `target`, `priority`, `observe`, `promoted` |
+| `tunables[]` | `key`, `type`, `min`, `max`, `value`, `layer` (`visual` or `rule`), `doc` |
+| `recipes[]` | `name`, `type`, `players`, `tags`, `description` |
+| `probes[]` | `key`, `member` |
+| `scion`, `generated_from` | Version and source (`build` or `source`). |
+
+## Example
+
+<!-- validate: manifest -->
+```json
+{"schema_version":1,"scion":"1.0.0","generated_from":"build","anchors":[{"id":"presentation.hit","target":"Orchard.Presentation.HitPresenter.Play","signature":"float Play(HitEvent e)","doc":"Plays one hit and returns how long it lasts.","slot":true,"used_by":["Orchard.Grafts.CritShake.After","Orchard.Grafts.HitFlash.After"]}],"grafts":[{"name":"Orchard.Grafts.CritShake.After","file":"Assets/Orchard/Grafts/CritShake.cs","line":12,"kind":"after","target":"Orchard.Presentation.HitPresenter.Play","priority":0,"observe":false,"promoted":true}],"tunables":[{"key":"CritShake.Strength","type":"float","min":0,"max":1,"value":0.3,"layer":"visual","doc":"Camera shake on a critical hit."},{"key":"Balance.CritPermille","type":"int","min":500,"max":2000,"value":1500,"layer":"rule","doc":"Critical damage multiplier, in permille."}],"recipes":[{"name":"SlashHit","type":"Orchard.Trials.SlashHit","players":1,"tags":["combat","melee"],"description":"The knight slashes a skeleton next to it."}],"probes":[{"key":"damage","member":"Orchard.Core.DamageCalc.Final"}]}
+```
+
+`GRAFTS.md`:
+
+```md
+## presentation.hit: HitPresenter.Play(HitEvent e)
+
+Plays one hit and returns how long it lasts.
+
+| Graft | Side | Priority | File |
+|---|---|---|---|
+| Orchard.Grafts.HitFlash.After | after | 0 | Assets/Orchard/Grafts/HitFlash.cs:9 |
+| Orchard.Grafts.CritShake.After | after | 0 | Assets/Orchard/Grafts/CritShake.cs:12 |
+```
+
+## Compatibility
+
+Sorted and stable: the same code always gives the same bytes, so diffs show only real changes.
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# Judge data files
+
+The judge's data is small and versioned: heads (what each one asks and how well it agrees with people), questions,
+votes (one JSON line each) and gold sets. Embeddings and model weights are large and stay out of git, in the cache.
+
+## Location
+
+```text
+scion/judge/                        judge.dir
+  questions/<head>.json             question files
+  heads/<head>.json                 current version of each head
+  heads/<head>@<version>.bin        trained weights per version
+  votes/<head>.jsonl                one vote per line
+  gold/<set>.jsonl                  gold votes, never used for training
+  references/                       optional reference screens and notes
+.scion/judge/                       judge.cache: embeddings per eyes and view
+```
+
+## Written by and read by
+
+Written by `judge new`, `judge vote` and `judge train`. Read by `judge run`, `judge show`, `trial eval` (default
+questions) and `search run`.
+
+## Schema
+
+- `https://jand-s.github.io/scion/41664431a8f5/schemas/v1/head.schema.json`
+- `https://jand-s.github.io/scion/41664431a8f5/schemas/v1/vote.schema.json` (each line)
+
+## Fields
+
+### Head
+
+| Field | Meaning |
+|---|---|
+| `name`, `version` | Head name and current version. |
+| `eyes`, `view` | The encoder and the view (`full`, `hud`, `corners`, `actor`). |
+| `question` | The question it answers. |
+| `trained_at`, `votes` | Last training and how many votes it used. |
+| `calibration` | `gold_set`, `agreement`, `ceiling` (people's agreement with themselves). |
+
+### Vote
+
+| Field | Meaning |
+|---|---|
+| `head`, `at`, `by`, `source` | Which head, when, who, `person` or `agent`. |
+| `a`, `b` | Image or sequence paths (`b` null for single-item labels). |
+| `winner`, `strength` | For duels: `a`, `b` or `tie`; 1 slight, 2 clear. |
+| `value` | For scores and choices. |
+| `tags` | Free tags (`synthetic:contrast`). |
+
+## Example
+
+<!-- validate: head -->
+```json
+{"schema_version":1,"name":"readability","version":4,"eyes":"siglip2-so400m","view":"hud","question":{"type":"score","instructions":"How easy is the HUD to read at 1x on a laptop screen?"},"trained_at":"2026-10-12T08:10:00Z","votes":412,"calibration":{"gold_set":"ui_v1","agreement":0.81,"ceiling":0.86}}
+```
+
+<!-- validate: vote -->
+```json
+{"schema_version":1,"head":"hit_weight","at":"2026-10-12T09:01:12Z","by":"alex","source":"person","a":".scion/runs/20261012-091500/q0/SlashHit_preset=heavy_/r1/preview.gif","b":".scion/runs/20261012-091500/q1/SlashHit_preset=snappy_/r1/preview.gif","winner":"a","strength":2,"tags":[]}
+```
+
+## Compatibility
+
+Votes are append-only. A head file keeps working across 1.x; changing `judge.eyes` requires retraining.
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# Control protocol
+
+A test build started with `-scion-control` opens a control server: a line-based JSON protocol over TCP on the
+loopback interface. The CLI uses it for warm copies and live injection; you can use it from any language. Requests
+carry a token from `control.json`; the main thread executes them; the game never waits on the network.
+
+## Transport
+
+| Item | Rule |
+|---|---|
+| Address | Loopback interface only, on the port in `control.json` (`-scion-control 0` lets the OS choose). |
+| Framing | One request per line: UTF-8 JSON, at most 64 KiB, ending in `\n`. One response line per request, in order. |
+| Connections | Up to 8 clients; a connection may stay open for many requests. |
+| Slow clients | Writes time out after 5 seconds and the connection is closed. |
+| Availability | Builds with `SCION_SLOTS` or `SCION_TRIALS`. |
+
+## Token
+
+`control.json` and the live file hold a 128-bit random token as 32 hex digits. Every request includes it as `token`;
+the server compares it in constant time. A wrong token gets `bad_token`.
+
+## Execution model
+
+The network thread only reads lines and queues them; the main thread executes them between frames. Idle, the server
+allocates nothing per frame. While a queue runs, `inject` answers `pending: true` and applies at the next recipe
+boundary; `run` answers when its queue ends.
+
+## Requests and responses
+
+Request:
+
+<!-- validate: control-request -->
+```json
+{"id":7,"token":"9c1f0e7a2b3c4d5e6f708192a3b4c5d6","op":"inject","dll":"/Users/alex/orchard/.scion/grafts/ScionGrafts_51c2.dll","isolate":false}
+```
+
+Error response:
+
+<!-- validate: control-response -->
+```json
+{"id":8,"ok":false,"error":{"code":"busy","message":"a queue is already running","hint":"wait for it or send quit"}}
+```
+
+## Ops
+
+| op | Arguments | Answer (besides `id`, `ok`) | Without the define |
+|---|---|---|---|
+| `hello` | | `pid`, `port`, `build_id`, `abi`, `scion`, `role`, `out`, `state` | |
+| `status` | | `state` (`idle`, `preparing`, `running`), `recipe`, `round`, `done`, `total`, `grafts`, `pending` | |
+| `inject` | `dll`, `isolate` (false) | The `InjectReport` fields; `ok` is `InjectReport.Ok` | `not_supported` without `SCION_SLOTS` |
+| `restore` | | `grafts` | `not_supported` without `SCION_SLOTS` |
+| `disable` | `slot` | `found` | `not_supported` without `SCION_SLOTS` |
+| `run` | `only` (null), `rounds` (1), `out` (required) | When the queue ends: `exit`, `out` | `not_supported` without `SCION_TRIALS` |
+| `quit` | | `{}`, then the process exits with 0 | |
+
+## Errors
+
+| Code | Meaning |
+|---|---|
+| `bad_json` | The line is not JSON. |
+| `line_too_long` | Over 64 KiB; the connection is closed. |
+| `bad_token` | Wrong token. |
+| `unknown_op` | Not one of the ops above. |
+| `bad_args` | Missing or wrong-typed arguments. |
+| `busy` | `run` while a queue is running. |
+| `not_supported` | The op needs a define this build lacks. |
+| `shutting_down` | After `quit`. |
+
+## Example session
+
+```sh
+PORT=$(jq -r .port .scion/serve/q0/control.json); TOKEN=$(jq -r .token .scion/serve/q0/control.json)
+printf '{"id":1,"token":"%s","op":"status"}\n' "$TOKEN" | nc localhost "$PORT"
+```
+
+```json
+{"id":1,"ok":true,"state":"idle","recipe":null,"round":0,"done":0,"total":0,"grafts":3,"pending":false}
+```
+
+## See also
+
+- [Warm copies](/scion/41664431a8f5/trials/warm-copies/)
+- [control.json and live files](/scion/41664431a8f5/reference/files/control-json/)
+- [Live injection](/scion/41664431a8f5/grafts/injection/)
+- [Error and warning codes](/scion/41664431a8f5/reference/errors/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# JSON Schemas
+
+Every JSON file Scion reads or writes, and the output of every CLI command, has a JSON Schema (draft 2020-12)
+published under `https://jand-s.github.io/scion/41664431a8f5/schemas/v1/`. Use them to validate configuration in your editor, to
+check files in CI, and to generate types for tools. The `v1` in the path matches `schema_version: 1`.
+
+## Validate
+
+In `scion.json`, point editors at the schema with `$schema` (the CLI ignores the key):
+
+```json
+{"$schema":"https://jand-s.github.io/scion/41664431a8f5/schemas/v1/scion-config.schema.json","schema_version":1}
+```
+
+From the command line:
+
+```sh
+npx ajv-cli validate --spec=draft2020 -s https://jand-s.github.io/scion/41664431a8f5/schemas/v1/result.schema.json -d ".scion/runs/*/q*/*/r*/result.json"
+check-jsonschema --schemafile https://jand-s.github.io/scion/41664431a8f5/schemas/v1/scion-config.schema.json scion.json
+```
+
+CLI outputs reference `envelope.schema.json` and add their fields.
+
+## Files
+
+| Schema | Validates |
+|---|---|
+| `envelope.schema.json` | The envelope every CLI command prints. |
+| `run.schema.json` | `run.json` |
+| `result.schema.json` | `result.json` |
+| `recipes.schema.json` | `recipes.json` |
+| `summary.schema.json` | `summary.json` |
+| `compare.schema.json` | `compare.json` |
+| `baseline.schema.json` | `baseline.json` |
+| `platform.schema.json` | `platform.json` |
+| `scion-build.schema.json` | `scion-build.json` |
+| `scion-config.schema.json` | `scion.json` and `scion.local.json` |
+| `scion-settings.schema.json` | `ProjectSettings/ScionSettings.json` |
+| `control.schema.json` | `control.json` and live files |
+| `control-request.schema.json` | Control protocol requests |
+| `control-response.schema.json` | Control protocol responses |
+| `inject-report.schema.json` | `InjectReport.ToJson()` |
+| `raw-frames.schema.json` | `frames/raw.json` |
+| `telemetry-line.schema.json` | Each line of `telemetry.jsonl` |
+| `judge-question.schema.json` | Question files and `eval-in.json` |
+| `judge-answer.schema.json` | `eval-out.json` and judge answers |
+| `manifest.schema.json` | `scion.manifest.json` |
+| `multiverse.schema.json` | `multiverse.json` |
+| `match.schema.json` | `*.match.json` captured and found matches |
+| `preset.schema.json` | `scion/presets/*.json` |
+| `metrics.schema.json` | `metrics.json` of the motion pack |
+| `search.schema.json` | `search.json` of guided search |
+| `head.schema.json` | `scion/judge/heads/*.json` |
+| `vote.schema.json` | Each line of `scion/judge/votes/*.jsonl` and gold sets |
+
+## CLI outputs
+
+Under `https://jand-s.github.io/scion/41664431a8f5/schemas/v1/cli/`:
+
+| Schema | Command |
+|---|---|
+| `cli/doctor.schema.json` | `doctor` |
+| `cli/init.schema.json` | `init`, `new`, `uninstall` |
+| `cli/build.schema.json` | `build test`, `build final` |
+| `cli/trial-list.schema.json` | `trial list` |
+| `cli/trial-run.schema.json` | `trial run` |
+| `cli/trial-show.schema.json` | `trial show` |
+| `cli/trial-approve.schema.json` | `trial approve` |
+| `cli/trial-serve.schema.json` | `trial serve` |
+| `cli/trial-diff.schema.json` | `trial diff` |
+| `cli/trial-eval.schema.json` | `trial eval` |
+| `cli/trial-loop.schema.json` | `trial loop` |
+| `cli/anchor-list.schema.json` | `anchor list` |
+| `cli/anchor-show.schema.json` | `anchor show` |
+| `cli/graft-new.schema.json` | `graft new` |
+| `cli/graft-check.schema.json` | `graft check` |
+| `cli/graft-build.schema.json` | `graft build` |
+| `cli/graft-inject.schema.json` | `graft inject` |
+| `cli/graft-restore.schema.json` | `graft restore` |
+| `cli/graft-disable.schema.json` | `graft disable` |
+| `cli/graft-promote.schema.json` | `graft promote` |
+| `cli/graft-watch.schema.json` | `graft watch` |
+| `cli/bisect.schema.json` | `bisect` |
+| `cli/diagnose.schema.json` | `diagnose` |
+| `cli/index.schema.json` | `index` |
+| `cli/guard.schema.json` | `guard` |
+| `cli/gen.schema.json` | `gen` |
+| `cli/judge.schema.json` | `judge list`, `show`, `new`, `vote`, `train`, `run` |
+| `cli/multiverse.schema.json` | `multiverse run`, `multiverse show` |
+| `cli/hunt-run.schema.json` | `hunt run` |
+| `cli/search-run.schema.json` | `search run` |
+
+## Versioning
+
+A schema URL never changes meaning. New optional fields are added to the same `v1` schema; a breaking change gets
+`schema_version: 2` and a `v2/` folder, with `v1/` kept.
+
+## See also
+
+- [Configuration](/scion/41664431a8f5/reference/configuration/)
+- [CLI overview](/scion/41664431a8f5/cli/)
+- [Reading results](/scion/41664431a8f5/agents/reading-results/)
+- [Versioning and compatibility](/scion/41664431a8f5/contribute/compatibility/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# Glossary
+
+Scion uses a small vocabulary consistently across the docs, the CLI output and the code. Each term below has one
+definition and a link to the page that explains it. Terms are in alphabetical order.
+
+## Terms
+
+### Adapter
+
+The game's code that plays recipes of a type: `TrialAdapter<TRecipe>` with `Prepare`, `Run`, `Teardown` and
+`StateHash`. See [Write an adapter](/scion/41664431a8f5/trials/adapters/).
+
+### Adoption level
+
+How much of Scion a project can use: 1 grafts, 2 trials, 3 multiverse. `doctor` reports it. See
+[Find non-determinism](/scion/41664431a8f5/determinism/diagnose/).
+
+### Anchor
+
+A game method the weaver rewrote so grafts run around it. See [Anchors](/scion/41664431a8f5/grafts/anchors/).
+
+### Baseline
+
+The approved hash, frames and images of an id, in `scion/baselines/`. See
+[Baselines and approval](/scion/41664431a8f5/trials/baselines/).
+
+### Boundary
+
+The moment between two recipes (and after the queue) when injections apply and leaking state is reset
+(`TrialSession.Boundary`).
+
+### Call mode
+
+How final builds reach grafts: a direct call to a generated dispatcher. See [Build modes](/scion/41664431a8f5/grafts/build-modes/).
+
+### Copy
+
+One process of the test build in a run. See [Parallel copies](/scion/41664431a8f5/trials/parallel/).
+
+### Cut
+
+The frames between `BeginCut` and `EndCut`: what a recipe captures.
+
+### Duel
+
+A blind comparison of two variants shown to a person or evaluator. See [A/B comparisons](/scion/41664431a8f5/evaluation/ab-comparison/).
+
+### Eyes
+
+The frozen vision encoder the judge uses for embeddings. See [The Judge](/scion/41664431a8f5/judge/overview/).
+
+### Final build
+
+The player you ship: call mode, no test defines, no lab code.
+
+### Gate
+
+An objective visual check that can fail a recipe (`gate:<id>`). See [Gates](/scion/41664431a8f5/evaluation/gates/).
+
+### Graft
+
+A `static void` method marked `[Before]` or `[After]` that the weaver calls around an anchor. See
+[How grafts work](/scion/41664431a8f5/grafts/overview/).
+
+### Group
+
+The copies that play one co-op recipe: a host and its clients. See [Co-op trials (1-4 players)](/scion/41664431a8f5/trials/coop/).
+
+### Head
+
+A small judge model trained on votes to answer one question. See [Train a head](/scion/41664431a8f5/judge/training/).
+
+### Id
+
+One concrete instance of a recipe, with variant, mode and seed: `SlashHit[Distance=3]@360p#7`. See
+[Variants, modes and seeds](/scion/41664431a8f5/trials/variants/).
+
+### Live loop
+
+A window of play replayed over and over while injections apply between passes. See
+[The live loop](/scion/41664431a8f5/explore/live-loop/).
+
+### Mark
+
+A label on a frame of the cut (`Mark`, `MarkImpact`, `Fx.Mark`).
+
+### Mode
+
+A capture setting applied to every recipe, such as a resolution (`@360p`).
+
+### Mosaic
+
+Several arenas in one process, each with its own camera. See [Mosaic](/scion/41664431a8f5/trials/mosaic/).
+
+### Multiverse
+
+Forking a captured match at a turn and playing variants to see where rules diverge. See
+[The multiverse](/scion/41664431a8f5/explore/multiverse/).
+
+### Platform
+
+The part of a baseline that depends on the machine: `osx-metal-1280x720-offscreen`.
+
+### Probe
+
+A number a recipe records (`Probe(key, value)`); checks and specs test it.
+
+### Promoted
+
+A graft compiled into the game (`grafts.promoted`), as opposed to a draft in staging.
+
+### Recipe
+
+A `TrialRecipe` class: the data of one situation to play. See [Write a recipe](/scion/41664431a8f5/trials/recipes/).
+
+### Round
+
+One play of an id; `--rounds 2` plays every id twice.
+
+### Run
+
+One `trial run` and its folder under `trials.out`. See [The run folder](/scion/41664431a8f5/reference/files/run-folder/).
+
+### Run folder
+
+The folder of a run, with one `q<i>/` per copy and the CLI's summaries.
+
+### Sensor
+
+A per-frame column in `frames.tsv` (`Sensor(name, read)`).
+
+### Shard
+
+The share `i/n` of the (id, round) pairs one copy plays.
+
+### Sheet
+
+A labeled grid of captures: `window.png`, `context.png`, `sheet.png`.
+
+### Slot
+
+In test builds, the delegate field through which an anchor calls its grafts; injection replaces it.
+
+### Slot mode
+
+How test builds reach grafts: through slots, on Mono.
+
+### Staging
+
+The drafts folder (`grafts.staging`, `scion/grafts/`).
+
+### Still
+
+One full-size frame saved by name (`Still(name)`).
+
+### Test build
+
+The Mono player with `SCION_SLOTS` and `SCION_TRIALS`. Never shipped.
+
+### Verdict
+
+The comparison of a result with its baseline: `same`, `within`, `px_changed`, `changed`, `new`, `stale`.
+
+### Warm copy
+
+A test build that prepared its adapters and waits idle for work. See [Warm copies](/scion/41664431a8f5/trials/warm-copies/).
+
+## See also
+
+- [What is Scion](/scion/41664431a8f5/start/overview/)
+- [How grafts work](/scion/41664431a8f5/grafts/overview/)
+- [How trials work](/scion/41664431a8f5/trials/overview/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# C# API
+
+Scion's public API is small and split by where it runs. `Scion.Runtime` has what every build needs (grafts, `Fx`,
+faults); test-only types sit behind `SCION_TRIALS` or `SCION_SLOTS`; the editor and the out-of-Unity packages
+(`Scion.Testing`, `Scion.Compare`, `Scion.Specs`, `Scion.Core`) have their own assemblies. Every public member has XML
+documentation in the package; these pages give the signatures and the rules.
+
+## Assemblies
+
+| Assembly | Namespace | Define | Contains |
+|---|---|---|---|
+| `Scion.Runtime` | `Scion` | none | Grafts attributes, `Call`, `Anchors`, `Faults`, `Fx`, `IFxSink`, `WallClock`, `ImageTolerance` |
+| `Scion.Runtime` | `Scion` | `SCION_TRIALS` | `Clock`, `VirtualScreen`, `VirtualWaitForSecondsRealtime`, `SeededRandom`, `Determinism`, `DeterminismControl` |
+| `Scion.Injection` | `Scion` | `SCION_SLOTS` | `Injection`, `InjectReport`, `ScionPromotedAttribute` |
+| `Scion.Trials` | `Scion.Trials` | `SCION_TRIALS` | Recipes, adapters, session, checks, static trials, captured matches, mosaic |
+| `Scion.Control` | `Scion.Control` | `SCION_SLOTS` or `SCION_TRIALS` | The control server (no public API beyond the protocol) |
+| `Scion.Editor` | `Scion.Editor` | editor | `ScionBuild`, `ScionBuildEntry` |
+| `Unity.Scion.CodeGen` | | editor | The weaver (no public API) |
+| `Scion.Core` (NuGet and package) | `Scion.Core` | none, no engine references | `RuleModifier<T>`, `Stage`, `TunableAttribute`, `ProbeAttribute`, `ISimulation` and capabilities |
+| `Scion.Testing` (NuGet) | `Scion.Testing` | | `FxRecorder`, `FxCall`; `Scion.Runtime` for .NET |
+| `Scion.Compare` (NuGet) | `Scion.Compare` | | `Image`, `Mask`, `ImageDiff`, `DiffStatus`, `DiffResult` |
+| `Scion.Specs` (NuGet) | `Scion.Specs` | | `TrialSpec`, `SpecBuilder`, `Gates`, `Metamorphic` |
+
+## Types
+
+| Type | Page |
+|---|---|
+| `BeforeAttribute`, `AfterAttribute`, `AnchorAttribute`, `AnchorScopeAttribute`, `Call`, `Call<T>`, `Faults`, `Anchors`, `WallClockAttribute`, `ScionPromotedAttribute` | [Grafts API](/scion/41664431a8f5/reference/api/grafts/) |
+| `Injection`, `InjectReport` | [Injection API](/scion/41664431a8f5/reference/api/injection/) |
+| `Clock`, `VirtualScreen`, `VirtualWaitForSecondsRealtime`, `SeededRandom`, `Determinism`, `DeterminismControl`, `NetClock` | [Determinism API](/scion/41664431a8f5/reference/api/determinism/) |
+| `TrialRecipe`, `VaryAttribute`, `TrialArgs`, `TrialModesAttribute`, `ITrialModeAware`, `CapturedMatch` | [Recipes API](/scion/41664431a8f5/reference/api/recipes/) |
+| `ITrialAdapter`, `TrialAdapter<TRecipe>`, `TrialAdapterAttribute`, `StaticTrial`, `StaticTrial<TItem>`, `TrialView`, `IMatchCapture`, `MatchCaptureAttribute`, `IMosaicAdapter` | [Adapters API](/scion/41664431a8f5/reference/api/adapters/) |
+| `TrialSession`, `TrialRole` | [Session API](/scion/41664431a8f5/reference/api/session/) |
+| `TrialChecks`, `ITrialCheck`, `TrialCheckAttribute`, `CheckResult`, `CheckStatus`, `FrameView` | [Checks API](/scion/41664431a8f5/reference/api/checks/) |
+| `Fx`, `IFxSink` | [Fx API](/scion/41664431a8f5/reference/api/fx/) |
+| `FxRecorder`, `FxCall` | [Testing API](/scion/41664431a8f5/reference/api/testing/) |
+| `ImageTolerance`, `Image`, `Mask`, `ImageDiff`, `DiffStatus`, `DiffResult` | [Compare API](/scion/41664431a8f5/reference/api/compare/) |
+| `ScionBuild`, `ScionBuildEntry` | [Editor API](/scion/41664431a8f5/reference/api/editor/) |
+| `TrialSpec`, `SpecBuilder`, `Gates`, `Metamorphic` | [Specs API](/scion/41664431a8f5/reference/api/specs/) |
+| `RuleModifier<T>`, `Stage`, `TunableAttribute`, `ProbeAttribute`, `ISimulation`, `SimulationAttribute`, `IBot`, `BotAttribute`, `ISaveable`, `IInspectable`, `IMirrorable`, `IPermutable`, `Tunables` | [Core API](/scion/41664431a8f5/reference/api/core/) |
+
+## Conventions
+
+- In call mode nothing allocates and nothing uses reflection.
+- Coordinates in C# have the origin at the bottom left, like `Screen`; JSON and PNG use the top left.
+- Session and check methods run on the main thread.
+
+## See also
+
+- [Build modes](/scion/41664431a8f5/grafts/build-modes/)
+- [Architecture](/scion/41664431a8f5/contribute/architecture/)
+- [Versioning and compatibility](/scion/41664431a8f5/contribute/compatibility/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# Grafts API
+
+These types exist in every build (namespace `Scion`, assembly `Scion.Runtime`), except `ScionPromotedAttribute`
+(`Scion.Injection`, `SCION_SLOTS`). The weaver reads the attributes at compile time; `Call` and `Call<T>` live on the
+anchor's stack at run time.
+
+## BeforeAttribute
+
+**Namespace:** `Scion` · **Assembly:** `Scion.Runtime` · **Define:** none
+
+```csharp
+[AttributeUsage(AttributeTargets.Method, AllowMultiple = true)]
+public sealed class BeforeAttribute : Attribute
+{
+    public BeforeAttribute(Type target, string method);
+    public Type Target { get; }
+    public string Method { get; }
+    public int Priority { get; set; }
+    public bool Observe { get; set; }
+}
+```
+
+| Member | Meaning | Default |
+|---|---|---|
+| `Target`, `Method` | The anchor: a method declared on `Target`. | |
+| `Priority` | Lower runs first; ties by the graft's full name. | 0 |
+| `Observe` | Observer: runs first, always, cannot skip. | false |
+
+## AfterAttribute
+
+**Namespace:** `Scion` · **Assembly:** `Scion.Runtime` · **Define:** none
+
+```csharp
+[AttributeUsage(AttributeTargets.Method, AllowMultiple = true)]
+public sealed class AfterAttribute : Attribute
+{
+    public AfterAttribute(Type target, string method);
+    public Type Target { get; }
+    public string Method { get; }
+    public int Priority { get; set; }
+}
+```
+
+Runs at every return of the target, also after a skip; not after an exception.
+
+## AnchorAttribute
+
+**Namespace:** `Scion` · **Assembly:** `Scion.Runtime` · **Define:** none
+
+```csharp
+[AttributeUsage(AttributeTargets.Method)]
+public sealed class AnchorAttribute : Attribute
+{
+    public string Id { get; set; }
+    public string Doc { get; set; }
+}
+```
+
+Metadata for tools (`anchor list`, the manifest); the weaver ignores it.
+
+## AnchorScopeAttribute
+
+**Namespace:** `Scion` · **Assembly:** `Scion.Runtime` · **Define:** none
+
+```csharp
+[AttributeUsage(AttributeTargets.Assembly, AllowMultiple = true)]
+public sealed class AnchorScopeAttribute : Attribute
+{
+    public AnchorScopeAttribute(Type target);
+    public Type Target { get; }
+    public string[] Members { get; set; }   // null = every eligible method
+}
+```
+
+Gives slots to eligible methods in test builds; ignored in final builds. Must be in the assembly that defines
+`Target` (SCN107).
+
+## Call
+
+**Namespace:** `Scion` · **Assembly:** `Scion.Runtime` · **Define:** none
+
+```csharp
+public struct Call
+{
+    public bool Skipped { get; }
+    public void Skip();
+    public long Tag { get; set; }
+}
+```
+
+The last parameter of a graft on a void target, as `ref Call`. `Skip` only in a non-observer `[Before]` (SCN108).
+
+## Call\<T\>
+
+**Namespace:** `Scion` · **Assembly:** `Scion.Runtime` · **Define:** none
+
+```csharp
+public struct Call<T>
+{
+    public Call(T result);
+    public bool Skipped { get; }
+    public T Result { get; set; }
+    public void Return(T value);
+    public long Tag { get; set; }
+}
+```
+
+`T` must be the target's return type (SCN109). `Result` in an `[After]` is the current return value; in a `[Before]`,
+the value returned if skipped. The constructor is for tests.
+
+## Faults
+
+**Namespace:** `Scion` · **Assembly:** `Scion.Runtime` · **Define:** none
+
+```csharp
+public static class Faults
+{
+    public static event Action<string, Exception> Reported;
+    public static void Report(string source, Exception e);
+}
+```
+
+The slot dispatcher reports a throwing graft here with `source = "Namespace.Type.Method"` and disables it. Handlers
+run on the reporting thread; exceptions in handlers are caught and logged.
+
+## Anchors
+
+**Namespace:** `Scion` · **Assembly:** `Scion.Runtime` · **Define:** none
+
+```csharp
+public static class Anchors
+{
+    public const int AbiVersion = 1;
+    public const string GeneratedType = "__ScionGenerated";
+    public const string RestoreMethod = "__Restore";
+    public static string Id(bool after, string typeFullName, string method, string[] parameterTypeNames);
+}
+```
+
+`Id` computes the anchor id the weaver and injection use: `A__` or `B__`, then the type, method and parameter simple
+names with every character outside `[A-Za-z0-9_]` replaced by `_`.
+
+## WallClockAttribute
+
+**Namespace:** `Scion` · **Assembly:** `Scion.Runtime` · **Define:** none
+
+```csharp
+[AttributeUsage(AttributeTargets.Method | AttributeTargets.Class | AttributeTargets.Struct)]
+public sealed class WallClockAttribute : Attribute { }
+```
+
+No time, screen or random redirect inside the marked code (and its generated code and nested types).
+
+## ScionPromotedAttribute
+
+**Namespace:** `Scion` · **Assembly:** `Scion.Injection` · **Define:** `SCION_SLOTS`
+
+```csharp
+[AttributeUsage(AttributeTargets.Assembly, AllowMultiple = true)]
+public sealed class ScionPromotedAttribute : Attribute
+{
+    public ScionPromotedAttribute(string id, string graft, int priority, string wrapper);
+}
+```
+
+Emitted by the weaver in slot mode, one per promoted graft, so injection can merge by identity and `anchor list` can
+show promoted grafts. Never written by hand.
+
+## See also
+
+- [Write a graft](/scion/41664431a8f5/grafts/write/)
+- [Call and Call\<T\>](/scion/41664431a8f5/grafts/call-context/)
+- [Anchors](/scion/41664431a8f5/grafts/anchors/)
+- [When a graft throws](/scion/41664431a8f5/grafts/faults/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# Injection API
+
+`Injection` swaps the slots of a running test build (`SCION_SLOTS`). The CLI and the control server call it; use it
+directly only in your own tools. Swaps requested during a recipe wait for the next boundary.
+
+## Injection
+
+**Namespace:** `Scion` · **Assembly:** `Scion.Injection` · **Define:** `SCION_SLOTS`
+
+```csharp
+public static class Injection
+{
+    public static int Version { get; }
+    public static event Action<InjectReport> Applied;
+    public static InjectReport Inject(string dllPath, bool isolate = false);
+    public static void Restore();
+    public static bool Disable(string slotId);
+}
+```
+
+| Member | Meaning |
+|---|---|
+| `Version` | Loads applied so far; the `grafts` column of `results.tsv`. |
+| `Applied` | Raised on the main thread after each applied load. |
+| `Inject` | Loads the DLL and binds its grafts; merges by graft identity, or replaces with `isolate`. Refuses another `build_id` (SCN130) or ABI (SCN131). |
+| `Restore` | Every slot back to the promoted grafts. |
+| `Disable` | Empties one slot; returns false when the slot does not exist. |
+
+Main thread only. Mono never unloads assemblies: each load stays in memory.
+
+```csharp
+#if SCION_SLOTS
+var r = Injection.Inject(path);
+Debug.Log(r.ToJson());
+#endif
+```
+
+## InjectReport
+
+**Namespace:** `Scion` · **Assembly:** `Scion.Injection` · **Define:** `SCION_SLOTS`
+
+```csharp
+public readonly struct InjectReport
+{
+    public int Version { get; }
+    public bool Ok { get; }
+    public bool Pending { get; }
+    public string[] Bound { get; }
+    public string[] Errors { get; }
+    public bool Recycle { get; }
+    public string ToJson();
+}
+```
+
+`Errors` lines are `"SCNxxx: message"`. `Recycle` is true after 50 loads. JSON shape:
+[InjectReport JSON](/scion/41664431a8f5/reference/files/inject-report/).
+
+## See also
+
+- [Live injection](/scion/41664431a8f5/grafts/injection/)
+- [InjectReport JSON](/scion/41664431a8f5/reference/files/inject-report/)
+- [Control protocol](/scion/41664431a8f5/reference/control-protocol/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# Determinism API
+
+These types are the targets of the weaver's redirects and the session's per-recipe resets in test builds. They live
+in `Scion.Runtime` under `SCION_TRIALS` (`NetClock` in `Scion.Trials`). Inactive, they return real values.
+
+## Clock
+
+**Namespace:** `Scion` · **Assembly:** `Scion.Runtime` · **Define:** `SCION_TRIALS`
+
+```csharp
+public static class Clock
+{
+    public const double RecipeStart = 1000.0;
+    public static readonly DateTime DefaultEpoch;      // 2000-01-01T00:00:00Z
+    public static bool Active { get; }
+    public static DateTime Epoch { get; set; }
+    public static void Begin(double start = RecipeStart);
+    public static void End();
+    public static void Advance(float delta);
+    public static float Time { get; }
+    public static double TimeAsDouble { get; }
+    public static float TimeSinceLevelLoad { get; }
+    public static double TimeSinceLevelLoadAsDouble { get; }
+    public static float UnscaledTime { get; }
+    public static double UnscaledTimeAsDouble { get; }
+    public static float UnscaledDeltaTime { get; }
+    public static float RealtimeSinceStartup { get; }
+    public static double RealtimeSinceStartupAsDouble { get; }
+    public static DateTime Now { get; }
+    public static DateTime UtcNow { get; }
+    public static DateTime Today { get; }
+}
+```
+
+`Begin` and `End` are called by the session. `Advance` is for tests outside Unity.
+
+## VirtualScreen
+
+**Namespace:** `Scion` · **Assembly:** `Scion.Runtime` · **Define:** `SCION_TRIALS`
+
+```csharp
+public static class VirtualScreen
+{
+    public static void Set(int width, int height);
+    public static void Clear();
+    public static int Width { get; }
+    public static int Height { get; }
+}
+```
+
+## VirtualWaitForSecondsRealtime
+
+**Namespace:** `Scion` · **Assembly:** `Scion.Runtime` · **Define:** `SCION_TRIALS`
+
+```csharp
+public sealed class VirtualWaitForSecondsRealtime : UnityEngine.WaitForSecondsRealtime
+{
+    public VirtualWaitForSecondsRealtime(float time);
+}
+```
+
+Waits on `Clock.RealtimeSinceStartupAsDouble`.
+
+## SeededRandom
+
+**Namespace:** `Scion` · **Assembly:** `Scion.Runtime` · **Define:** `SCION_TRIALS`
+
+```csharp
+public sealed class SeededRandom : System.Random
+{
+    public SeededRandom();
+    public static void Reset(int seed);
+}
+```
+
+The seed is a hash of the recipe seed and the order of creation since the last `Reset`.
+
+## DeterminismControl
+
+**Namespace:** `Scion` · **Assembly:** `Scion.Runtime` · **Define:** `SCION_TRIALS`
+
+```csharp
+[Flags]
+public enum DeterminismControl { None = 0, Particles = 1, Animators = 2, UiToolkit = 4, Physics = 8, All = ~0 }
+```
+
+## Determinism
+
+**Namespace:** `Scion` · **Assembly:** `Scion.Runtime` · **Define:** `SCION_TRIALS`
+
+```csharp
+public static class Determinism
+{
+    public static void Begin(int seed, DeterminismControl control);
+    public static void End();
+    public static int SeedFor(string path, int creationOrder);
+    public static IReadOnlyList<string> Census();
+}
+```
+
+`Begin` and `End` are called by the session. `SeedFor` is FNV of the seed, the path and the order. `Census` lists
+what still depends on real time or automatic seeds.
+
+## NetClock
+
+**Namespace:** `Scion.Trials` · **Assembly:** `Scion.Trials` · **Define:** `SCION_TRIALS`
+
+```csharp
+public static class NetClock
+{
+    public static double Time { get; }
+    public static float DeltaTime { get; }
+}
+```
+
+Continuous virtual time for libraries that keep their own clock; it never jumps back at `Clock.Begin`.
+
+## See also
+
+- [Deterministic runs](/scion/41664431a8f5/determinism/overview/)
+- [Clock, screen and random](/scion/41664431a8f5/determinism/clock-and-screen/)
+- [Particles, animators, UI and physics](/scion/41664431a8f5/determinism/control/)
+- [Netcode clock](/scion/41664431a8f5/determinism/netclock/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# Recipes API
+
+A recipe is a `TrialRecipe` subclass created through its public parameterless constructor. Variants come from
+`[Vary]` fields or `Variants()`; modes from `[assembly: TrialModes]`. All types are in `Scion.Trials` under
+`SCION_TRIALS`.
+
+## TrialRecipe
+
+**Namespace:** `Scion.Trials` · **Assembly:** `Scion.Trials` · **Define:** `SCION_TRIALS`
+
+```csharp
+public abstract class TrialRecipe
+{
+    public virtual string Name { get; }                       // class name
+    public string Id { get; }
+    public string Variant { get; }
+    public string Mode { get; }
+    public IReadOnlyList<string> Tags { get; protected set; }
+    public string Description { get; protected set; }
+    public int Seed { get; protected set; } = 1;
+    public int Fps { get; protected set; } = 30;
+    public float TailSeconds { get; protected set; } = 0.5f;
+    public float TimeoutSeconds { get; protected set; } = 30f;
+    public int Players { get; protected set; } = 1;
+    public bool Explicit { get; protected set; }
+    public DeterminismControl Control { get; protected set; } = DeterminismControl.All;
+    public ImageTolerance Tolerance { get; protected set; } = ImageTolerance.Default;
+    protected virtual void Checks(TrialChecks c) { }
+    protected virtual void Setup() { }
+    protected virtual IEnumerable<TrialArgs> Variants() => null;
+    protected void Mask(string artifact, Rect normalized, string why);
+}
+```
+
+| Member | Meaning | Default |
+|---|---|---|
+| `Id`, `Variant`, `Mode` | Set by the session when it expands the recipe. | |
+| `Players` | 1 to 4. | 1 |
+| `Explicit` | Runs only when named. | false |
+| `Tolerance` | `null` compares no images. | `ImageTolerance.Default` |
+| `Mask` | `artifact` is a file name or `*`; `normalized` has the origin at the bottom left. | |
+
+## VaryAttribute
+
+**Namespace:** `Scion.Trials` · **Assembly:** `Scion.Trials` · **Define:** `SCION_TRIALS`
+
+```csharp
+[AttributeUsage(AttributeTargets.Field | AttributeTargets.Property)]
+public sealed class VaryAttribute : Attribute
+{
+    public VaryAttribute(params object[] values);
+}
+```
+
+Every combination of `[Vary]` values is a variant, in declaration order.
+
+## TrialArgs
+
+**Namespace:** `Scion.Trials` · **Assembly:** `Scion.Trials` · **Define:** `SCION_TRIALS`
+
+```csharp
+public sealed class TrialArgs : IEnumerable<KeyValuePair<string, object>>
+{
+    public void Add(string name, object value);
+}
+```
+
+Keys are recipe members or `tunable:<Type>.<Field>`.
+
+## TrialModesAttribute
+
+**Namespace:** `Scion.Trials` · **Assembly:** `Scion.Trials` · **Define:** `SCION_TRIALS`
+
+```csharp
+[AttributeUsage(AttributeTargets.Assembly)]
+public sealed class TrialModesAttribute : Attribute
+{
+    public TrialModesAttribute(params string[] modes);   // "360p=640x360", "deuter"
+}
+```
+
+## ITrialModeAware
+
+**Namespace:** `Scion.Trials` · **Assembly:** `Scion.Trials` · **Define:** `SCION_TRIALS`
+
+```csharp
+public interface ITrialModeAware
+{
+    void ApplyMode(string mode);
+}
+```
+
+Adapters implement it for modes that are not resolutions.
+
+## CapturedMatch
+
+**Namespace:** `Scion.Trials` · **Assembly:** `Scion.Trials` · **Define:** `SCION_TRIALS`
+
+```csharp
+public sealed class CapturedMatch : TrialRecipe
+{
+    public string Match { get; }          // the variant key "match"
+    public MatchData Data { get; }        // the parsed .match.json
+}
+```
+
+One variant per file in `scion/recipes/captured/` and `found/`. Played by `IMatchCapture.Replay`.
+
+## See also
+
+- [Write a recipe](/scion/41664431a8f5/trials/recipes/)
+- [Variants, modes and seeds](/scion/41664431a8f5/trials/variants/)
+- [Turn any match into a recipe](/scion/41664431a8f5/trials/captured-matches/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# Adapters API
+
+Adapters are the game's port into Trials. `TrialAdapter<TRecipe>` handles recipes of a type; `StaticTrial<TItem>`
+needs no game adapter; `IMatchCapture` turns matches into recipes; `IMosaicAdapter` runs several arenas. All in
+`Scion.Trials` under `SCION_TRIALS`.
+
+## ITrialAdapter
+
+**Namespace:** `Scion.Trials` · **Assembly:** `Scion.Trials` · **Define:** `SCION_TRIALS`
+
+```csharp
+public interface ITrialAdapter
+{
+    IEnumerator Prepare(TrialSession session);
+    bool Accepts(TrialRecipe recipe);
+    IEnumerator Run(TrialRecipe recipe, TrialSession session);
+    IEnumerator Teardown(TrialRecipe recipe, TrialSession session);
+    string StateHash { get; }
+}
+```
+
+A plain implementation handles `TrialRecipe`, the least specific type. `Accepts` must not throw.
+
+## TrialAdapter\<TRecipe\>
+
+**Namespace:** `Scion.Trials` · **Assembly:** `Scion.Trials` · **Define:** `SCION_TRIALS`
+
+```csharp
+public abstract class TrialAdapter<TRecipe> : MonoBehaviour, ITrialAdapter where TRecipe : TrialRecipe
+{
+    public virtual IEnumerator Prepare(TrialSession s);
+    protected abstract IEnumerator Run(TRecipe r, TrialSession s);
+    protected virtual IEnumerator Teardown(TRecipe r, TrialSession s);
+    public virtual string StateHash => null;
+}
+```
+
+`Accepts` is `r is TRecipe`. The most derived `TRecipe` among accepting adapters wins (SCN203 on a tie).
+
+## TrialAdapterAttribute
+
+**Namespace:** `Scion.Trials` · **Assembly:** `Scion.Trials` · **Define:** `SCION_TRIALS`
+
+```csharp
+[AttributeUsage(AttributeTargets.Assembly, AllowMultiple = true)]
+public sealed class TrialAdapterAttribute : Attribute
+{
+    public TrialAdapterAttribute(Type adapter);
+    public Type Adapter { get; }
+}
+```
+
+## StaticTrial
+
+**Namespace:** `Scion.Trials` · **Assembly:** `Scion.Trials` · **Define:** `SCION_TRIALS`
+
+```csharp
+public abstract class StaticTrial : TrialRecipe
+{
+    public int SettleFrames { get; protected set; } = 3;
+    public abstract IEnumerator Play(TrialSession s);
+}
+```
+
+The non-generic base, so adapters can be `TrialAdapter<StaticTrial>`. The package registers `StaticTrialAdapter`,
+which only calls `Play`.
+
+## StaticTrial\<TItem\>
+
+**Namespace:** `Scion.Trials` · **Assembly:** `Scion.Trials` · **Define:** `SCION_TRIALS`
+
+```csharp
+public abstract class StaticTrial<TItem> : StaticTrial
+{
+    protected abstract IEnumerable<TItem> Enumerate();
+    protected virtual string ItemName(TItem item);
+    protected abstract IEnumerator Show(TItem item, TrialSession s);
+    protected virtual IEnumerator Clear(TItem item, TrialSession s);
+    protected virtual IEnumerable<TrialView> Views(TItem item);
+    protected virtual void Measure(TItem item, TrialSession s);
+}
+```
+
+## TrialView
+
+**Namespace:** `Scion.Trials` · **Assembly:** `Scion.Trials` · **Define:** `SCION_TRIALS`
+
+```csharp
+public readonly struct TrialView
+{
+    public static TrialView Screen { get; }
+    public static TrialView Ui { get; }
+    public static TrialView Top(Bounds bounds, float pxPerUnit, bool grid = false);
+    public string Name { get; }
+}
+```
+
+## IMatchCapture
+
+**Namespace:** `Scion.Trials` · **Assembly:** `Scion.Trials` · **Define:** `SCION_TRIALS`
+
+```csharp
+public interface IMatchCapture
+{
+    bool CanCapture { get; }
+    int Seed { get; }
+    int Players { get; }
+    string SaveSetup();
+    IEnumerable<(int Turn, int Player, string Data)> Commands();
+    IEnumerator Replay(MatchData match, TrialSession s);
+    string StateHash { get; }
+}
+```
+
+## MatchCaptureAttribute
+
+**Namespace:** `Scion.Trials` · **Assembly:** `Scion.Trials` · **Define:** `SCION_TRIALS`
+
+```csharp
+[AttributeUsage(AttributeTargets.Assembly)]
+public sealed class MatchCaptureAttribute : Attribute
+{
+    public MatchCaptureAttribute(Type capture);
+    public KeyCode Key { get; set; } = KeyCode.F9;
+}
+```
+
+## IMosaicAdapter
+
+**Namespace:** `Scion.Trials` · **Assembly:** `Scion.Trials` · **Define:** `SCION_TRIALS`
+
+```csharp
+public interface IMosaicAdapter
+{
+    IEnumerator PrepareArena(int arena, TrialSession s);
+}
+```
+
+Implemented by an adapter that can run arenas side by side; `TrialSession.Arena` tells `Run` which one it plays.
+
+## See also
+
+- [Write an adapter](/scion/41664431a8f5/trials/adapters/)
+- [Static trials](/scion/41664431a8f5/trials/static-trials/)
+- [Turn any match into a recipe](/scion/41664431a8f5/trials/captured-matches/)
+- [Mosaic](/scion/41664431a8f5/trials/mosaic/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# Session API
+
+`TrialSession` is the MonoBehaviour that runs the queue; `TrialRole` names a process's role in a co-op group.
+Behavior and examples are on [TrialSession](/scion/41664431a8f5/trials/session/); this page lists the signatures.
+
+## TrialSession
+
+**Namespace:** `Scion.Trials` · **Assembly:** `Scion.Trials` · **Define:** `SCION_TRIALS`
+
+```csharp
+public sealed partial class TrialSession : MonoBehaviour
+{
+    public static TrialSession Current { get; }
+    public static event Action Boundary;
+
+    public string OutputRoot { get; }
+    public TrialRecipe Recipe { get; }
+    public string RecipeDir { get; }
+    public int Round { get; }
+    public bool InRecipe { get; }
+    public int RunSeed { get; }
+    public IReadOnlyList<TrialRecipe> Recipes { get; }
+    public TrialRole Role { get; }
+    public int Arena { get; }
+    public static TrialSession ForArena(int arena);
+
+    public void BeginCut();
+    public void EndCut();
+    public void Mark(string label);
+    public void MarkImpact();
+    public void Still(string name);
+    public void MaskRect(Rect screenPixels, string why);
+
+    public void Fail(string reason);
+    public void Check(bool ok, string what);
+    public void Note(string line);
+
+    public void Probe(string key, double value);
+    public void Sensor(string name, Func<long> read);
+    public void Event(string name, params (string Key, object Value)[] fields);
+
+    public IEnumerator WaitUntil(Func<bool> cond, string what);
+    public IEnumerator WaitSeconds(float gameSeconds);
+    public IEnumerator RunQueue(string only, int rounds, string outDir, Action<int> done = null);
+}
+```
+
+Main thread only; calls from other threads are ignored and logged as errors. `Arena` is 0 outside the mosaic.
+
+## TrialRole
+
+**Namespace:** `Scion.Trials` · **Assembly:** `Scion.Trials` · **Define:** `SCION_TRIALS`
+
+```csharp
+public readonly struct TrialRole : IEquatable<TrialRole>
+{
+    public static TrialRole Host { get; }
+    public static TrialRole Client(int index);   // 1 to 3
+    public bool IsHost { get; }
+    public int Index { get; }                    // 0 = host
+    public override string ToString();           // "host" or "client:1"
+    public static bool TryParse(string text, out TrialRole role);
+}
+```
+
+## See also
+
+- [TrialSession](/scion/41664431a8f5/trials/session/)
+- [Co-op trials (1-4 players)](/scion/41664431a8f5/trials/coop/)
+- [Checks API](/scion/41664431a8f5/reference/api/checks/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# Checks API
+
+Recipes declare checks with `TrialChecks`; games add checks for every recipe with `ITrialCheck`. Results are
+`CheckResult` values. All in `Scion.Trials` under `SCION_TRIALS`.
+
+## TrialChecks
+
+**Namespace:** `Scion.Trials` · **Assembly:** `Scion.Trials` · **Define:** `SCION_TRIALS`
+
+```csharp
+public sealed class TrialChecks
+{
+    public TrialChecks NoErrors(params string[] allowRegex);
+    public TrialChecks Deterministic(bool frames = false, bool pixels = true);
+    public TrialChecks Marked(string label, int atLeast = 1);
+    public TrialChecks Order(params string[] labels);
+    public TrialChecks Frames(int min, int max);
+    public TrialChecks ProbeIs(string key, Func<double, bool> ok, string why);
+    public TrialChecks Gate(string id, params (string Name, object Value)[] options);
+    public TrialChecks Skip(string checkId, string why);
+}
+```
+
+Check ids: `log`, `assert`, `blank`, `magenta`, `px`, `determinism`, `marked:<label>`, `order`, `frames`,
+`probe:<key>`, `gate:<id>`, plus custom ids. A wrong argument throws `ArgumentException` and fails the recipe.
+
+## ITrialCheck
+
+**Namespace:** `Scion.Trials` · **Assembly:** `Scion.Trials` · **Define:** `SCION_TRIALS`
+
+```csharp
+public interface ITrialCheck
+{
+    string Id { get; }
+    void Begin(TrialRecipe recipe, TrialSession session);
+    void OnFrame(in FrameView frame);
+    void OnLog(string message, string stack, LogType type);
+    CheckResult End();
+}
+```
+
+One instance per process; main thread; `OnFrame` must not allocate.
+
+## TrialCheckAttribute
+
+**Namespace:** `Scion.Trials` · **Assembly:** `Scion.Trials` · **Define:** `SCION_TRIALS`
+
+```csharp
+[AttributeUsage(AttributeTargets.Assembly, AllowMultiple = true)]
+public sealed class TrialCheckAttribute : Attribute
+{
+    public TrialCheckAttribute(Type check);
+    public Type Check { get; }
+}
+```
+
+## FrameView
+
+**Namespace:** `Scion.Trials` · **Assembly:** `Scion.Trials` · **Define:** `SCION_TRIALS`
+
+```csharp
+public readonly ref struct FrameView
+{
+    public int Index { get; }
+    public int Width { get; }
+    public int Height { get; }
+    public ReadOnlySpan<byte> Pixels { get; }   // bottom row first, 4 bytes per pixel
+    public string Layout { get; }               // RGBA8, ARGB8 or BGRA8
+    public ulong Px { get; }
+    public double GameMs { get; }
+}
+```
+
+## CheckStatus
+
+**Namespace:** `Scion.Trials` · **Assembly:** `Scion.Trials` · **Define:** `SCION_TRIALS`
+
+```csharp
+public enum CheckStatus { Pass, Warn, Fail, Skipped }
+```
+
+## CheckResult
+
+**Namespace:** `Scion.Trials` · **Assembly:** `Scion.Trials` · **Define:** `SCION_TRIALS`
+
+```csharp
+public readonly struct CheckResult
+{
+    public CheckStatus Status { get; }
+    public string Reason { get; }
+    public int Frame { get; }            // -1 = no frame
+    public RectInt? Region { get; }      // pixels, origin bottom left
+    public static CheckResult Pass();
+    public static CheckResult Warn(string reason, int frame = -1, RectInt? region = null);
+    public static CheckResult Fail(string reason, int frame = -1, RectInt? region = null);
+}
+```
+
+`default(CheckResult)` fails the check. `Warn` and `Fail` need a non-blank reason.
+
+## See also
+
+- [Checks](/scion/41664431a8f5/trials/checks/)
+- [Gates](/scion/41664431a8f5/evaluation/gates/)
+- [Session API](/scion/41664431a8f5/reference/api/session/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# Fx API
+
+`Fx` is the effects facade grafts call; `IFxSink` is what the game implements once. Both exist in every build.
+
+## Fx
+
+**Namespace:** `Scion` · **Assembly:** `Scion.Runtime` · **Define:** none
+
+```csharp
+public static class Fx
+{
+    public static IFxSink Sink { get; set; }
+    public static string Source { get; set; }
+    public static void Sound(string id, Vector3? at = null, float volume = 1f);
+    public static void Shake(float amount);
+    public static void Text(string text, Vector3 at, Color color, float seconds = 1.1f, int size = 12, string icon = null);
+    public static void Flash(Component target, Color color, float seconds);
+    public static void HitStop(float seconds);
+    public static void Vfx(string id, Vector3 at, float scale = 1f);
+    public static void Mark(string label);
+}
+```
+
+| Member | Meaning |
+|---|---|
+| `Sink` | The game's sink; null makes every verb a no-op. Set once at boot. |
+| `Source` | The graft currently running, written by the slot dispatcher; `by` in telemetry. |
+
+## IFxSink
+
+**Namespace:** `Scion` · **Assembly:** `Scion.Runtime` · **Define:** none
+
+```csharp
+public interface IFxSink
+{
+    void Sound(string id, Vector3? at, float volume);
+    void Shake(float amount);
+    void Text(string text, Vector3 at, Color color, float seconds, int size, string icon);
+    void Flash(Component target, Color color, float seconds);
+    void HitStop(float seconds);
+    void Vfx(string id, Vector3 at, float scale);
+    void Mark(string label);
+}
+```
+
+In test builds, Trials wraps the sink to record each call in `telemetry.jsonl`, then forwards it.
+
+## See also
+
+- [Effects with Fx](/scion/41664431a8f5/grafts/fx/)
+- [Testing API](/scion/41664431a8f5/reference/api/testing/)
+- [telemetry.jsonl](/scion/41664431a8f5/reference/files/telemetry-jsonl/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# Testing API
+
+`Scion.Testing` is a NuGet package for `dotnet test` projects. It brings `Scion.Runtime` compiled for .NET (so
+`Call<T>`, `Fx` and the attributes work outside Unity), Unity value types used by grafts (`Vector3`, `Color`), the
+Scion analyzers, and a recorder for `Fx` calls.
+
+## FxRecorder
+
+**Namespace:** `Scion.Testing` · **Assembly:** `Scion.Testing` · **Define:** none
+
+```csharp
+public sealed class FxRecorder : IFxSink
+{
+    public IReadOnlyList<FxCall> Calls { get; }
+    public void Clear();
+}
+```
+
+Set `Fx.Sink = new FxRecorder()` before calling a graft; every verb is appended to `Calls` with its arguments and
+`Fx.Source`.
+
+## FxCall
+
+**Namespace:** `Scion.Testing` · **Assembly:** `Scion.Testing` · **Define:** none
+
+```csharp
+public readonly struct FxCall
+{
+    public string Verb { get; }       // "Sound", "Shake", ...
+    public object[] Args { get; }
+    public string Source { get; }
+}
+```
+
+## The package
+
+```sh
+dotnet add Tests/Orchard.Grafts.Tests package Scion.Testing --version 1.0.0
+```
+
+Projects that reference `Scion.Testing` are test assemblies: SCN110 does not apply to them.
+
+## See also
+
+- [Test grafts without Unity](/scion/41664431a8f5/grafts/testing/)
+- [Fx API](/scion/41664431a8f5/reference/api/fx/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# Compare API
+
+`ImageTolerance` (in `Scion.Runtime`) states how much two captures may differ. `Scion.Compare` (in the package and on
+NuGet, no Unity needed) loads PNG and raw frames, builds masks, compares images with OKLab and HyAB and writes
+heatmaps. JSON and PNG coordinates have the origin at the top left.
+
+## ImageTolerance
+
+**Namespace:** `Scion` · **Assembly:** `Scion.Runtime` · **Define:** none
+
+```csharp
+public sealed class ImageTolerance
+{
+    public ImageTolerance(float pixel, float maxRatio, int maxPixels);
+    public static readonly ImageTolerance Default;   // (0.1, 0.001, -1)
+    public static readonly ImageTolerance Exact;     // (0, 0, 0)
+    public float Pixel { get; }
+    public float MaxRatio { get; }
+    public int MaxPixels { get; }                    // -1 = no limit
+}
+```
+
+## Image
+
+**Namespace:** `Scion.Compare` · **Assembly:** `Scion.Compare` · **Define:** none
+
+```csharp
+public sealed class Image
+{
+    public int Width { get; }
+    public int Height { get; }
+    public byte[] Rgba { get; }                      // RGBA8, top row first
+    public static Image Load(string path);           // .png, or .raw with raw.json beside it
+    public static Image FromRaw(byte[] raw, int width, int height, string layout, bool bottomUp);
+    public void SavePng(string path);
+}
+```
+
+## NormRect
+
+**Namespace:** `Scion.Compare` · **Assembly:** `Scion.Compare` · **Define:** none
+
+```csharp
+public readonly struct NormRect
+{
+    public NormRect(float x, float y, float w, float h);   // 0 to 1, origin top left
+}
+```
+
+## PixelRect
+
+**Namespace:** `Scion.Compare` · **Assembly:** `Scion.Compare` · **Define:** none
+
+```csharp
+public readonly struct PixelRect
+{
+    public int X { get; }
+    public int Y { get; }
+    public int Width { get; }
+    public int Height { get; }
+}
+```
+
+## Mask
+
+**Namespace:** `Scion.Compare` · **Assembly:** `Scion.Compare` · **Define:** none
+
+```csharp
+public sealed class Mask
+{
+    public static Mask Empty(int width, int height);
+    public static Mask FromRects(int width, int height, IEnumerable<NormRect> rects);
+    public static bool TryLearn(IReadOnlyList<Image> samples, ImageTolerance t, float cap, out Mask mask, out float unstable);
+    public float Coverage { get; }
+    public Mask Union(Mask other);
+    public static Mask Load(string png);
+    public void Save(string png);
+}
+```
+
+`TryLearn` returns false (and no mask) when the unstable area exceeds `cap`; it never truncates.
+
+## DiffStatus
+
+**Namespace:** `Scion.Compare` · **Assembly:** `Scion.Compare` · **Define:** none
+
+```csharp
+public enum DiffStatus { Same, Within, Changed }
+```
+
+`new` and `stale` are CLI verdicts, not image statuses.
+
+## DiffResult
+
+**Namespace:** `Scion.Compare` · **Assembly:** `Scion.Compare` · **Define:** none
+
+```csharp
+public readonly struct DiffResult
+{
+    public DiffStatus Status { get; }
+    public double Ratio { get; }
+    public int Pixels { get; }
+    public PixelRect Bounds { get; }
+}
+```
+
+## ImageDiff
+
+**Namespace:** `Scion.Compare` · **Assembly:** `Scion.Compare` · **Define:** none
+
+```csharp
+public static class ImageDiff
+{
+    public static DiffResult Compare(Image a, Image b, Mask mask, ImageTolerance t, bool parallel = false);
+    public static void WriteHeatmap(Image a, Image b, Mask mask, ImageTolerance t, string pngPath);
+}
+```
+
+## See also
+
+- [Image comparison](/scion/41664431a8f5/trials/image-comparison/)
+- [Raw frames](/scion/41664431a8f5/reference/files/raw-frames/)
+- [Baselines and approval](/scion/41664431a8f5/trials/baselines/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# Editor API
+
+`ScionBuild` builds players the way the CLI does: test players on Mono with the test defines, final players without
+them. It works from your editor scripts, from batchmode and through the open editor.
+
+## ScionBuild
+
+**Namespace:** `Scion.Editor` · **Assembly:** `Scion.Editor` · **Define:** editor only
+
+```csharp
+public static class ScionBuild
+{
+    public static readonly string[] TestDefines = { "SCION_SLOTS", "SCION_TRIALS" };
+    public static BuildReport BuildTestPlayer(BuildPlayerOptions o);
+    public static BuildReport BuildFinalPlayer(BuildPlayerOptions o);
+    public static void TestFromCommandLine();
+    public static void FinalFromCommandLine();
+    public static string FromEditor(string mode, string outDir);
+}
+```
+
+| Member | Meaning |
+|---|---|
+| `BuildTestPlayer` | Forces Mono, adds `TestDefines` for the build, restores backend and defines in a `finally`, writes `scion-build.json`. |
+| `BuildFinalPlayer` | Builds with the project's backend; fails with SCN121 when a test define is set. |
+| `TestFromCommandLine`, `FinalFromCommandLine` | Batchmode: `-scion-build-out <dir> [-scion-build-target osx\|win\|linux]`; exits 0 or 1 and prints `BUILD_RESULT`. |
+| `FromEditor` | `mode` is `test` or `final`; returns the JSON of `build`. Used through the open editor. |
+
+## ScionBuildEntry
+
+**Namespace:** global · **Assembly:** written by the CLI into `Temp/Scion/` · **Define:** editor only
+
+```csharp
+public static class ScionBuildEntry
+{
+    public static string Run(string mode, string outDir) => Scion.Editor.ScionBuild.FromEditor(mode, outDir);
+}
+```
+
+The CLI writes this stub to `Temp/Scion/ScionBuildEntry.cs` and runs it in the open editor through the
+`com.unity.pipeline` command line. You never write it.
+
+## See also
+
+- [Build modes](/scion/41664431a8f5/grafts/build-modes/)
+- [build test, build final](/scion/41664431a8f5/cli/build/)
+- [scion-build.json](/scion/41664431a8f5/reference/files/scion-build-json/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# Specs API
+
+`Scion.Specs` is a NuGet package for specs projects (`specs.project` in `scion.json`). A spec is a `TrialSpec` that
+defines its parts on a `SpecBuilder`; `trial run --spec` runs it. It references `Scion.Core` and runs balance and
+metamorphic parts on the simulator in plain .NET.
+
+## TrialSpec
+
+**Namespace:** `Scion.Specs` · **Assembly:** `Scion.Specs` · **Define:** none
+
+```csharp
+public abstract class TrialSpec
+{
+    public abstract string Name { get; }
+    public abstract string Target { get; }       // one sentence: what must be true
+    public abstract void Define(SpecBuilder s);
+}
+```
+
+## SpecBuilder
+
+**Namespace:** `Scion.Specs` · **Assembly:** `Scion.Specs` · **Define:** none
+
+```csharp
+public sealed class SpecBuilder
+{
+    public BalancePart Balance(string name, int players, int matches);
+    public VisualPart Visual(string recipe);
+    public JudgePart Judge(string recipe, string head);
+    public void Metamorphic(Metamorphic property, int matches, int players = 1);
+    public void Metamorphic(string name, Func<ISimulation, int, bool> property, int matches);
+    public CurvePart Curve(string name, int levels, int players, int matches);
+}
+
+public sealed class BalancePart { public BalancePart Expect(string metric, double? min = null, double? max = null); }
+public sealed class VisualPart
+{
+    public VisualPart Expect(string metric, double? min = null, double? max = null);
+    public VisualPart Gate(string id, params (string Name, object Value)[] options);
+}
+public sealed class JudgePart { public JudgePart Expect(string answer, double? min = null, double? max = null); }
+public sealed class CurvePart
+{
+    public CurvePart ExpectAt(int level, string metric, double? min = null, double? max = null);
+    public CurvePart Monotonic(string metric, bool decreasing);
+    public CurvePart MaxStep(string metric, double step);
+}
+```
+
+| Part | Metrics |
+|---|---|
+| `Balance`, `Curve` | `ISimulation.Metrics`: `win_rate`, `turns_mean` and the game's own. |
+| `Visual` | Motion metrics (`hit_stop_ms`, `shake_peak_px`, `flash_ms`...) and the recipe's probes. |
+| `Judge` | `score`, `noul`, or a choice's probability. |
+
+## Gates
+
+**Namespace:** `Scion.Specs` (also `Scion.Trials`) · **Assembly:** `Scion.Specs` · **Define:** none
+
+```csharp
+public static class Gates
+{
+    public const string TextOverflow = "text_overflow";
+    public const string UiGrid = "ui_grid";
+    public const string TextContrast = "text_contrast";
+    public const string Photosensitivity = "photosensitivity";
+    public const string ImageRegression = "image_regression";
+    public const string TelemetryVsPixel = "telemetry_vs_pixel";
+    public const string NothingChanged = "nothing_changed";
+    public const string Palette = "palette";
+}
+```
+
+## Metamorphic
+
+**Namespace:** `Scion.Specs` · **Assembly:** `Scion.Specs` · **Define:** none
+
+```csharp
+public enum Metamorphic { Mirror, Permute, VisualToggle, SaveLoad }
+```
+
+## See also
+
+- [Specs](/scion/41664431a8f5/trials/specs/)
+- [Balance with the simulator](/scion/41664431a8f5/explore/balance/)
+- [Metamorphic tests](/scion/41664431a8f5/explore/metamorphic/)
+- [Gates](/scion/41664431a8f5/evaluation/gates/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# Core API
+
+`Scion.Core` is a small assembly without engine references, for the game's rules core. It gives rules an explicit
+extension point (`RuleModifier<T>`), declares tunables and probes, and lets Scion run the rules outside Unity
+(`ISimulation`) for balance specs, the multiverse, metamorphic tests and the hunter. It ships in the package and on
+NuGet with the same version.
+
+## RuleModifier\<T\>
+
+**Namespace:** `Scion.Core` · **Assembly:** `Scion.Core` · **Define:** none
+
+```csharp
+public abstract class RuleModifier<T> where T : struct
+{
+    public abstract Stage Stage { get; }
+    public virtual int Priority => 0;
+    public abstract void Apply(ref T context);
+}
+
+public sealed class ModifierSet<T> where T : struct
+{
+    public void Add(RuleModifier<T> modifier);
+    public bool Remove(RuleModifier<T> modifier);
+    public void Apply(ref T context);           // by Stage, then Priority, then type full name
+    public IReadOnlyList<RuleModifier<T>> All { get; }
+}
+```
+
+## Stage
+
+**Namespace:** `Scion.Core` · **Assembly:** `Scion.Core` · **Define:** none
+
+```csharp
+public enum Stage { Base = 1, Add = 2, Mul = 3, Clamp = 4, Final = 5 }
+```
+
+## TunableAttribute
+
+**Namespace:** `Scion.Core` · **Assembly:** `Scion.Core` · **Define:** none
+
+```csharp
+[AttributeUsage(AttributeTargets.Field)]
+public sealed class TunableAttribute : Attribute
+{
+    public TunableAttribute();                        // bool tunables
+    public TunableAttribute(double min, double max);
+    public double Min { get; }
+    public double Max { get; }
+    public string Doc { get; set; }
+}
+```
+
+On `static` fields of type `int`, `float`, `double` or `bool`. Numeric tunables need a range (SCN005).
+
+## ProbeAttribute
+
+**Namespace:** `Scion.Core` · **Assembly:** `Scion.Core` · **Define:** none
+
+```csharp
+[AttributeUsage(AttributeTargets.Field | AttributeTargets.Property)]
+public sealed class ProbeAttribute : Attribute
+{
+    public ProbeAttribute(string key);
+    public string Key { get; }
+}
+```
+
+Values recorded at the end of each recipe as probes.
+
+## Tunables
+
+**Namespace:** `Scion.Core` · **Assembly:** `Scion.Core` · **Define:** none
+
+```csharp
+public static class Tunables
+{
+    public static bool Set(string key, object value);       // clamps to the range; false if unknown
+    public static object Get(string key);
+    public static string LobbyHash { get; }                 // hash of rule-layer tunable values
+}
+```
+
+## ISimulation
+
+**Namespace:** `Scion.Core` · **Assembly:** `Scion.Core` · **Define:** none
+
+```csharp
+public interface ISimulation
+{
+    void Reset(int seed, string setup);
+    IReadOnlyList<string> LegalCommands(int player);
+    void Apply(int player, string command);
+    bool Done { get; }
+    string Hash();
+    IReadOnlyDictionary<string, double> Metrics();
+    IEnumerable<string> Features();
+}
+```
+
+Commands are serialized strings (the same `Data` as captured matches).
+
+## SimulationAttribute
+
+**Namespace:** `Scion.Core` · **Assembly:** `Scion.Core` · **Define:** none
+
+```csharp
+[AttributeUsage(AttributeTargets.Assembly)]
+public sealed class SimulationAttribute : Attribute
+{
+    public SimulationAttribute(Type simulation);
+}
+```
+
+Registering it raises the project to adoption level 3.
+
+## IBot
+
+**Namespace:** `Scion.Core` · **Assembly:** `Scion.Core` · **Define:** none
+
+```csharp
+public interface IBot
+{
+    string Choose(ISimulation sim, int player, IReadOnlyList<string> legal, Random random);
+}
+
+[AttributeUsage(AttributeTargets.Class)]
+public sealed class BotAttribute : Attribute { public BotAttribute(string name); }
+```
+
+## Capabilities
+
+**Namespace:** `Scion.Core` · **Assembly:** `Scion.Core` · **Define:** none
+
+```csharp
+public interface ISaveable { byte[] Save(); void Load(byte[] state); }
+public interface IInspectable { string Diff(ISimulation other); }   // first differing field, e.g. "units[0].hp"
+public interface IMirrorable { void Mirror(); }
+public interface IPermutable { void Permute(int[] order); }
+```
+
+Implemented by the simulation for forking (`ISaveable`), divergence reports (`IInspectable`) and metamorphic
+properties (`IMirrorable`, `IPermutable`).
+
+## See also
+
+- [Grafts are visual only](/scion/41664431a8f5/grafts/visual-only/)
+- [Rules R1-R8](/scion/41664431a8f5/standard/rules/)
+- [The multiverse](/scion/41664431a8f5/explore/multiverse/)
+- [Balance with the simulator](/scion/41664431a8f5/explore/balance/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# Run Scion in CI
+
+This recipe runs Scion in GitHub Actions with three jobs. A fast `dotnet` job needs no Unity license: analyzers,
+strict graft checks, `gen --check`, unit tests and specs on the simulator. A Unity job builds the test player with
+GameCI, runs the trials and uploads the run folder. A nightly job runs many rounds with `--check --jitter` to catch
+rare non-determinism. Pull requests that change baselines must come with the approved files.
+
+## When to use
+
+- Every repository with Scion: the dotnet job costs under two minutes and catches most mistakes.
+- Add the Unity job when you have a license for CI (GameCI documents the activation).
+
+## Before you begin
+
+- `scion.json`, the tool manifest and baselines committed (PNGs in Git LFS).
+- A Unity license secret for the Unity job (`UNITY_LICENSE`, `UNITY_EMAIL`, `UNITY_PASSWORD`) set in the repository
+  settings, never in files.
+
+## Steps
+
+### 1. The dotnet job
+
+`.github/workflows/scion.yml`:
+
+```yaml
+name: scion
+on: [pull_request, push]
+jobs:
+  dotnet:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { lfs: true }
+      - uses: actions/setup-dotnet@v4
+        with: { dotnet-version: '10.0.x' }
+      - run: dotnet tool restore
+      - run: dotnet test Tests/Orchard.Core.Tests
+      - run: dotnet test Tests/Orchard.Grafts.Tests
+      - run: dotnet scion graft check --strict
+      - run: dotnet scion gen --check
+      - run: dotnet scion trial run --spec RulesHold
+```
+
+### 2. The Unity job
+
+```yaml
+  unity:
+    runs-on: ubuntu-latest
+    needs: dotnet
+    steps:
+      - uses: actions/checkout@v4
+        with: { lfs: true }
+      - uses: actions/setup-dotnet@v4
+        with: { dotnet-version: '10.0.x' }
+      - run: dotnet tool restore
+      - uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          targetPlatform: StandaloneLinux64
+          buildMethod: Scion.Editor.ScionBuild.TestFromCommandLine
+          customParameters: -scion-build-out .scion/builds/test
+      - run: dotnet scion trial run --rounds 2 -j 2 --build .scion/builds/test
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: scion-run, path: .scion/runs }
+```
+
+### 3. Fail on unapproved changes
+
+A run exits 0 when recipes pass, even with `changed` verdicts. To require that visual changes come with approved
+baselines, fail the job when any id is `changed` or `new`:
+
+```yaml
+      - run: |
+          dotnet scion trial show --changed --format json > changed.json
+          test "$(jq .count changed.json)" = "0"
+```
+
+Linux baselines have their own platform folder; approve them once from a Linux machine or a CI artifact.
+
+### 4. The nightly batch
+
+```yaml
+on:
+  schedule: [{ cron: '0 3 * * *' }]
+# same Unity job, with:
+      - run: dotnet scion trial run --rounds 10 --check --jitter 20 -j 4 --build .scion/builds/test
+```
+
+## Reference
+
+| Job | Needs Unity | Catches |
+|---|---|---|
+| dotnet | no | Analyzer errors, graft signatures, stale manifest, rule regressions, broken specs |
+| Unity | yes | Failing recipes, determinism, visual changes |
+| Nightly | yes | Rare non-determinism, timing-dependent bugs |
+
+## Errors
+
+| Code | Exit | Cause | Next action |
+|---|---|---|---|
+| `unity_failed` | 3 | The license step failed. | Check the GameCI activation secrets. |
+| `baseline_unreadable` | warning | LFS files not checked out. | `lfs: true` in checkout. |
+| `capture_broken` | 3 | No GPU and no offscreen capture. | Keep the default headless mode; do not pass `--window`. |
+
+## Examples
+
+### Only the dotnet job on documentation changes
+
+```yaml
+on:
+  pull_request:
+    paths-ignore: ['**/*.md']
+```
+
+### Upload only failures
+
+```yaml
+      - run: dotnet scion trial show --failed --format json > failed.json
+```
+
+## See also
+
+- [Verify determinism](/scion/41664431a8f5/determinism/verify/)
+- [Baselines and approval](/scion/41664431a8f5/trials/baselines/)
+- [trial run](/scion/41664431a8f5/cli/trial-run/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# Capture every HUD state
+
+The HUD has many states nobody looks at together: the turn banner, low health, four players, a status effect, a long
+unit name. This recipe captures all of them with one `StaticTrial<HudState>`, at 360p and 720p, checks them with
+gates (text overflow, contrast, grid), writes a labeled sheet, and lets the judge rank them for review.
+
+## When to use
+
+- Any change to HUD layout, fonts, colors or localization.
+- As the input of a [UI review with the judge](/scion/41664431a8f5/judge/ui-review/).
+
+## Before you begin
+
+- The HUD can be put in any state from data, without a battle (Orchard's `Hud.Apply(HudState)`).
+- Modes declared: `[assembly: TrialModes("360p=640x360", "720p=1280x720")]`.
+
+## Steps
+
+### 1. Describe the states
+
+```csharp
+public readonly struct HudState
+{
+    public readonly string Name; public readonly int Players; public readonly int Hp; public readonly string Status;
+    public HudState(string name, int players, int hp, string status) { Name = name; Players = players; Hp = hp; Status = status; }
+}
+```
+
+### 2. Write the static trial
+
+```csharp
+public sealed class HudStates : StaticTrial<HudState>
+{
+    public HudStates()
+    {
+        Description = "Every HUD state at the current mode.";
+        Tags = new[] { "ui" };
+        Tolerance = ImageTolerance.Exact;
+    }
+
+    protected override IEnumerable<HudState> Enumerate()
+    {
+        yield return new HudState("idle", 1, 20, null);
+        yield return new HudState("low-hp", 1, 3, null);
+        yield return new HudState("four-players", 4, 20, null);
+        yield return new HudState("burning", 1, 12, "burn");
+        yield return new HudState("long-name", 1, 20, null);
+        // ... 15 more
+    }
+
+    protected override string ItemName(HudState s) => s.Name;
+
+    protected override IEnumerator Show(HudState s, TrialSession session)
+    {
+        Hud.Current.Apply(s);
+        yield return null;
+    }
+
+    protected override IEnumerable<TrialView> Views(HudState s) { yield return TrialView.Ui; }
+
+    protected override void Checks(TrialChecks c) =>
+        c.Gate(Gates.TextOverflow).Gate(Gates.TextContrast).Gate(Gates.UiGrid, ("grid_px", 4));
+}
+```
+
+### 3. Run both modes
+
+```sh
+dotnet scion trial run HudStates --mode 360p
+dotnet scion trial run HudStates --mode 720p
+dotnet scion trial show "HudStates@*" --image sheet
+```
+
+### 4. Rank for review
+
+```sh
+dotnet scion judge run <run> --heads readability,has_glitch
+```
+
+## Reference
+
+| Output | Content |
+|---|---|
+| `<state>.ui.png` | One still per state, UI layer only. |
+| `sheet.png` | All states, labeled, longer side at most 2000 px. |
+| `checks[]` | `gate:text_overflow`, `gate:text_contrast`, `gate:ui_grid` with frame and region. |
+
+Ids are `HudStates@360p` and `HudStates@720p`; each has its own baseline.
+
+## Errors
+
+| Code | Exit | Cause | Next action |
+|---|---|---|---|
+| check `gate:text_overflow` fails | 1 | A label is cut. | Fix the layout or the text; the region shows where. |
+| check `gate:text_contrast` fails | 1 | Text below 4.5:1. | Change the color or add a backing panel. |
+
+## Examples
+
+### Only one state while fixing it
+
+```sh
+dotnet scion trial run HudStates --mode 360p
+dotnet scion trial show HudStates@360p --image still
+```
+
+### Add a color-blind mode
+
+```csharp
+[assembly: TrialModes("360p=640x360", "720p=1280x720", "deuter")]
+```
+
+## See also
+
+- [Static trials](/scion/41664431a8f5/trials/static-trials/)
+- [Gates](/scion/41664431a8f5/evaluation/gates/)
+- [Review a UI with the judge](/scion/41664431a8f5/judge/ui-review/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# Tune a hit effect
+
+This recipe tunes Orchard's critical hit from "it works" to "it feels right" in one sitting. You loop the moment in
+the test build, edit a draft graft with `graft watch` injecting every save, read the motion metrics, save the result
+as presets, compare them blind with a judge duel, then promote the graft and approve the baselines.
+
+## When to use
+
+- Any feel work on one moment: a hit, a death, a pickup, a turn change.
+
+## Before you begin
+
+- A captured match of the moment (`knight-dies-to-crit`), or a recipe (`SlashHit`).
+- Warm copies are not needed: the loop runs its own copy.
+
+## Steps
+
+### 1. Loop the moment
+
+```sh
+dotnet scion trial loop "CapturedMatch[match=knight-dies-to-crit]" --span 3..3 --window
+```
+
+### 2. Draft the graft and watch
+
+```sh
+dotnet scion graft new CritShake --after Orchard.Presentation.HitPresenter.Play
+dotnet scion graft watch
+```
+
+Edit `scion/grafts/CritShake.cs`; every save shows up on the next pass.
+
+### 3. Read the numbers
+
+```sh
+dotnet scion trial run SlashHit --grafts .scion/grafts/ScionGrafts_51c2.dll --motion
+```
+
+`metrics.json` gives hit-stop, shake peak and decay, flash length. Aim for the bounds of your spec (for example
+hit-stop 50 to 120 ms, shake peak 4 to 12 px).
+
+### 4. Save two feels as presets
+
+`scion/presets/heavy.json` and `scion/presets/snappy.json` with the tunables you settled on.
+
+### 5. Duel them
+
+```sh
+dotnet scion trial run SlashHit --grafts .scion/grafts/ScionGrafts_51c2.dll --variants heavy,snappy --motion
+dotnet scion judge run <run> --heads hit_weight
+dotnet scion judge vote --run <run> --head hit_weight
+```
+
+### 6. Promote and approve
+
+```sh
+dotnet scion graft promote CritShake
+dotnet scion build test
+dotnet scion trial run --rounds 2
+dotnet scion trial approve --changed --reason "crit shake and hit-stop"
+```
+
+Approving `changed` needs a person at a terminal.
+
+## Reference
+
+| Step | Tool | Time |
+|---|---|---|
+| Loop and edit | `trial loop`, `graft watch` | Seconds per change |
+| Measure | `--motion`, `metrics.json` | One run |
+| Compare | presets, `judge run`, `judge vote` | Minutes |
+| Ship | `graft promote`, `build test`, `trial approve` | One build |
+
+## Errors
+
+| Code | Exit | Cause | Next action |
+|---|---|---|---|
+| loop stopped by `error` | 1 | The graft changed the hash. | It touches rules; keep it visual. |
+| `SCN113` | 1 | No slot for `HitPresenter.Play`. | Add `AnchorScope(typeof(HitPresenter))`, rebuild. |
+
+## Examples
+
+### A blend between the two feels
+
+```sh
+dotnet scion trial run SlashHit --preset "base + 0.5 heavy + 0.5 snappy" --motion
+```
+
+### Check photosensitivity before approving
+
+```csharp
+protected override void Checks(TrialChecks c) => c.Gate(Gates.Photosensitivity);
+```
+
+## See also
+
+- [The live loop](/scion/41664431a8f5/explore/live-loop/)
+- [The motion pack](/scion/41664431a8f5/evaluation/motion-pack/)
+- [Taste heads and feel presets](/scion/41664431a8f5/judge/presets/)
+- [From draft to final build](/scion/41664431a8f5/grafts/lifecycle/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# Audit level rooms
+
+Level rooms break quietly: a prop floats, a door is blocked, a decoration from another biome slips in. This recipe
+audits every room template with a `StaticTrial<RoomTemplate>`: two views per room (empty from above, and with units
+from the game camera), probes for props and doors, custom gates that fail on the common breakages, and reruns of only
+the rooms a change touched.
+
+## When to use
+
+- Games with authored or generated rooms, tiles or arenas.
+- After changes to room data, prop prefabs or the placement code.
+
+## Before you begin
+
+- The game can build one room in an empty scene from its template (Orchard's `RoomBuilder.Build(template)`), the same
+  code path the game uses.
+
+## Steps
+
+### 1. The static trial
+
+```csharp
+public sealed class RoomAudit : StaticTrial<RoomTemplate>
+{
+    public RoomAudit() { Tags = new[] { "level" }; SettleFrames = 5; }
+
+    protected override IEnumerable<RoomTemplate> Enumerate() => RoomTemplates.All.OrderBy(t => t.Id);
+    protected override string ItemName(RoomTemplate t) => t.Id;
+
+    protected override IEnumerator Show(RoomTemplate t, TrialSession s)
+    {
+        yield return RoomBuilder.Build(t);
+    }
+
+    protected override IEnumerator Clear(RoomTemplate t, TrialSession s)
+    {
+        RoomBuilder.Clear();
+        yield break;
+    }
+
+    protected override IEnumerable<TrialView> Views(RoomTemplate t)
+    {
+        yield return TrialView.Top(RoomBuilder.Bounds, pxPerUnit: 16, grid: true);
+        yield return TrialView.Screen;
+    }
+
+    protected override void Measure(RoomTemplate t, TrialSession s)
+    {
+        s.Probe(t.Id + "_props", RoomBuilder.Props.Count);
+        s.Probe(t.Id + "_doors_open", RoomBuilder.Doors.Count(d => d.Reachable));
+    }
+}
+```
+
+### 2. Custom gates
+
+Register `FloatingPropGate` and a `BlockedDoorGate` as `ITrialCheck` ([Gates](/scion/41664431a8f5/evaluation/gates/) shows the
+first). Others worth writing: a prop clipping another prop, a prop from a foreign biome, an invisible blocker on the
+navigation mesh, a room that does not match its template's size.
+
+### 3. Run and review
+
+```sh
+dotnet scion trial run RoomAudit -j 6
+dotnet scion trial show RoomAudit --image sheet
+```
+
+### 4. Recapture only what changed
+
+```sh
+dotnet scion trial run RoomAudit --changed
+```
+
+`--changed` takes the ids that were `changed` or `stale` in the last run; for static trials, the stills that changed
+are listed in `compare.json`.
+
+## Reference
+
+| Output | Content |
+|---|---|
+| `<room>.top.png` | From above with a 1-unit grid. |
+| `<room>.png` | The game camera with units placed. |
+| `sheet.png` | Every room, labeled. |
+| probes | Props and reachable doors per room. |
+
+## Errors
+
+| Code | Exit | Cause | Next action |
+|---|---|---|---|
+| check `gate:floating_prop` fails | 1 | A prop is above the ground. | Fix the prefab pivot or the placement. |
+| check `gate:blocked_door` fails | 1 | No path through a door. | Move the blocking prop. |
+
+## Examples
+
+### A judge head trained on past room reviews
+
+```sh
+dotnet scion judge new room_quality --question scion/judge/questions/room_quality.json --view full
+dotnet scion judge run <run> --heads room_quality
+```
+
+### Only one biome
+
+```csharp
+protected override IEnumerable<RoomTemplate> Enumerate() => RoomTemplates.All.Where(t => t.Biome == "orchard");
+```
+
+## See also
+
+- [Static trials](/scion/41664431a8f5/trials/static-trials/)
+- [Gates](/scion/41664431a8f5/evaluation/gates/)
+- [Checks](/scion/41664431a8f5/trials/checks/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# Troubleshooting
+
+Each entry starts from what you see, names the usual cause and gives the fix. Run `dotnet scion doctor --level 3`
+first: it catches most setup problems with a hint. Error codes link to [Error and warning codes](/scion/41664431a8f5/reference/errors/).
+
+## No copies start
+
+**Symptom.** `trial run` ends at once with `build_not_found` or `player_crashed`.
+
+**Cause.** No test build at the discovered path, a build from another machine (paths in `scion-build.json`), or a
+macOS quarantine flag on a downloaded build.
+
+**Fix.** `dotnet scion build test`; or `--build <path>`; on macOS, `xattr -dr com.apple.quarantine <app>`.
+
+## Every verdict is stale
+
+**Symptom.** All ids are `stale` after switching machines or Unity versions.
+
+**Cause.** Images are compared per platform (OS, graphics API, size, capture), and the baseline has no folder for
+this platform, or Unity, fps or player args changed.
+
+**Fix.** The hash is still compared, so `stale` with the same hash is safe. A person approves once on the new
+platform: `dotnet scion trial approve --changed --reason "baselines for linux-vulkan"`.
+
+## editor_open when building
+
+**Symptom.** `build test` exits 3 with `editor_open`.
+
+**Cause.** The project is open in Unity and `com.unity.pipeline` is not installed, so the CLI cannot build through the
+editor and cannot start a second one on the same project.
+
+**Fix.** Close the editor, or install the pipeline package and build again.
+
+## SCN113 when injecting
+
+**Symptom.** `graft inject` reports `SCN113: HitPresenter.PlayCritical has no slot in this build.`
+
+**Cause.** The test build has no slot for that method: no promoted graft on it and no `AnchorScope` covering it.
+
+**Fix.** Add `[assembly: AnchorScope(typeof(HitPresenter))]`, `dotnet scion build test`, inject again.
+
+## SCN120 on a test build
+
+**Symptom.** The build fails with `SCION_SLOTS needs a JIT backend (Mono)`.
+
+**Cause.** The test defines were set in Player Settings and the project builds with IL2CPP.
+
+**Fix.** Remove the defines from Player Settings; build tests with `dotnet scion build test`, which sets Mono and the
+defines only for the build.
+
+## Empty captures in batchmode
+
+**Symptom.** Exit 3 `capture_broken`, or black `window.png`.
+
+**Cause.** A player started by hand with `-batchmode` and without offscreen capture, or a camera that renders only
+to the screen.
+
+**Fix.** Let the CLI start players, or add `-scion-offscreen`. Cameras with a target texture of their own need to be
+captured with a `TrialView`.
+
+## Ports already in use
+
+**Symptom.** `no_free_port`, or co-op clients that never connect.
+
+**Cause.** Another server holds ports, or `port_arg` is missing, so every group uses the game's default port.
+
+**Fix.** Set `trials.port_arg` to the game's port flag; close stray servers (`dotnet scion trial serve --stop`).
+
+## px_unstable warnings
+
+**Symptom.** `px_unstable` and `px_changed` verdicts that come and go.
+
+**Cause.** Something visual is not deterministic: particles started before the recipe, an animator on unscaled real
+time, a shader reading `_Time` from a non-redirected source.
+
+**Fix.** Keep `Control = DeterminismControl.All`; run `--rounds 3 --check` and read `determinism.tsv`; mask only what is
+random on purpose.
+
+## Frame count off by one
+
+**Symptom.** `frame_jitter: ["CoopTurn 212/213"]`.
+
+**Cause.** The Netcode tick runs on the real clock.
+
+**Fix.** Turn on `SCION_NETCLOCK` with `netclock_assemblies` ([Netcode clock](/scion/41664431a8f5/determinism/netclock/)).
+
+## Low memory
+
+**Symptom.** `low_memory` warnings, copies killed by the OS, `player_crashed`.
+
+**Cause.** `-j` above what free memory allows (about 550 MB per copy for Orchard).
+
+**Fix.** Lower `-j` to `doctor`'s `suggested_copies`, or use warm copies or the mosaic.
+
+## A recipe passes alone and fails in the queue
+
+**Symptom.** `trial run SlashHit` passes; `trial run` fails it.
+
+**Cause.** State leaks from an earlier recipe: a static, `Time.timeScale`, a pool, a scene left loaded.
+
+**Fix.** Reset it in the adapter's `Teardown` or on `TrialSession.Boundary`.
+
+## See also
+
+- [Error and warning codes](/scion/41664431a8f5/reference/errors/)
+- [What to do next](/scion/41664431a8f5/agents/next-action/)
+- [doctor](/scion/41664431a8f5/cli/doctor/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# FAQ
+
+Short answers to the questions people ask first. Each links to the page with the details.
+
+## Questions
+
+### Does Scion ship to players
+
+Only as direct calls. The final build calls promoted grafts directly (call mode): no slots, no injection, no trials,
+no lab code, no reflection. A final build with test defines fails (SCN121). See [Build modes](/scion/41664431a8f5/grafts/build-modes/).
+
+### Why does the test build need Mono
+
+Slots are replaced while the game runs, which needs a JIT. IL2CPP compiles ahead of time. The test build is Mono; the
+final build can be IL2CPP.
+
+### Do I need Netcode or URP
+
+No. Neither is a dependency. Scion knows how to redirect their time reads when you list them in `ScionSettings.json`,
+and co-op trials work with any networking that takes command-line flags.
+
+### Which platforms
+
+The editor and the CLI run on macOS, Windows and Linux. Test builds run on the desktop platforms. See
+[Requirements](/scion/41664431a8f5/start/requirements/).
+
+### Why not Harmony or MonoMod
+
+They patch at run time, which IL2CPP does not support, and their errors appear only when the code runs. Scion weaves
+at compile time: errors come with file and line, and final builds have plain direct calls.
+
+### Can grafts change rules
+
+No. Grafts are visual; rules change in the core through `RuleModifier<T>`. See
+[Grafts are visual only](/scion/41664431a8f5/grafts/visual-only/).
+
+### How much does an agent spend
+
+The CLI returns compact JSON (about 1.5 KB) with a `next_step`, and images are paths, not content, so an agent reads
+only what it needs. The project index is under 2 KB. The judge runs locally and costs nothing per image.
+
+### Does Scion call AI models
+
+No. The CLI, the MCP server and the judge never call a hosted model. Agent evaluators answer through files.
+
+### Does it work offline
+
+Yes. After installing the package, the CLI and (optionally) the judge's eye model, nothing needs the network.
+
+### What is the license
+
+Apache-2.0. See [License](/scion/41664431a8f5/help/license/).
+
+### Where do I report a bug
+
+On the GitHub repository's issues, with the output of `dotnet scion doctor --level 3` and the run's `report.md`.
+
+## See also
+
+- [What is Scion](/scion/41664431a8f5/start/overview/)
+- [Requirements](/scion/41664431a8f5/start/requirements/)
+- [License](/scion/41664431a8f5/help/license/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# Changelog
+
+All notable changes to Scion are listed here, newest first, in the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
+format. Scion follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html); what counts as a breaking change is
+on [Versioning and compatibility](/scion/41664431a8f5/contribute/compatibility/). The same entries are in the package's
+`CHANGELOG.md`.
+
+## [1.0.0] - 2026-10-13
+
+First stable release.
+
+### Grafts
+
+- `[Before]` and `[After]` with `Priority` and `Observe`; compile-time weaver (ILPostProcessor on Mono.Cecil) with call
+  mode for final builds and slot mode for test builds.
+- `ref Call` and `ref Call<T>`: `Skip`, `Return`, `Result`, `Skipped`, `Tag`.
+- Anchors: `[Anchor(Id, Doc)]`, `[assembly: AnchorScope]`, `Anchors.Id`, `anchor list` and `anchor show`.
+- Live injection: `graft build`, `graft inject` (merge or isolate), `graft restore`, `graft disable`, `InjectReport`.
+- Draft lifecycle: `graft new`, `graft check`, `graft promote`, `graft watch`.
+- `Faults`, the `Fx` facade with `IFxSink`, `[Tunable]` with presets and blends.
+- Diagnostics SCN101 to SCN114, SCN120, SCN121, SCN130, SCN131.
+
+### Trials
+
+- Recipes, adapters, `TrialSession`, checks and `ITrialCheck`; variants with `[Vary]` and `Variants()`, modes and
+  seed ranges.
+- Static trials with views and sheets; co-op groups of 1 to 4 players; captured matches (F9); the mosaic.
+- Parallel copies with shards, warm copies with `trial serve`, `trial run`, `show`, `approve`, `diff`, `eval`, `loop`.
+- Baselines per platform with perceptual image comparison, masks and learned unstable masks.
+- Specs (`TrialSpec`) with balance, visual, judge, metamorphic and curve parts.
+- Diagnostics SCN201 to SCN203.
+
+### Determinism
+
+- Virtual clock, screen, random and real-time waits in test builds; `[WallClock]`; `DeterminismControl` for
+  particles, animators, UI Toolkit and physics; `SCION_NETCLOCK`.
+- `--check`, `--jitter`, `determinism.tsv`; `scion diagnose` with SCN301 to SCN307 and adoption levels.
+
+### Evaluation and the Judge
+
+- Gates: text overflow, UI grid, contrast, photosensitivity, regression, telemetry versus pixels, nothing changed,
+  palette.
+- The motion pack and metrics; blind A/B comparisons; file-based evaluators.
+- The Judge: eyes and heads, `judge list`, `show`, `new`, `vote`, `train`, `run`.
+
+### Exploration
+
+- The multiverse, the live loop, bisect, metamorphic tests, the rare-moment hunter, guided search, balance with the
+  simulator.
+
+### Standard and core
+
+- `Scion.Core`: `RuleModifier<T>`, `Stage`, `ISimulation`, bots and capabilities; analyzers SCN001 to SCN005.
+
+### Tools and agents
+
+- `dotnet scion` CLI with JSON envelopes and schemas; `init`, `new`, `uninstall`, `doctor`, `build`, `index`,
+  `guard`, `gen`, `mcp`.
+- Claude Code plugin with the skill and hooks; MCP server with docs tools; `llms.txt` and Markdown pages.
+- `Scion.Testing`, `Scion.Compare`, `Scion.Specs` and `Scion.Core` on NuGet.
+
+## See also
+
+- [Versioning and compatibility](/scion/41664431a8f5/contribute/compatibility/)
+- [Install](/scion/41664431a8f5/start/install/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# License
+
+Scion is open source under the Apache License, Version 2.0. The package, the CLI and the NuGet packages carry the same
+license and the same `NOTICE`. Third-party code and models keep their own licenses.
+
+## Scion
+
+- License: Apache-2.0 (`LICENSE` in the package).
+- Notice: `NOTICE` in the package, to keep with redistributions.
+- You may use Scion in commercial games. Final builds contain only Scion's runtime attributes and generated
+  dispatchers, under the same license.
+
+## Third-party software
+
+| Component | Used by | License |
+|---|---|---|
+| Mono.Cecil (`com.unity.nuget.mono-cecil`) | The weaver, the CLI | MIT |
+| Roslyn (`Microsoft.CodeAnalysis`) | Analyzers, `graft check`, `graft build` | MIT |
+
+## Models
+
+The judge's eye models are downloaded separately and keep their licenses; check each model card before
+redistributing heads trained on them ([Models and licenses](/scion/41664431a8f5/judge/models/)). Heads trained on your own votes and
+captures are yours.
+
+## Documentation
+
+This documentation is part of the package and is licensed under Apache-2.0 too.
+
+## See also
+
+- [Models and licenses](/scion/41664431a8f5/judge/models/)
+- [FAQ](/scion/41664431a8f5/help/faq/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# Architecture
+
+This page is for contributors and for anyone who needs to know how Scion works inside: which assemblies exist and
+what each does, how data moves from a build to a verdict, what the weaver generates (the ABI that injection depends
+on), and how the package is tested. For using Scion, start at [What is Scion](/scion/41664431a8f5/start/overview/).
+
+## How it works
+
+### Components
+
+Scion has code Unity compiles into the game (runtime), code that runs in the editor at build time, and .NET tools
+outside Unity. Folders ending in `~` (`Tools~`, `Tests~`, `Documentation~`) travel with the package and are ignored by
+Unity's importer.
+
+| Component | Assembly | Role |
+|---|---|---|
+| Runtime | `Scion.Runtime` | Graft attributes, `Call`, `Fx`, `Faults`, `Anchors`; under `SCION_TRIALS` the virtual clock, screen and random. |
+| Injection | `Scion.Injection` | Slots, `Injection`, `InjectReport` (`SCION_SLOTS`). |
+| Trials | `Scion.Trials` | The session, recipes, adapters, checks, capture, static trials, co-op, mosaic (`SCION_TRIALS`). Its pure logic (flags, shards, writers, checks) has no `UnityEngine` and is tested with `dotnet test`. |
+| Control | `Scion.Control` | The control server for warm copies and live injection. |
+| Core | `Scion.Core` | The engine-free rules API: `RuleModifier<T>`, `ISimulation`, tunables, probes. |
+| Editor | `Scion.Editor` | `ScionBuild`, build guards, `scion-build.json`. |
+| Weaver | `Unity.Scion.CodeGen` | The `ILPostProcessor`. Only `ScionWeaver.cs` touches Unity's ILPP API; the model, resolver and emitters are plain Mono.Cecil, shared with the CLI. |
+| CLI | `Scion.Cli` (dotnet tool) | Every command; reads builds with Mono.Cecil and never loads them. |
+| Analyzers | `Scion.Analyzers` | Roslyn analyzers with the weaver's ids and texts; loaded by Unity through the `RoslynAnalyzer` label. |
+| Compare | `Scion.Compare` | Image comparison, masks, heatmaps, its own PNG reader and writer. |
+| Testing | `Scion.Testing` | `FxRecorder` and `Scion.Runtime` for .NET. |
+| Specs | `Scion.Specs` | Specs, gates ids, metamorphic properties. |
+
+### Data flow
+
+1. Unity compiles the game; the weaver rewrites anchors (call mode or slot mode) and writes the determinism scan.
+2. `build test` produces the player and `scion-build.json` (build id, slots, recipes).
+3. `trial run` starts copies with `-scion-*` flags; each `TrialSession` plays its shard and writes `q<i>/`.
+4. The CLI merges copies, compares with `scion/baselines/` using `Scion.Compare`, and writes `summary.json`.
+5. `graft build` compiles drafts with Roslyn against the build's assemblies and the same emitters as the weaver;
+   `graft inject` sends the DLL over the control protocol; `Injection` swaps slots at the next boundary.
+
+### The generated ABI
+
+Injection depends on names the weaver generates. They are fixed by `Anchors`:
+
+| Name | Meaning |
+|---|---|
+| `__ScionGenerated` | The generated type in each woven assembly. |
+| `D_<id>` | The dispatcher of an anchor side (call mode). |
+| `F_<id>` | The slot field of an anchor side (slot mode). |
+| `__Restore` | Restores every slot to the promoted grafts. |
+| `AbiVersion` | 1; a constant in `Anchors` and in every `__ScionGenerated`. A DLL of another ABI is refused (SCN131). |
+| `Anchors.Id` | The id format shared by the weaver, the CLI and the injection. |
+
+### Diagnostics in one place
+
+`DiagnosticIds.cs` is the single catalog of SCN ids, severities, messages and hints. The weaver and the analyzers
+compile it; the runtime and the CLI repeat only the id, and a parity test checks every id used exists.
+
+### Tests
+
+```sh
+cd Packages/me.jandson.scion/Tests~
+dotnet test Scion.Tests.slnx
+```
+
+| Project | Covers |
+|---|---|
+| Weaver tests | Weaving real assemblies with Cecil, call and slot mode, diagnostics, redirects. |
+| Analyzer tests | Each SCN analyzer with positive and negative cases. |
+| Trials tests | Flags, shards, filters, writers, checks, adapter choice, without Unity. |
+| CLI tests | Commands against fake builds and run folders; envelopes validated against the JSON Schemas. |
+| Compare tests | Metric, masks, learned masks, heatmaps. |
+
+Play-mode tests in Unity cover capture, offscreen rendering and the control server.
+
+## Key terms
+
+| Term | Meaning |
+|---|---|
+| ILPP | `ILPostProcessor`: Unity's hook to rewrite compiled assemblies. |
+| Call mode, slot mode | How anchors reach grafts in final and test builds. |
+| ABI | The generated names and `AbiVersion` that injection relies on. |
+| Pure logic | Code without `UnityEngine`, compiled twice: by Unity and by `dotnet test`. |
+
+## Guarantees and limits
+
+- The weaver never weaves assemblies named `Scion.*` or `Unity.Scion.*`.
+- Redirect targets (`Clock`, `VirtualScreen`, `SeededRandom`, `VirtualWaitForSecondsRealtime`) stay in `Scion.Runtime`
+  forever, because assemblies such as Unity UI do not reference other Scion assemblies.
+- Renaming a redirect target is never silent: SCN114 and a test fail.
+- The CLI never loads game DLLs; it reads them with Cecil.
+
+## See also
+
+- [Versioning and compatibility](/scion/41664431a8f5/contribute/compatibility/)
+- [C# API](/scion/41664431a8f5/reference/api/)
+- [How grafts work](/scion/41664431a8f5/grafts/overview/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
+# Versioning and compatibility
+
+Scion follows Semantic Versioning: within 1.x nothing documented breaks; breaking changes wait for 2.0. This page says
+exactly what "documented" covers, how each surface evolves, and which pieces must have the same version.
+
+## Surfaces
+
+| Surface | Within 1.x | Breaking change means |
+|---|---|---|
+| C# API (public types and members) | Members may be added; none removed or changed. | Removing or changing a signature. |
+| Weaver ABI (`Anchors.AbiVersion`) | Stays 1. | A new ABI number; DLLs of another ABI are refused (SCN131). |
+| Player flags (`-scion-*`) | Flags may be added; none removed or changed in meaning. | Removing or redefining a flag. |
+| File formats (`schema_version`) | Optional fields may be added; readers ignore unknown fields. | `schema_version: 2` and a `v2/` schema folder. |
+| CLI output (envelope and command fields) | Fields may be added. | Removing or renaming a field. |
+| Exit codes and error codes | Stable; new codes may be added. | Changing what a code means. |
+| SCN ids | Never reused; new ids may be added; severities may be lowered, not raised. | Raising a warning to an error. |
+| Verdicts (`same`, `within`, `px_changed`, `changed`, `new`, `stale`) | Stable. | Adding or redefining a verdict. |
+
+## Versions that must match
+
+| Pair | Rule | When they differ |
+|---|---|---|
+| CLI and package | Same version. | `doctor` warns `version_mismatch`; injection may fail with SCN131. |
+| Graft DLL and test build | Built against the same `build_id`. | SCN130. |
+| `Scion.Testing`, `Scion.Compare`, `Scion.Specs`, `Scion.Core` and the package | Same version. | Tests may compile against members the game does not have. |
+
+The CLI's NuGet version is the package version; local development builds use a `-dev` suffix.
+
+## Deprecation
+
+A member to be removed in 2.0 is marked `[Obsolete]` with the replacement in the message for at least one minor
+version, and listed in the changelog under "Deprecated".
+
+## Supported Unity versions
+
+Each release states its minimum Unity version in `package.json` (`unity: 6000.3`). A minor release may raise it only
+when the previous Unity is out of Unity's support.
+
+## See also
+
+- [Changelog](/scion/41664431a8f5/help/changelog/)
+- [JSON Schemas](/scion/41664431a8f5/reference/schemas/)
+- [SCN120-SCN131](/scion/41664431a8f5/reference/diagnostics/builds-and-injection/)

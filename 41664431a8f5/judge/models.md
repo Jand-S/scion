@@ -32,11 +32,14 @@ Switching eyes recomputes embeddings (10,000 images take about 5 to 10 minutes) 
 
 ## Hardware
 
-| Machine | Works |
+The judge runs the eyes with ONNX Runtime, on the GPU when one is available:
+
+| Machine | Runs on |
 |---|---|
-| Apple silicon (M1 or later) | Yes, on the GPU through Metal. |
-| Windows or Linux with an NVIDIA GPU (8 GB) | Yes, through CUDA. |
-| CPU only | Yes, about 5 to 10 times slower. |
+| macOS on Apple silicon | GPU and Neural Engine through CoreML. |
+| Windows with a DirectX 12 GPU | GPU through DirectML. |
+| Linux with an NVIDIA GPU | GPU through CUDA. |
+| Any machine without a supported GPU | CPU, about 5 to 10 times slower. |
 
 ## Where the data lives
 

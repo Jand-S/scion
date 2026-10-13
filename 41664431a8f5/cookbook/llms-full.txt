@@ -6,30 +6,475 @@
 
 > Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
 
-# ci
+# Run Scion in CI
 
-_This page is still being written._
+This recipe runs Scion in GitHub Actions with three jobs. A fast `dotnet` job needs no Unity license: analyzers,
+strict graft checks, `gen --check`, unit tests and specs on the simulator. A Unity job builds the test player with
+GameCI, runs the trials and uploads the run folder. A nightly job runs many rounds with `--check --jitter` to catch
+rare non-determinism. Pull requests that change baselines must come with the approved files.
+
+## When to use
+
+- Every repository with Scion: the dotnet job costs under two minutes and catches most mistakes.
+- Add the Unity job when you have a license for CI (GameCI documents the activation).
+
+## Before you begin
+
+- `scion.json`, the tool manifest and baselines committed (PNGs in Git LFS).
+- A Unity license secret for the Unity job (`UNITY_LICENSE`, `UNITY_EMAIL`, `UNITY_PASSWORD`) set in the repository
+  settings, never in files.
+
+## Steps
+
+### 1. The dotnet job
+
+`.github/workflows/scion.yml`:
+
+```yaml
+name: scion
+on: [pull_request, push]
+jobs:
+  dotnet:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { lfs: true }
+      - uses: actions/setup-dotnet@v4
+        with: { dotnet-version: '10.0.x' }
+      - run: dotnet tool restore
+      - run: dotnet test Tests/Orchard.Core.Tests
+      - run: dotnet test Tests/Orchard.Grafts.Tests
+      - run: dotnet scion graft check --strict
+      - run: dotnet scion gen --check
+      - run: dotnet scion trial run --spec RulesHold
+```
+
+### 2. The Unity job
+
+```yaml
+  unity:
+    runs-on: ubuntu-latest
+    needs: dotnet
+    steps:
+      - uses: actions/checkout@v4
+        with: { lfs: true }
+      - uses: actions/setup-dotnet@v4
+        with: { dotnet-version: '10.0.x' }
+      - run: dotnet tool restore
+      - uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          targetPlatform: StandaloneLinux64
+          buildMethod: Scion.Editor.ScionBuild.TestFromCommandLine
+          customParameters: -scion-build-out .scion/builds/test
+      - run: dotnet scion trial run --rounds 2 -j 2 --build .scion/builds/test
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: scion-run, path: .scion/runs }
+```
+
+### 3. Fail on unapproved changes
+
+A run exits 0 when recipes pass, even with `changed` verdicts. To require that visual changes come with approved
+baselines, fail the job when any id is `changed` or `new`:
+
+```yaml
+      - run: |
+          dotnet scion trial show --changed --format json > changed.json
+          test "$(jq .count changed.json)" = "0"
+```
+
+Linux baselines have their own platform folder; approve them once from a Linux machine or a CI artifact.
+
+### 4. The nightly batch
+
+```yaml
+on:
+  schedule: [{ cron: '0 3 * * *' }]
+# same Unity job, with:
+      - run: dotnet scion trial run --rounds 10 --check --jitter 20 -j 4 --build .scion/builds/test
+```
+
+## Reference
+
+| Job | Needs Unity | Catches |
+|---|---|---|
+| dotnet | no | Analyzer errors, graft signatures, stale manifest, rule regressions, broken specs |
+| Unity | yes | Failing recipes, determinism, visual changes |
+| Nightly | yes | Rare non-determinism, timing-dependent bugs |
+
+## Errors
+
+| Code | Exit | Cause | Next action |
+|---|---|---|---|
+| `unity_failed` | 3 | The license step failed. | Check the GameCI activation secrets. |
+| `baseline_unreadable` | warning | LFS files not checked out. | `lfs: true` in checkout. |
+| `capture_broken` | 3 | No GPU and no offscreen capture. | Keep the default headless mode; do not pass `--window`. |
+
+## Examples
+
+### Only the dotnet job on documentation changes
+
+```yaml
+on:
+  pull_request:
+    paths-ignore: ['**/*.md']
+```
+
+### Upload only failures
+
+```yaml
+      - run: dotnet scion trial show --failed --format json > failed.json
+```
+
+## See also
+
+- [Verify determinism](/scion/41664431a8f5/determinism/verify/)
+- [Baselines and approval](/scion/41664431a8f5/trials/baselines/)
+- [trial run](/scion/41664431a8f5/cli/trial-run/)
 
 ---
 
 > Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
 
-# hud-states
+# Capture every HUD state
 
-_This page is still being written._
+The HUD has many states nobody looks at together: the turn banner, low health, four players, a status effect, a long
+unit name. This recipe captures all of them with one `StaticTrial<HudState>`, at 360p and 720p, checks them with
+gates (text overflow, contrast, grid), writes a labeled sheet, and lets the judge rank them for review.
+
+## When to use
+
+- Any change to HUD layout, fonts, colors or localization.
+- As the input of a [UI review with the judge](/scion/41664431a8f5/judge/ui-review/).
+
+## Before you begin
+
+- The HUD can be put in any state from data, without a battle (Orchard's `Hud.Apply(HudState)`).
+- Modes declared: `[assembly: TrialModes("360p=640x360", "720p=1280x720")]`.
+
+## Steps
+
+### 1. Describe the states
+
+```csharp
+public readonly struct HudState
+{
+    public readonly string Name; public readonly int Players; public readonly int Hp; public readonly string Status;
+    public HudState(string name, int players, int hp, string status) { Name = name; Players = players; Hp = hp; Status = status; }
+}
+```
+
+### 2. Write the static trial
+
+```csharp
+public sealed class HudStates : StaticTrial<HudState>
+{
+    public HudStates()
+    {
+        Description = "Every HUD state at the current mode.";
+        Tags = new[] { "ui" };
+        Tolerance = ImageTolerance.Exact;
+    }
+
+    protected override IEnumerable<HudState> Enumerate()
+    {
+        yield return new HudState("idle", 1, 20, null);
+        yield return new HudState("low-hp", 1, 3, null);
+        yield return new HudState("four-players", 4, 20, null);
+        yield return new HudState("burning", 1, 12, "burn");
+        yield return new HudState("long-name", 1, 20, null);
+        // ... 15 more
+    }
+
+    protected override string ItemName(HudState s) => s.Name;
+
+    protected override IEnumerator Show(HudState s, TrialSession session)
+    {
+        Hud.Current.Apply(s);
+        yield return null;
+    }
+
+    protected override IEnumerable<TrialView> Views(HudState s) { yield return TrialView.Ui; }
+
+    protected override void Checks(TrialChecks c) =>
+        c.Gate(Gates.TextOverflow).Gate(Gates.TextContrast).Gate(Gates.UiGrid, ("grid_px", 4));
+}
+```
+
+### 3. Run both modes
+
+```sh
+dotnet scion trial run HudStates --mode 360p
+dotnet scion trial run HudStates --mode 720p
+dotnet scion trial show "HudStates@*" --image sheet
+```
+
+### 4. Rank for review
+
+```sh
+dotnet scion judge run <run> --heads readability,has_glitch
+```
+
+## Reference
+
+| Output | Content |
+|---|---|
+| `<state>.ui.png` | One still per state, UI layer only. |
+| `sheet.png` | All states, labeled, longer side at most 2000 px. |
+| `checks[]` | `gate:text_overflow`, `gate:text_contrast`, `gate:ui_grid` with frame and region. |
+
+Ids are `HudStates@360p` and `HudStates@720p`; each has its own baseline.
+
+## Errors
+
+| Code | Exit | Cause | Next action |
+|---|---|---|---|
+| check `gate:text_overflow` fails | 1 | A label is cut. | Fix the layout or the text; the region shows where. |
+| check `gate:text_contrast` fails | 1 | Text below 4.5:1. | Change the color or add a backing panel. |
+
+## Examples
+
+### Only one state while fixing it
+
+```sh
+dotnet scion trial run HudStates --mode 360p
+dotnet scion trial show HudStates@360p --image still
+```
+
+### Add a color-blind mode
+
+```csharp
+[assembly: TrialModes("360p=640x360", "720p=1280x720", "deuter")]
+```
+
+## See also
+
+- [Static trials](/scion/41664431a8f5/trials/static-trials/)
+- [Gates](/scion/41664431a8f5/evaluation/gates/)
+- [Review a UI with the judge](/scion/41664431a8f5/judge/ui-review/)
 
 ---
 
 > Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
 
-# tune-hit-feel
+# Tune a hit effect
 
-_This page is still being written._
+This recipe tunes Orchard's critical hit from "it works" to "it feels right" in one sitting. You loop the moment in
+the test build, edit a draft graft with `graft watch` injecting every save, read the motion metrics, save the result
+as presets, compare them blind with a judge duel, then promote the graft and approve the baselines.
+
+## When to use
+
+- Any feel work on one moment: a hit, a death, a pickup, a turn change.
+
+## Before you begin
+
+- A captured match of the moment (`knight-dies-to-crit`), or a recipe (`SlashHit`).
+- Warm copies are not needed: the loop runs its own copy.
+
+## Steps
+
+### 1. Loop the moment
+
+```sh
+dotnet scion trial loop "CapturedMatch[match=knight-dies-to-crit]" --span 3..3 --window
+```
+
+### 2. Draft the graft and watch
+
+```sh
+dotnet scion graft new CritShake --after Orchard.Presentation.HitPresenter.Play
+dotnet scion graft watch
+```
+
+Edit `scion/grafts/CritShake.cs`; every save shows up on the next pass.
+
+### 3. Read the numbers
+
+```sh
+dotnet scion trial run SlashHit --grafts .scion/grafts/ScionGrafts_51c2.dll --motion
+```
+
+`metrics.json` gives hit-stop, shake peak and decay, flash length. Aim for the bounds of your spec (for example
+hit-stop 50 to 120 ms, shake peak 4 to 12 px).
+
+### 4. Save two feels as presets
+
+`scion/presets/heavy.json` and `scion/presets/snappy.json` with the tunables you settled on.
+
+### 5. Duel them
+
+```sh
+dotnet scion trial run SlashHit --grafts .scion/grafts/ScionGrafts_51c2.dll --variants heavy,snappy --motion
+dotnet scion judge run <run> --heads hit_weight
+dotnet scion judge vote --run <run> --head hit_weight
+```
+
+### 6. Promote and approve
+
+```sh
+dotnet scion graft promote CritShake
+dotnet scion build test
+dotnet scion trial run --rounds 2
+dotnet scion trial approve --changed --reason "crit shake and hit-stop"
+```
+
+Approving `changed` needs a person at a terminal.
+
+## Reference
+
+| Step | Tool | Time |
+|---|---|---|
+| Loop and edit | `trial loop`, `graft watch` | Seconds per change |
+| Measure | `--motion`, `metrics.json` | One run |
+| Compare | presets, `judge run`, `judge vote` | Minutes |
+| Ship | `graft promote`, `build test`, `trial approve` | One build |
+
+## Errors
+
+| Code | Exit | Cause | Next action |
+|---|---|---|---|
+| loop stopped by `error` | 1 | The graft changed the hash. | It touches rules; keep it visual. |
+| `SCN113` | 1 | No slot for `HitPresenter.Play`. | Add `AnchorScope(typeof(HitPresenter))`, rebuild. |
+
+## Examples
+
+### A blend between the two feels
+
+```sh
+dotnet scion trial run SlashHit --preset "base + 0.5 heavy + 0.5 snappy" --motion
+```
+
+### Check photosensitivity before approving
+
+```csharp
+protected override void Checks(TrialChecks c) => c.Gate(Gates.Photosensitivity);
+```
+
+## See also
+
+- [The live loop](/scion/41664431a8f5/explore/live-loop/)
+- [The motion pack](/scion/41664431a8f5/evaluation/motion-pack/)
+- [Taste heads and feel presets](/scion/41664431a8f5/judge/presets/)
+- [From draft to final build](/scion/41664431a8f5/grafts/lifecycle/)
 
 ---
 
 > Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
 
-# level-rooms
+# Audit level rooms
 
-_This page is still being written._
+Level rooms break quietly: a prop floats, a door is blocked, a decoration from another biome slips in. This recipe
+audits every room template with a `StaticTrial<RoomTemplate>`: two views per room (empty from above, and with units
+from the game camera), probes for props and doors, custom gates that fail on the common breakages, and reruns of only
+the rooms a change touched.
+
+## When to use
+
+- Games with authored or generated rooms, tiles or arenas.
+- After changes to room data, prop prefabs or the placement code.
+
+## Before you begin
+
+- The game can build one room in an empty scene from its template (Orchard's `RoomBuilder.Build(template)`), the same
+  code path the game uses.
+
+## Steps
+
+### 1. The static trial
+
+```csharp
+public sealed class RoomAudit : StaticTrial<RoomTemplate>
+{
+    public RoomAudit() { Tags = new[] { "level" }; SettleFrames = 5; }
+
+    protected override IEnumerable<RoomTemplate> Enumerate() => RoomTemplates.All.OrderBy(t => t.Id);
+    protected override string ItemName(RoomTemplate t) => t.Id;
+
+    protected override IEnumerator Show(RoomTemplate t, TrialSession s)
+    {
+        yield return RoomBuilder.Build(t);
+    }
+
+    protected override IEnumerator Clear(RoomTemplate t, TrialSession s)
+    {
+        RoomBuilder.Clear();
+        yield break;
+    }
+
+    protected override IEnumerable<TrialView> Views(RoomTemplate t)
+    {
+        yield return TrialView.Top(RoomBuilder.Bounds, pxPerUnit: 16, grid: true);
+        yield return TrialView.Screen;
+    }
+
+    protected override void Measure(RoomTemplate t, TrialSession s)
+    {
+        s.Probe(t.Id + "_props", RoomBuilder.Props.Count);
+        s.Probe(t.Id + "_doors_open", RoomBuilder.Doors.Count(d => d.Reachable));
+    }
+}
+```
+
+### 2. Custom gates
+
+Register `FloatingPropGate` and a `BlockedDoorGate` as `ITrialCheck` ([Gates](/scion/41664431a8f5/evaluation/gates/) shows the
+first). Others worth writing: a prop clipping another prop, a prop from a foreign biome, an invisible blocker on the
+navigation mesh, a room that does not match its template's size.
+
+### 3. Run and review
+
+```sh
+dotnet scion trial run RoomAudit -j 6
+dotnet scion trial show RoomAudit --image sheet
+```
+
+### 4. Recapture only what changed
+
+```sh
+dotnet scion trial run RoomAudit --changed
+```
+
+`--changed` takes the ids that were `changed` or `stale` in the last run; for static trials, the stills that changed
+are listed in `compare.json`.
+
+## Reference
+
+| Output | Content |
+|---|---|
+| `<room>.top.png` | From above with a 1-unit grid. |
+| `<room>.png` | The game camera with units placed. |
+| `sheet.png` | Every room, labeled. |
+| probes | Props and reachable doors per room. |
+
+## Errors
+
+| Code | Exit | Cause | Next action |
+|---|---|---|---|
+| check `gate:floating_prop` fails | 1 | A prop is above the ground. | Fix the prefab pivot or the placement. |
+| check `gate:blocked_door` fails | 1 | No path through a door. | Move the blocking prop. |
+
+## Examples
+
+### A judge head trained on past room reviews
+
+```sh
+dotnet scion judge new room_quality --question scion/judge/questions/room_quality.json --view full
+dotnet scion judge run <run> --heads room_quality
+```
+
+### Only one biome
+
+```csharp
+protected override IEnumerable<RoomTemplate> Enumerate() => RoomTemplates.All.Where(t => t.Biome == "orchard");
+```
+
+## See also
+
+- [Static trials](/scion/41664431a8f5/trials/static-trials/)
+- [Gates](/scion/41664431a8f5/evaluation/gates/)
+- [Checks](/scion/41664431a8f5/trials/checks/)

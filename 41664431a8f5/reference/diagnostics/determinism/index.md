@@ -45,8 +45,8 @@ Nothing to fix; it shows what the virtual clock covers.
 **Message:** `{0} reads the wall clock ({1}), which is not redirected.` **Hint:** `Use Time or Clock, or mark the
 method [WallClock] if it must be real time.`
 
-**Cause.** `Stopwatch`, `Environment.TickCount`, `DateTime.Now` in a `[WallClock]`-free path not covered, or a native
-time call.
+**Cause.** `Stopwatch`, `Environment.TickCount`, process times or a native time call: wall-clock sources the weaver
+does not redirect.
 
 **Fix.**
 
