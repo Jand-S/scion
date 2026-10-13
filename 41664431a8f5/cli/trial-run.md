@@ -96,7 +96,7 @@ dotnet scion trial run [patterns] [-j N] [--rounds N] [selection options] [captu
 
 <!-- validate: cli/trial-run -->
 ```json
-{"schema_version":1,"command":"trial run","ok":false,"run":"/Users/alex/orchard/.scion/runs/20261011-143200","build_id":"4c49a1e0b2f3","copies":6,"wall_s":27.1,"runs":{"recipes":6,"rounds":2,"total":12,"ok":11,"failed":1,"changed":1,"within":0,"px_changed":0,"new":0,"stale":0},"failed":[{"id":"KnightFalls","round":1,"copy":3,"error":"timeout (30s): unit down animation","report":"q3/KnightFalls/r1/report.md"}],"changed":[{"id":"SlashHit","vs_approved":"changed","hash":"same","image":"q0/SlashHit/r1/window.png","diff":"diff/SlashHit/r1/window.diff.png"}],"determinism":{"hash_stable":true,"frame_jitter":[]},"next_step":"read q3/KnightFalls/r1/report.md; SlashHit changed only in images: see diff/SlashHit/r1/window.diff.png"}
+{"schema_version":1,"command":"trial run","ok":false,"run":"/Users/alex/orchard/.scion/runs/20261011-143200","build_id":"4c49a1e0b2f3","copies":6,"wall_s":27.1,"runs":{"recipes":6,"rounds":2,"total":12,"ok":11,"failed":1,"changed":1,"within":0,"px_changed":0,"new":0,"stale":0},"failed":[{"id":"KnightFalls","round":1,"copy":3,"error":"timeout (30s): unit down animation","report":"q3/KnightFalls/r1/report.md"}],"changed":[{"id":"SlashHit","vs_approved":"changed","hash":"same","image":"q0/SlashHit/r1/window.png","diff":"diff/SlashHit/r1/window.diff.png"}],"determinism":{"hash_stable":true,"frame_jitter":[]},"next_step":"read /Users/alex/orchard/.scion/runs/20261011-143200/q3/KnightFalls/r1/report.md; SlashHit changed only in images: see /Users/alex/orchard/.scion/runs/20261011-143200/diff/SlashHit/r1/window.diff.png"}
 ```
 
 | Field | Meaning |
@@ -116,7 +116,7 @@ Files: [summary.json, summary.tsv, compare.json](/scion/41664431a8f5/reference/f
 
 | Code | When |
 |---|---|
-| 0 | Every recipe passed. Verdicts such as `changed` do not fail a run. |
+| 0 | Every recipe passed. Verdicts such as `changed` do not fail a run: `ok` stays `true` and `changed[]` lists them ([`ok` and `changed`](/scion/41664431a8f5/cli/#ok-and-changed)). |
 | 1 | A recipe or check failed, or a spec failed. |
 | 2 | Bad option or a pattern matched nothing. |
 | 3 | No build, a copy crashed or timed out, environment errors. |
@@ -137,7 +137,7 @@ Copies are combined with precedence 2 > 3 > 1 > 0.
 | `mosaic_unsupported` | 3 | `--mosaic` and no `IMosaicAdapter`. | Implement it or drop `--mosaic`. |
 | warning `build_stale` | 0 | Sources changed after the build. | Rebuild before trusting the result. |
 | warning `px_unstable` | 0 | Pixels vary between rounds. | See [Verify determinism](/scion/41664431a8f5/determinism/verify/). |
-| warning `shard_ignored` | 0 | `-scion-shard` passed after `--`. | Let the CLI shard. |
+| `shard_ignored` | 3 | Two copies ran the same (recipe, round): the build ignores `-scion-shard`. | `dotnet scion build test`, or run with `-j 1`. |
 
 ## Examples
 

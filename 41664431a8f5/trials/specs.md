@@ -116,7 +116,7 @@ for a duel, then approve.
 |---|---|---|---|
 | `no_match` | 2 | No spec with that name in `specs.project`. | Use `did_you_mean`. |
 | `no_simulation` | 3 | `Balance` needs an `ISimulation` and the core declares none. | Implement `ISimulation` ([Core API](/scion/41664431a8f5/reference/api/core/)). |
-| `model_missing` | 3 | `Judge` needs a head that is not trained. | `dotnet scion judge list`; train the head. |
+| `model_missing` | 3 | `Judge` needs a head that is not trained, or the eye model is not in the model cache. | `dotnet scion judge list` and train the head; or `dotnet scion judge model pull`. |
 | spec `ok: false` | 1 | No variant passes. | Read `spec.variants[].failed`. |
 
 ## Examples

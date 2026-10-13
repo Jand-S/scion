@@ -242,7 +242,8 @@ capture at 1280x720 and 30 fps.
 The Judge runs on the CPU, or on the GPU through ONNX Runtime when one is available (CoreML on macOS, DirectML on
 Windows, CUDA on Linux). Computing embeddings for 10,000 images takes about 5 to 10 minutes on an M5; training a head
 takes seconds; judging one image takes 10 to 50 ms. Eye models take 0.4 to 1.6 GB of disk each in
-`~/.scion/models/`. See [Models and licenses](/scion/41664431a8f5/judge/models/).
+the model cache, `~/.cache/scion/models/`; `dotnet scion judge model pull` downloads them. See
+[Models and licenses](/scion/41664431a8f5/judge/models/).
 
 ## See also
 
@@ -331,7 +332,7 @@ dotnet scion init --existing --dry-run
 
 <!-- validate: cli/init -->
 ```json
-{"schema_version":1,"command":"init","ok":true,"dry_run":true,"created":["scion.json","scion/grafts/","scion/recipes/","scion/baselines/","Assets/Orchard/Grafts/Orchard.Grafts.asmref",".config/dotnet-tools.json"],"changed":[".gitignore",".gitattributes","Packages/manifest.json"],"skipped":["ProjectSettings/ScionSettings.json"],"adoption_level":1,"next_step":"run without --dry-run: dotnet scion init --existing"}
+{"schema_version":1,"command":"init","ok":true,"dry_run":true,"created":["scion.json","ProjectSettings/ScionSettings.json","scion/grafts/","scion/recipes/","scion/baselines/","Assets/Orchard/Grafts/Orchard.Grafts.asmref"],"changed":[".gitignore",".gitattributes","Assets/Orchard/Runtime/Orchard.Runtime.asmdef"],"skipped":[".config/dotnet-tools.json","Packages/manifest.json"],"adoption_level":1,"next_step":"run without --dry-run: dotnet scion init --existing"}
 ```
 
 Then apply it:
@@ -384,6 +385,7 @@ dotnet scion doctor
 {"schema_version":1,"command":"doctor","ok":true,"level":2,"version":"1.0.0","adoption_level":1,"adoption_next":"level 2: write an adapter and a recipe (dotnet scion new trial MyFirstTrial)","checks":[{"id":"build","status":"warn","detail":"no test build at /Users/alex/orchard/.scion/builds/test/Orchard.app","hint":"run: dotnet scion build test"},{"id":"config","status":"ok","detail":"/Users/alex/orchard/scion.json"},{"id":"unity","status":"ok","detail":"6000.3.25f1"},{"id":"machine","status":"ok","detail":"10 cores, 9.1 GB free of 16.0 GB"}],"suggested_copies":4,"next_step":"run: dotnet scion build test"}
 ```
 
+Without `--level`, `doctor` runs level 2, which includes the test build ([doctor](/scion/41664431a8f5/cli/doctor/)).
 Exit 0 means the setup is usable; read the `hint` of each `warn`. On a fresh project, the `build` check warns until
 the first `dotnet scion build test`. Exit 3 means a check failed: fix what `error.hint` says and run `doctor` again.
 
@@ -424,18 +426,23 @@ verdict it causes. You finish with a second recipe of your own.
 
 ## Before you begin
 
-- Scion is installed: package, CLI and `dotnet scion doctor` passing ([Install](/scion/41664431a8f5/start/install/)).
-- An empty Unity 6000.3 project in a git repository, with the CLI tool manifest. The commands below create the
-  Orchard sample in it:
+- An empty Unity 6000.3 project (created by the Unity Hub) in a git repository.
+- The package and the CLI in that project: steps 1 and 2 of [Install](/scion/41664431a8f5/start/install/). Skip step 3 of Install
+  (`init --existing`): `new` below writes `scion.json` and every other file `init` would, and the two are never
+  mixed in one project.
+
+Create the Orchard sample and check the setup:
 
 ```sh
 dotnet scion new --genre tactics --name Orchard
+dotnet scion doctor
 git add -A && git commit -m "Orchard sample"
 ```
 
-`new --genre tactics` writes the Orchard game skeleton (`Assets/Orchard/Core`, `Runtime`, `Grafts`, `Trials`), a
-battle scene, the `OrchardAdapter`, the `SlashHit` recipe, `scion.json` and the agent block in `CLAUDE.md`
-([Start a new project](/scion/41664431a8f5/start/new-project/)).
+`new --genre tactics` writes the [Orchard sample](/scion/41664431a8f5/reference/orchard-sample/) (`Assets/Orchard/Core`,
+`Runtime`, `Grafts`, `Trials`), a battle scene, the `OrchardAdapter`, its recipes, `scion.json` and the agent block
+in `CLAUDE.md` ([Start a new project](/scion/41664431a8f5/start/new-project/)). `doctor` exits 0; its `build` check warns until
+step 1.
 
 ## Steps
 
@@ -521,7 +528,8 @@ Check it against the build, without Unity:
 dotnet scion graft check scion/grafts/HitFlash.cs
 ```
 
-A typo such as `nameof(HitPresenter.Ply)` comes back as `SCN103` with `did_you_mean: ["Play"]`.
+A target name with a typo, such as `[After(typeof(HitPresenter), "Ply")]`, comes back as `SCN103` with
+`did_you_mean: ["Play"]`. (With `nameof(HitPresenter.Ply)` the C# compiler stops first, with CS0117.)
 
 ### 6. Try it live in a running copy
 
@@ -550,10 +558,12 @@ compares the images with the baseline and finds the flash:
 
 <!-- validate: cli/trial-run -->
 ```json
-{"schema_version":1,"command":"trial run","ok":false,"run":"/Users/alex/orchard/.scion/runs/20261011-150410","build_id":"8d02f1c3a7b9","copies":1,"wall_s":4.1,"runs":{"recipes":1,"rounds":1,"total":1,"ok":1,"failed":0,"changed":1,"within":0,"px_changed":0,"new":0,"stale":0},"failed":[],"changed":[{"id":"SlashHit","vs_approved":"changed","hash":"same","image":"q0/SlashHit/r1/window.png","diff":"diff/SlashHit/r1/window.diff.png"}],"determinism":{"hash_stable":true,"frame_jitter":[]},"next_step":"review: dotnet scion trial show SlashHit --grid; a person approves at a terminal"}
+{"schema_version":1,"command":"trial run","ok":true,"run":"/Users/alex/orchard/.scion/runs/20261011-150410","build_id":"8d02f1c3a7b9","copies":1,"wall_s":4.1,"runs":{"recipes":1,"rounds":1,"total":1,"ok":1,"failed":0,"changed":1,"within":0,"px_changed":0,"new":0,"stale":0},"failed":[],"changed":[{"id":"SlashHit","vs_approved":"changed","hash":"same","image":"q0/SlashHit/r1/window.png","diff":"diff/SlashHit/r1/window.diff.png"}],"determinism":{"hash_stable":true,"frame_jitter":[]},"next_step":"review: dotnet scion trial show SlashHit --grid; a person approves at a terminal"}
 ```
 
-Exit code 1: `SlashHit` is `changed`. The rules did not change (`hash: same`); the image did, outside the tolerance.
+Exit code 0 with `ok: true` and `changed[]` filled: `SlashHit` is `changed`. A `changed` verdict is a review signal, not
+a failure ([`ok` and `changed`](/scion/41664431a8f5/cli/#ok-and-changed)), so always read `changed[]`. The rules did not change
+(`hash: same`); the image did, outside the tolerance.
 
 ### 8. Review and approve the change
 
@@ -561,8 +571,8 @@ Exit code 1: `SlashHit` is `changed`. The rules did not change (`hash: same`); t
 dotnet scion trial show SlashHit --grid
 ```
 
-`--grid` writes `grid.png` with three rows: the baseline, the current frames and the difference. If the flash is
-what you wanted, a person approves it at an interactive terminal:
+`--grid` writes `diff/SlashHit/r1/window.grid.png` with three columns: the baseline, the current frames and the
+difference. If the flash is what you wanted, a person approves it at an interactive terminal:
 
 ```sh
 dotnet scion trial approve SlashHit --reason "white hit flash on every hit"
@@ -573,10 +583,10 @@ result a person approved is only replaced by a person.
 
 ### 9. Write a second recipe
 
-Add `Assets/Orchard/Trials/KnightFalls.cs`:
+The template ships `SlashHit`, `FireballArea`, `CoopTurn`, `HudStates` and `UnitGallery`. Add the
+[Orchard sample](/scion/41664431a8f5/reference/orchard-sample/)'s last one, `Assets/Orchard/Trials/KnightFalls.cs`:
 
 ```csharp
-using Orchard.Core;
 using Scion.Trials;
 
 namespace Orchard.Trials
@@ -585,20 +595,18 @@ namespace Orchard.Trials
     {
         public KnightFalls()
         {
-            Description = "Three goblins attack a knight with 4 HP; the knight falls.";
-            Attacker = UnitKind.Goblin;
-            Defender = UnitKind.Knight;
-            Attackers = 3;
-            DefenderHp = 4;
-            Ability = "stab";
+            Attacker = "skeleton"; Defender = "knight"; DefenderHp = 3;
+            Description = "A skeleton finishes a wounded knight.";
             Tags = new[] { "combat", "death" };
         }
 
         protected override void Checks(TrialChecks c) =>
-            c.Order("IMPACT", "unit_down").ProbeIs("defender_hp", hp => hp == 0, "the knight ends at 0 HP");
+            c.Order("IMPACT", "unit_down").ProbeIs("defender_hp", hp => hp == 0, "the knight falls");
     }
 }
 ```
+
+`Attacker` and `Defender` are unit ids (`UnitKind.Id`); the other fields keep the defaults of `OrchardRecipe`.
 
 Build, run and approve it as a `new` recipe:
 
@@ -660,6 +668,9 @@ dotnet scion new --genre tactics --name Orchard --dry-run
 {"schema_version":1,"command":"new","ok":true,"dry_run":true,"created":["Assets/Orchard/Core/Orchard.Core.asmdef","Assets/Orchard/Runtime/Orchard.Runtime.asmdef","Assets/Orchard/Grafts/Orchard.Grafts.asmref","Assets/Orchard/Trials/Orchard.Trials.asmdef","Assets/Orchard/Trials/OrchardAdapter.cs","Assets/Orchard/Trials/SlashHit.cs",{"more":14}],"changed":["Packages/manifest.json",".gitignore"],"skipped":[],"adoption_level":3,"next_step":"run without --dry-run: dotnet scion new --genre tactics --name Orchard"}
 ```
 
+A list cut for length ends with one `{"more": N}` object, here 14 more files
+([Behavior every command shares](/scion/41664431a8f5/cli/#behavior-every-command-shares)).
+
 ### 2. Create it
 
 ```sh
@@ -698,7 +709,7 @@ recipe stub that exercises its anchor.
 
 | Genre | Sample game | Adapter | Recipes it starts with |
 |---|---|---|---|
-| `tactics` | Orchard Tactics: grid, turns, 1 to 4 players co-op | `OrchardAdapter : TrialAdapter<OrchardRecipe>` | `SlashHit`, `CoopTurn`, `HudStates` |
+| `tactics` | Orchard Tactics: grid, turns, 1 to 4 players co-op | `OrchardAdapter : TrialAdapter<OrchardRecipe>` | `SlashHit`, `FireballArea`, `CoopTurn`, `HudStates`, `UnitGallery` ([Orchard sample](/scion/41664431a8f5/reference/orchard-sample/)) |
 | `action` | A top-down arena with real-time combat | `ArenaAdapter : TrialAdapter<ArenaRecipe>` | `DashHit`, `WaveClear` |
 | `platformer` | A side-scrolling level with a controllable character | `LevelAdapter : TrialAdapter<LevelRecipe>` | `JumpLand`, `CoinPickup` |
 | `blank` | No game code; only the layout, an empty adapter and one recipe stub | `GameAdapter : TrialAdapter<GameRecipe>` | `FirstTrial` |
@@ -736,7 +747,7 @@ Runtime as a black box and Core to compare hashes. Nothing depends on Grafts. Se
 |---|---|---|---|
 | `usage` | 2 | `--genre` missing, or `new` in a project that already has `Assets/<Name>/`. | Pick another `--name`, or use `init --existing`. |
 | `bad_value` | 2 | Unknown genre. | Use a genre from `did_you_mean`. |
-| `config_not_found` | 3 | No Unity project here (`ProjectSettings/ProjectVersion.txt` missing). | Run it at the root of the Unity project. |
+| `usage` | 2 | Not at the root of a Unity project (`ProjectSettings/ProjectVersion.txt` missing). | Run it at the root of the Unity project. |
 | `out_not_writable` | 3 | A target file cannot be written. | Fix permissions and run again; `new` is idempotent. |
 
 ## Examples
@@ -933,7 +944,7 @@ These rules are also at the top of [/scion/llms.txt](/scion/41664431a8f5/llms.tx
 - Run `dotnet scion doctor` first. Exit 0 means usable; exit 3 means fix what `error.hint` says.
 - Every command prints one JSON object on stdout (`schema_version`, `ok`, `next_step`, `error` on exits 2 and 3). Parse it; do not scrape text. Follow `next_step`.
 - Exit codes: 0 ok, 1 a check failed, 2 usage error (see `did_you_mean`), 3 environment. Next actions: `https://jand-s.github.io/scion/41664431a8f5/agents/next-action.md`
-- You may approve only `new` baselines (`trial approve --new --reason "..."`). Never approve `changed`, `stale` or `px_changed`, and never edit `scion/baselines/` by hand: ask a person.
+- You may approve only `new` baselines (`trial approve --new --reason "..."`). Never approve `changed`, `stale`, `within` or `px_changed`, and never edit `scion/baselines/` by hand: ask a person.
 - Read `report.md` only for failed or changed recipes; open images only when pixels changed or the task is visual.
 
 Two more that follow from the design:
@@ -1039,7 +1050,7 @@ recipe ([The Scion skill](/scion/41664431a8f5/agents/skill/)).
 | Signal | Next action |
 |---|---|
 | Exit 1, `failed[]` | Read `failed[].report`, fix, run again. |
-| Exit 1, `changed[]` | Explain the change with `trial show --changed`; ask a person to approve or fix it. |
+| Exit 0, `changed[]` not empty | A review signal, not a failure ([`ok` and `changed`](/scion/41664431a8f5/cli/#ok-and-changed)). Explain the change with `trial show --changed`; ask a person to approve or fix it. |
 | Exit 2 | Fix the call with `error.hint` and `did_you_mean`; never retry unchanged. |
 | Exit 3 | Fix the environment with `error.hint`; `doctor` names the failing check. |
 
@@ -1055,9 +1066,13 @@ dotnet scion anchor list --search shake
 dotnet scion graft new CritShake --after Orchard.Presentation.HitPresenter.Play
 dotnet scion graft check scion/grafts/CritShake.cs
 dotnet scion build test
+dotnet scion graft build
 dotnet scion trial run --grafts .scion/grafts/ScionGrafts_51c2.dll
 dotnet scion trial show --changed
 ```
+
+`graft build` compiles the drafts against the test build; take the DLL path for `--grafts` from the `dll` field of
+its envelope, never from memory.
 
 The run reports `SlashHit` as `changed` with `hash: same`: only pixels moved. The agent reports to the person:
 "CritShake adds a 0.3 shake on critical hits; SlashHit changed in pixels only (window.png). To accept, promote the
@@ -1271,16 +1286,16 @@ The skill is facts and commands, not a long tutorial: every detail it does not h
 | Field | Value |
 |---|---|
 | Input | A run folder and a list of recipe ids (usually `changed[]` of a `trial run`) |
-| Reads | `compare.json`, each recipe's `report.md`, then `window.png` or `grid.png` |
+| Reads | `compare.json`, each recipe's `report.md`, then `window.png` or `<artifact>.grid.png` |
 | Returns | One line per recipe: id, verdict, what changed in the frames, whether it looks intended, and the file it looked at |
 | Never does | Approve, edit files or run commands other than `trial show` |
 
 Example return:
 
 ```text
-SlashHit      changed   white flash on the goblin, frames 12-14; looks intended (HitFlash)   diff/SlashHit/r1/grid.png
+SlashHit      changed   white flash on the skeleton, frames 12-14; looks intended (HitFlash) diff/SlashHit/r1/window.grid.png
 FireballArea  within    no visible change                                                     q1/FireballArea/r1/window.png
-KnightFalls   changed   knight falls one frame later; hash same; check HitStop                diff/KnightFalls/r1/grid.png
+KnightFalls   changed   knight falls one frame later; hash same; check HitStop                diff/KnightFalls/r1/window.grid.png
 ```
 
 ## Scoped rules
@@ -1376,15 +1391,16 @@ command passes untouched. For an approval it runs the approve as `--dry-run` and
 | The approval would replace | Decision | Effect |
 |---|---|---|
 | Only `new` recipes | allow | The command runs. |
-| Any `changed`, `stale` or `px_changed` recipe | ask | Claude Code asks the person, showing the reason. |
+| Any `changed`, `stale`, `within` or `px_changed` recipe | deny | The command does not run. The reason gives the person the review command and the approve command to run at their own terminal. |
 | A run made with `--grafts`, or a refused recipe | deny | The command does not run; the reason says why. |
 
 ```json
-{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"ask","permissionDecisionReason":"This approves SlashHit (changed: image) and replaces a baseline a person approved. Review: dotnet scion trial show SlashHit --grid"}}
+{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"SlashHit is changed (image) and replaces a baseline a person approved; only a person approves it, at a terminal. Review: dotnet scion trial show SlashHit --grid. Then the person runs: dotnet scion trial approve SlashHit --reason \"...\""}}
 ```
 
-The CLI itself also refuses such approvals without a terminal (`human_required`); the guard explains it before the
-command runs.
+The guard denies instead of asking because asking could not help: an agent's shell has no terminal, so the CLI would
+refuse the approval anyway (`human_required`, exit 2). The person runs the command from the reason at their own
+terminal.
 
 ## PreToolUse Edit and Write: baseline guard
 
@@ -1531,16 +1547,19 @@ GitMCP turns the public site into a remote MCP server with no setup: `https://ja
 Look up the exit code and the signal a Scion command returned, and do the action in the last column. The signals are
 the envelope fields (`error.code`, `warnings[].code`, `failed[]`, `changed[]`, `vs_approved`, `determinism`), the
 `SCNxxx` ids of diagnostics and the control-protocol errors. Every code links to its full entry in
-[Error and warning codes](/scion/41664431a8f5/reference/errors/). When two rows apply, handle the higher exit code first.
+[Error and warning codes](/scion/41664431a8f5/reference/errors/), which is the single source for the exit code of each error.
+When two rows apply, handle the higher exit code first. Exit 0 is not always "done": a `changed` verdict exits 0
+with `ok: true` ([`ok` and `changed`](/scion/41664431a8f5/cli/#ok-and-changed)), so check `changed[]` too.
 
 ## Exit 0
 
 | Signal | Meaning | Next action |
 |---|---|---|
-| `warnings` empty | Done. | Follow `next_step`. |
+| `warnings` and `changed[]` empty, `runs.new` 0 | Done. | Follow `next_step`. |
+| `vs_approved: changed` (in `changed[]`) | Hash, frames (off by more than one), images outside tolerance or the rule digest changed. A review signal, not a failure. | If intended: explain it with `trial show --changed` (and `--grid`) and ask a person to approve. If not: fix the code. Never approve it yourself. |
 | `vs_approved: same` | Hash, frames and images match the baseline. | Nothing to do. |
 | `vs_approved: new` | The recipe has no baseline yet. | Read its `report.md`; if it shows what the recipe should, `dotnet scion trial approve --new --reason "..."` and commit the staged files. |
-| `vs_approved: within` | Pixels differ, inside the recipe's tolerance. | Nothing to approve. Mention it if the task was visual. |
+| `vs_approved: within` | Pixels differ, inside the recipe's tolerance. | Nothing to approve; only a person may refresh it. Mention it if the task was visual. |
 | `vs_approved: px_changed` | Pixel hashes changed for a recipe that keeps no images. Informative. | Open `window.png` only if the task is visual; if intended, a person may approve it. |
 | `vs_approved: stale` | The baseline was approved on another platform, Unity version, fps or player arguments; images were not compared. | Tell the person; a person approves on this platform when the result looks right. |
 | warning [`build_stale`](/scion/41664431a8f5/reference/errors/#build_stale) | Sources or rule files changed after the build. | `dotnet scion build test`, then run again before trusting the result. |
@@ -1557,11 +1576,12 @@ the envelope fields (`error.code`, `warnings[].code`, `failed[]`, `changed[]`, `
 | Signal | Meaning | Next action |
 |---|---|---|
 | `failed[]` | A (recipe, round) failed: timeout, `Fail`, a check, a logged error, a graft that threw. | Read `failed[].report`; fix the cause; run again. |
-| `vs_approved: changed` | Hash, frames (off by more than one), images outside tolerance or the rule digest changed. | If intended: explain it with `trial show --changed` (and `--grid`) and ask a person to approve. If not: fix the code. |
 | `determinism.hash_stable: false` | Rounds of one recipe disagree, or no round passed. | Check `failed[]` first. Then `dotnet scion trial run <Id> --rounds 4 --check`; read `determinism.tsv`; see [Verify determinism](/scion/41664431a8f5/determinism/verify/). |
 | [`refused`](/scion/41664431a8f5/reference/errors/#refused) in `trial approve` | A selected recipe has a failed round, an unstable hash or was run with `--grafts`. Nothing was written. | Fix that recipe; `next_step` gives the command that approves the others. |
 | `diagnostics[]` in `graft check` or `graft build` | Graft errors with SCN ids. | Apply each `hint` and `did_you_mean`; check again. |
 | `errors[]` in `build test` | Compiler (`CSxxxx`) or Scion (`SCNxxx`) errors. | Fix the file and line; build again. |
+| [`SCN130`](/scion/41664431a8f5/reference/diagnostics/builds-and-injection/#scn130) in `graft inject` or `trial run --grafts` | The graft DLL was built for another build. Nothing was injected. | `dotnet scion graft build`, then inject again. |
+| [`SCN131`](/scion/41664431a8f5/reference/diagnostics/builds-and-injection/#scn131) in `graft inject` or `trial run --grafts` | The graft DLL or the build has another Scion ABI. Nothing was injected. | Use the same Scion version for the CLI and the build. |
 | `spec.ok: false` in `trial run --spec` | An expectation of the spec failed. | Read `spec.json`; never edit the spec to make it pass. |
 
 ## Exit 2
@@ -1588,15 +1608,13 @@ the envelope fields (`error.code`, `warnings[].code`, `failed[]`, `changed[]`, `
 | [`no_adapter`](/scion/41664431a8f5/reference/errors/#no_adapter), [`prepare_failed`](/scion/41664431a8f5/reference/errors/#prepare_failed) | No valid adapter, or an adapter's `Prepare` failed. | Read `error.message` (it names SCN202 or SCN203 when relevant) and the player log. |
 | [`capture_broken`](/scion/41664431a8f5/reference/errors/#capture_broken) | Frame capture failed. | Read the player log; run once with `--window` to compare. |
 | [`out_not_writable`](/scion/41664431a8f5/reference/errors/#out_not_writable), [`no_free_port`](/scion/41664431a8f5/reference/errors/#no_free_port) | The machine blocks the run. | Fix permissions or `trials.out`; close programs that hold ports, or use fewer copies. |
-| [`shard_ignored`](/scion/41664431a8f5/reference/errors/#shard_ignored) | The build predates sharding. | `dotnet scion build test`. |
+| [`shard_ignored`](/scion/41664431a8f5/reference/errors/#shard_ignored) | Two copies ran the same (recipe, round): the build ignores `-scion-shard`. | `dotnet scion build test`, or run with `-j 1`. |
 | [`no_copies`](/scion/41664431a8f5/reference/errors/#no_copies) | `graft inject`, `--warm` or `trial loop` found no warm copy. | `dotnet scion trial serve -j 2`. |
 | [`no_simulation`](/scion/41664431a8f5/reference/errors/#no_simulation), [`not_forkable`](/scion/41664431a8f5/reference/errors/#not_forkable) | A level 3 command without an `ISimulation`. | Register one; see [Add Scion to an existing game](/scion/41664431a8f5/start/existing-project/). |
 | [`mosaic_unsupported`](/scion/41664431a8f5/reference/errors/#mosaic_unsupported) | `--mosaic` with an adapter that is not an `IMosaicAdapter`. | Run without `--mosaic`, or see [Mosaic](/scion/41664431a8f5/trials/mosaic/). |
-| [`model_missing`](/scion/41664431a8f5/reference/errors/#model_missing) | A Judge eye model is not downloaded and the machine is offline. | Connect once, or copy the model into `~/.scion/models/`. |
-| [`SCN130`](/scion/41664431a8f5/reference/diagnostics/builds-and-injection/#scn130) | The graft DLL was built for another build. | `dotnet scion graft build`, then inject again. |
-| [`SCN131`](/scion/41664431a8f5/reference/diagnostics/builds-and-injection/#scn131) | The graft DLL or the build has another Scion ABI. | Use the same Scion version for the CLI and the build. |
+| [`model_missing`](/scion/41664431a8f5/reference/errors/#model_missing) | The eye model of the Judge is not in the model cache, or a needed head is not trained. | `dotnet scion judge model pull` (the `error.hint` names the eyes), then run the command again; for a head, ask a person to train it. See [Models and licenses](/scion/41664431a8f5/judge/models/). |
 | [`SCN202`](/scion/41664431a8f5/reference/diagnostics/trials/#scn202), [`SCN203`](/scion/41664431a8f5/reference/diagnostics/trials/#scn203) | Invalid adapter, or two adapters for one recipe type. | Fix the adapter as the hint says. |
-| [`interrupted`](/scion/41664431a8f5/reference/errors/#interrupted) | Ctrl-C stopped the command. | Run it again. |
+| [`interrupted`](/scion/41664431a8f5/reference/errors/#interrupted) | Ctrl-C or a cancelled MCP call stopped the command. | Run it again. |
 | [`internal_error`](/scion/41664431a8f5/reference/errors/#internal_error) | A bug in Scion. | Report it with the stack trace; do not loop. |
 
 ## Exit 125
@@ -1673,8 +1691,9 @@ probes, notes and logged errors. Most failures are explained here, without an im
 
 Open an image when `changed[].hash` is `same` (only pixels moved), when the verdict is `px_changed` or `within` and the
 task is visual, or when the task itself is about the look. `window.png` holds up to 12 consecutive frames around the
-impact, 3 columns, numbered with their game time and marks. Prefer `grid.png` from `trial show <Id> --grid` for a
-`changed` recipe: baseline, current and difference rows in one image.
+impact, 3 columns, numbered with their game time and marks. Prefer the grid image from `trial show <Id> --grid` for a
+`changed` recipe: `diff/<IdDir>/r<n>/<artifact>.grid.png`, with the baseline, the current frames and the difference
+in three columns.
 
 ### 4. Open context.png only if the window is not enough
 
@@ -1743,7 +1762,7 @@ asked in both orders.
 | `report.md` missing for a failed pair | The copy crashed: read `q<i>/player.log` (`player_crashed`). |
 | `window.png` missing | The recipe never called `MarkImpact` and had no cut; read `report.md` and the recipe. |
 | An image is blank or magenta | The `blank` or `magenta` check failed too; it is in `report.md`. |
-| `grid.png` missing | The recipe keeps no images (`Tolerance = null`); compare `window.png` of both runs with `trial diff`. |
+| `<artifact>.grid.png` missing | The recipe keeps no images (`Tolerance = null`); compare `window.png` of both runs with `trial diff`. |
 
 ## Examples
 
@@ -1762,7 +1781,8 @@ the rule code first.
 {"changed":[{"id":"SlashHit","vs_approved":"changed","hash":"same","image":"q0/SlashHit/r1/window.png","diff":"diff/SlashHit/r1/window.diff.png"}]}
 ```
 
-`hash: same`: the rules did not change. Open `grid.png` (`trial show SlashHit --grid`) to see the visual change and
+`hash: same`: the rules did not change. Open `diff/SlashHit/r1/window.grid.png` (`trial show SlashHit --grid`) to see
+the visual change and
 report it to the person.
 
 ## See also
@@ -2126,11 +2146,15 @@ public static void After(HitPresenter presenter, HitEvent e) { }
 `Observe = true` (only on `[Before]`) marks an observer: a graft that only watches. Observers always run, before
 every `[Before]` that may skip the target, ordered by `Priority` among themselves, and may not call `Skip()` or
 `Return()` ([SCN108](/scion/41664431a8f5/reference/diagnostics/grafts/#scn108)). Use one when the graft must see every call,
-including calls another graft skips, such as a trials mark:
+including calls another graft skips, such as a trials mark. `TrialSession` exists only in test builds, so a graft
+that uses it sits inside `#if SCION_TRIALS`; a promoted graft compiles into the game, and without the define the
+final build fails ([Build modes](/scion/41664431a8f5/grafts/build-modes/)):
 
 ```csharp
+#if SCION_TRIALS
 [Before(typeof(HitPresenter), nameof(HitPresenter.Play), Observe = true)]
 public static void Before(HitPresenter presenter, HitEvent e) => TrialSession.Current?.MarkImpact();
+#endif
 ```
 
 ### Order within one call
@@ -2261,6 +2285,7 @@ changed value. In a `[Before]`, `Result` is the value returned if the target is 
 `Tag` is a `long`, 0 at the start of every call, shared by every graft of that call:
 
 ```csharp
+#if SCION_TRIALS   // a trials-only graft: TrialSession exists only in test builds
 public static class HitTiming
 {
     [Before(typeof(HitPresenter), nameof(HitPresenter.Play))]
@@ -2270,6 +2295,7 @@ public static class HitTiming
     public static void After(HitPresenter presenter, ref Call<float> c) =>
         TrialSession.Current?.Probe("hit_present_ticks", Stopwatch.GetTimestamp() - c.Tag);
 }
+#endif
 ```
 
 When two or more befores, or two or more afters, of one anchor use `Tag`, the weaver warns
@@ -3569,7 +3595,7 @@ virtual, so the same recipe gives the same frames on any machine.
 | `same` | Hash, frame count and images match the baseline. | 0 |
 | `within` | Images differ but inside the tolerance. | 0 |
 | `px_changed` | Hash and frames match; pixel hashes differ and the recipe compares no images. Informative. | 0 |
-| `changed` | Hash, frame count (beyond ±1) or images outside the tolerance differ. | 0 (it is a review signal, not a failure) |
+| `changed` | Hash, frame count (beyond ±1) or images outside the tolerance differ. | 0 with `ok: true` and `changed[]` filled: a review signal, not a failure ([`ok` and `changed`](/scion/41664431a8f5/cli/#ok-and-changed)) |
 | `new` | No `baseline.json` for this id. | 0 |
 | `stale` | The baseline is for another platform, fps, Unity or player args; images are suspended, the hash still counts. | 0 |
 
@@ -3649,14 +3675,17 @@ namespace Orchard.Trials
 {
     public abstract class OrchardRecipe : TrialRecipe
     {
-        public string Attacker = "knight";
-        public string Defender = "skeleton";
+        public string Attacker = "knight";     // a UnitKind.Id
+        public string Defender = "skeleton";   // a UnitKind.Id
         public int DefenderHp = 20;
+        public int Defenders = 1;
         public int Distance = 1;
         public string Ability = "slash";
     }
 }
 ```
+
+These are the fields of the [Orchard sample](/scion/41664431a8f5/reference/orchard-sample/); your game has its own.
 
 ### 2. One recipe
 
@@ -3684,18 +3713,34 @@ namespace Orchard.Trials
 The adapter decides when the interesting part starts and ends:
 
 ```csharp
-session.BeginCut();                 // frames from here on are captured
-battle.Issue(Command.Attack(recipe.Ability, target));
-yield return session.WaitUntil(() => battle.Idle, "attack finished");
-yield return session.WaitSeconds(recipe.TailSeconds);
-session.EndCut();
+// Inside OrchardAdapter.Run(OrchardRecipe r, TrialSession s)
+s.BeginCut();                       // frames from here on are captured
+battle.Issue(Command.Ability(r.Ability, attacker: 0, target: r.Players));
+yield return s.WaitUntil(() => battle.Idle, "ability resolved");
+yield return s.WaitSeconds(r.TailSeconds);
+s.EndCut();
 ```
 
-The moment that matters is marked from a trials-only observer graft, so `window.png` centers on it:
+The moment that matters is marked from a trials-only observer graft, so `window.png` centers on it. It uses
+`TrialSession`, which exists only in test builds, so the whole graft sits inside `#if SCION_TRIALS`
+([Build modes](/scion/41664431a8f5/grafts/build-modes/)); without it the final build fails to compile:
 
 ```csharp
-[Before(typeof(HitPresenter), nameof(HitPresenter.Play), Observe = true)]
-public static void Before(HitPresenter presenter, HitEvent e) => TrialSession.Current?.MarkImpact();
+#if SCION_TRIALS
+using Orchard.Core;
+using Orchard.Presentation;
+using Scion;
+using Scion.Trials;
+
+namespace Orchard.Grafts
+{
+    public static class ImpactMark
+    {
+        [Before(typeof(HitPresenter), nameof(HitPresenter.Play), Observe = true)]
+        public static void Before(HitPresenter presenter, HitEvent e) => TrialSession.Current?.MarkImpact();
+    }
+}
+#endif
 ```
 
 ### 4. List and run it
@@ -3760,14 +3805,14 @@ They run only when named: `dotnet scion trial run KnightFallsSlow`.
 
 ## Examples
 
-### Three attackers
+### Three targets
 
 ```csharp
 public sealed class FireballArea : OrchardRecipe
 {
     public FireballArea()
     {
-        Attacker = "mage"; Ability = "fireball"; Distance = 4;
+        Attacker = "mage"; Ability = "fireball"; Distance = 4; Defenders = 3;
         Description = "A fireball hits three skeletons in an area.";
         Tags = new[] { "combat", "area" };
     }
@@ -3833,6 +3878,11 @@ namespace Orchard.Trials
         string hash;
         public override string StateHash => hash;
 
+        // One battle setup for every recipe; co-op and mosaic runs use it too.
+        public static BattleSetup SetupFor(OrchardRecipe r, TrialSession s) =>
+            new BattleSetup(r.Attacker, r.Defender, r.DefenderHp, r.Distance,
+                            defenders: r.Defenders, players: r.Players, seed: s.RunSeed);
+
         public override IEnumerator Prepare(TrialSession s)
         {
             s.Sensor("state", () => Battle.Current?.State.Hash64 ?? 0L);
@@ -3842,21 +3892,23 @@ namespace Orchard.Trials
 
         protected override IEnumerator Run(OrchardRecipe r, TrialSession s)
         {
+            if (r.Players > 1) { yield return RunCoop(r, s); yield break; }   // see Co-op trials
             hash = null;
-            var battle = Battle.Start(new BattleSetup(r.Attacker, r.Defender, r.DefenderHp, r.Distance, seed: s.RunSeed));
+            var battle = Battle.Start(SetupFor(r, s));
             yield return s.WaitUntil(() => battle.Ready, "battle ready");
             s.Still("before");
             yield return null;
 
-            int hp = battle.State.Unit(1).Hp;
+            int target = r.Players;          // the first defender
+            int hp = battle.State.Unit(target).Hp;
             s.BeginCut();
-            battle.Issue(Command.Ability(r.Ability, attacker: 0, target: 1));
+            battle.Issue(Command.Ability(r.Ability, attacker: 0, target: target));
             yield return s.WaitUntil(() => battle.Idle, "ability resolved");
             yield return s.WaitSeconds(r.TailSeconds);
             s.EndCut();
 
-            s.Probe("damage", hp - battle.State.Unit(1).Hp);
-            s.Probe("defender_hp", battle.State.Unit(1).Hp);
+            s.Probe("damage", hp - battle.State.Unit(target).Hp);
+            s.Probe("defender_hp", battle.State.Unit(target).Hp);
             hash = battle.State.Hash64.ToString("X16");
         }
 
@@ -3938,7 +3990,7 @@ A selected recipe no adapter accepts fails alone, naming the registered adapters
 |---|---|---|---|
 | `SCN202` | 3 | A registered type is not a valid adapter. | Derive from `TrialAdapter<TRecipe>` with a public parameterless constructor. |
 | `SCN203` | 3 | Two adapters handle the same recipe type. | Keep one per type; make one more specific. |
-| `no_adapter` | 3 | No `[assembly: TrialAdapter]` in the build. | Register the adapter; `dotnet scion diagnose` writes a skeleton. |
+| `no_adapter` | 3 | No `[assembly: TrialAdapter]` in the build. | Register the adapter; `dotnet scion diagnose --adapter` writes a skeleton. |
 | `prepare_failed` | 3 | `Prepare` threw, timed out or called `Fail`. | Read `player.log` of the copy. |
 
 ## Examples
@@ -4205,20 +4257,29 @@ This guide covers the id grammar, `TrialArgs`, `Setup()`, modes, tags, patterns 
 
 ## When to use
 
-- Use `[Vary]` for a small grid of values (3 attackers x 3 distances).
-- Use `Variants()` when combinations are not a full grid, or values are computed.
+- Use `Variants()` to vary members the recipe inherits (the fields of `OrchardRecipe`), when combinations are not a
+  full grid, or when values are computed.
+- Use `[Vary]` for a small grid over fields the recipe class declares itself.
 - Use modes for capture settings that apply to every recipe (resolutions, a color-blind filter).
 - Use seed ranges to search for rare failures, not for baselines: each seed is its own id.
 
 ## Steps
 
-### 1. Vary fields
+### 1. Yield the variants
+
+This page turns the [Orchard sample](/scion/41664431a8f5/reference/orchard-sample/)'s `SlashHit` into a grid of three attackers
+and two distances. `Attacker` and `Distance` are fields of the base class `OrchardRecipe`, which is what the adapter
+reads, so the recipe sets them by name with `TrialArgs`:
 
 ```csharp
 public sealed class SlashHit : OrchardRecipe
 {
-    [Vary("knight", "mage", "rogue")] public new string Attacker = "knight";
-    [Vary(1, 3)] public new int Distance = 1;
+    protected override IEnumerable<TrialArgs> Variants()
+    {
+        foreach (var attacker in new[] { "knight", "mage", "rogue" })
+            foreach (var distance in new[] { 1, 3 })
+                yield return new TrialArgs { { "Attacker", attacker }, { "Distance", distance } };
+    }
 
     protected override void Setup()
     {
@@ -4227,20 +4288,36 @@ public sealed class SlashHit : OrchardRecipe
 }
 ```
 
-This gives 6 ids: `SlashHit[Attacker=knight,Distance=1]` through `SlashHit[Attacker=rogue,Distance=3]`.
-
-### 2. Or yield the variants
+This gives 6 ids: `SlashHit[Attacker=knight,Distance=1]` through `SlashHit[Attacker=rogue,Distance=3]`. Keys are
+field or property names, looked up on the recipe class and then on its base classes, so an inherited field is set
+where the adapter reads it. A key can also be `tunable:<Type>.<Field>`
+([Tunables and presets](/scion/41664431a8f5/grafts/tunables/)):
 
 ```csharp
-protected override IEnumerable<TrialArgs> Variants()
+yield return new TrialArgs { { "Attacker", "mage" }, { "Distance", 4 }, { "tunable:CritShake.Strength", 0.8f } };
+```
+
+### 2. Or vary the recipe's own fields
+
+`[Vary]` marks a field or property that the recipe class declares itself. Map it onto the base fields in `Setup()`:
+
+```csharp
+public sealed class SlashRange : OrchardRecipe
 {
-    yield return new TrialArgs { { "Attacker", "knight" }, { "Distance", 1 } };
-    yield return new TrialArgs { { "Attacker", "mage" }, { "Distance", 4 }, { "tunable:CritShake.Strength", 0.8f } };
+    [Vary("near", "far")] public string Range = "near";
+
+    protected override void Setup() => Distance = Range == "far" ? 3 : 1;
 }
 ```
 
-`Variants()` replaces the `[Vary]` grid when it returns non-null. Keys are field or property names of the recipe, or
-`tunable:<Type>.<Field>` ([Tunables and presets](/scion/41664431a8f5/grafts/tunables/)).
+This gives `SlashRange[Range=near]` and `SlashRange[Range=far]`. `Variants()` replaces the `[Vary]` grid when it
+returns non-null.
+
+:::caution[Never hide a base field]
+`[Vary] public new string Attacker` declares a second field. The adapter reads `OrchardRecipe.Attacker`, so every
+variant would play the same fight under a different id. The session fails such a recipe with
+`[Vary] hides OrchardRecipe.Attacker: use Variants()`.
+:::
 
 ### 3. Declare modes
 
@@ -4248,8 +4325,8 @@ protected override IEnumerable<TrialArgs> Variants()
 [assembly: TrialModes("360p=640x360", "720p=1280x720", "deuter")]
 ```
 
-A mode `name=WxH` sets the capture size. Any other mode is passed to every adapter that implements
-`ITrialModeAware`:
+A mode `name=WxH` sets the capture size. Any other mode, declared in `TrialModes` or not, keeps the default size and
+is passed to every adapter that implements `ITrialModeAware`:
 
 ```csharp
 public sealed class OrchardAdapter : TrialAdapter<OrchardRecipe>, ITrialModeAware
@@ -4313,8 +4390,9 @@ with `no_match` and `did_you_mean`. `Explicit` recipes run only when a pattern n
 | Code | Exit | Cause | Next action |
 |---|---|---|---|
 | `no_match` | 2 | No id matches. | Use `did_you_mean` or `trial list --ids`. |
-| `bad_value` | 2 | A `[Vary]` value does not convert to the field's type, or an unknown mode. | Fix the value; list modes in `TrialModes`. |
-| recipe error `unknown variant key <k>` | 1 | `TrialArgs` names a member the recipe does not have. | Use the field name. |
+| `bad_value` | 2 | A `[Vary]` or `TrialArgs` value does not convert to the member's type. | Fix the value. |
+| recipe error `unknown variant key <k>` | 1 | `TrialArgs` names a member neither the recipe nor its base classes have. | Use the field name. |
+| recipe error `[Vary] hides <Base>.<member>` | 1 | A `[Vary]` field hides an inherited one with `new`. | Remove the field; set the base member from `Variants()`. |
 
 ## Examples
 
@@ -4361,7 +4439,10 @@ static trial needs no adapter of its own.
 ```csharp
 using System.Collections;
 using System.Collections.Generic;
+using Orchard.Core;
+using Orchard.Runtime;
 using Scion.Trials;
+using UnityEngine;
 
 namespace Orchard.Trials
 {
@@ -4519,14 +4600,21 @@ public sealed class CoopTurn : OrchardRecipe
 
 ### 3. Play it by role in the adapter
 
+`OrchardAdapter.Run` calls this method when `r.Players > 1`. `hash` is the adapter's field behind `StateHash`, and
+`SetupFor` builds the battle ([Write an adapter](/scion/41664431a8f5/trials/adapters/)):
+
 ```csharp
-protected override IEnumerator Run(OrchardRecipe r, TrialSession s)
+// In OrchardAdapter (Orchard.Trials). Units 0..Players-1 are the players' knights; unit Players is the skeleton.
+IEnumerator RunCoop(OrchardRecipe r, TrialSession s)
 {
-    yield return s.WaitUntil(() => Lobby.Connected == r.Players, "all players connected");
+    hash = null;
+    var battle = Battle.Start(SetupFor(r, s));
+    yield return s.WaitUntil(() => battle.Ready && Lobby.Connected == r.Players, "all players connected");
     s.BeginCut();
     for (int turn = 1; turn <= r.Players; turn++)
     {
-        if (Lobby.LocalPlayer == turn - 1) battle.Issue(Command.Ability("slash", attacker: turn - 1, target: 4));
+        int player = turn - 1;
+        if (Lobby.LocalPlayer == player) battle.Issue(Command.Ability(r.Ability, attacker: player, target: r.Players));
         yield return s.WaitUntil(() => battle.State.Turn > turn, "turn " + turn);
         s.Event("turn", ("turn", turn), ("hash", battle.State.Hash64.ToString("X16")));
     }
@@ -4594,7 +4682,7 @@ dotnet scion trial run --players 2
 dotnet scion trial run --players 4
 ```
 
-### A two-player recipe with a pass-through flag
+### A co-op recipe with a pass-through flag
 
 ```sh
 dotnet scion trial run CoopTurn -- -orchard-latency 80
@@ -4976,7 +5064,7 @@ dotnet scion trial show --changed
 
 <!-- validate: cli/trial-show -->
 ```json
-{"schema_version":1,"command":"trial show","ok":true,"run":"/Users/alex/orchard/.scion/runs/20261011-143200","count":1,"recipes":[{"id":"SlashHit","rounds":{"ok":2,"failed":0},"hashes":["9F3A0C11D2E4B5A6"],"frames":[46],"vs_approved":"changed","report":"q0/SlashHit/r1/report.md","images":["q0/SlashHit/r1/window.png"],"reasons":["image"],"stale":[],"px_diff":0.12}],"next_step":"look at q0/SlashHit/r1/window.png; if intended, a person approves: dotnet scion trial approve SlashHit --reason \"...\""}
+{"schema_version":1,"command":"trial show","ok":true,"run":"/Users/alex/orchard/.scion/runs/20261011-143200","count":1,"recipes":[{"id":"SlashHit","rounds":{"ok":2,"failed":0},"hashes":["9F3A0C11D2E4B5A6"],"frames":[46],"vs_approved":"changed","report":"q0/SlashHit/r1/report.md","images":["q0/SlashHit/r1/window.png"],"reasons":["image"],"stale":[],"px_diff":0.12}],"next_step":"look at /Users/alex/orchard/.scion/runs/20261011-143200/q0/SlashHit/r1/window.png; if intended, a person approves: dotnet scion trial approve SlashHit --reason \"...\""}
 ```
 
 ### 2. Compare side by side
@@ -5025,9 +5113,9 @@ dotnet scion trial approve SlashHit --reason "crit shake is stronger"
 | failed recipe | no | no |
 | run with `--grafts` or `--warm` | no | no |
 
-Approval is all or nothing: if one id is refused, nothing is written and `refused[]` says why. The `guard` hook
-asks the person before an agent's `trial approve` and denies edits under `scion/baselines/`
-([Hooks](/scion/41664431a8f5/agents/hooks/)).
+Approval is all or nothing: if one id is refused, nothing is written and `refused[]` says why. The `guard` hook lets
+an agent's `trial approve` run only when every id is `new`; any other approval is denied with the command the person
+runs at their terminal. It also denies edits under `scion/baselines/` ([Hooks](/scion/41664431a8f5/agents/hooks/)).
 
 ### Storage
 
@@ -5314,7 +5402,7 @@ for a duel, then approve.
 |---|---|---|---|
 | `no_match` | 2 | No spec with that name in `specs.project`. | Use `did_you_mean`. |
 | `no_simulation` | 3 | `Balance` needs an `ISimulation` and the core declares none. | Implement `ISimulation` ([Core API](/scion/41664431a8f5/reference/api/core/)). |
-| `model_missing` | 3 | `Judge` needs a head that is not trained. | `dotnet scion judge list`; train the head. |
+| `model_missing` | 3 | `Judge` needs a head that is not trained, or the eye model is not in the model cache. | `dotnet scion judge list` and train the head; or `dotnet scion judge model pull`. |
 | spec `ok: false` | 1 | No variant passes. | Read `spec.variants[].failed`. |
 
 ## Examples
@@ -5366,7 +5454,13 @@ match's setup, seed and command log to `scion/recipes/captured/<name>.match.json
 ### 1. Implement IMatchCapture
 
 ```csharp
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using Orchard.Core;
+using Orchard.Runtime;
 using Scion.Trials;
+using UnityEngine;
 
 [assembly: MatchCapture(typeof(Orchard.Trials.OrchardMatchCapture))]
 
@@ -5390,6 +5484,8 @@ namespace Orchard.Trials
             {
                 battle.Issue(Command.FromJson(c.Data));
                 yield return s.WaitUntil(() => battle.Idle, "turn " + c.Turn);
+                // Per-turn hash: co-op and the multiverse compare these between copies.
+                s.Event("turn", ("turn", c.Turn), ("hash", battle.State.Hash64.ToString("X16")));
             }
             s.EndCut();
         }
@@ -5521,7 +5617,7 @@ public sealed class OrchardAdapter : TrialAdapter<OrchardRecipe>, IMosaicAdapter
     protected override IEnumerator Run(OrchardRecipe r, TrialSession s)
     {
         var arena = s.Arena;                     // 0..K-1
-        var battle = Battle.Start(setup, root: Arenas.Root(arena));
+        var battle = Battle.Start(SetupFor(r, s), root: Arenas.Root(arena));
         // ... the same as a single run, through battle and arena-local objects ...
     }
 }
@@ -6134,7 +6230,7 @@ appear only in the scan file and in `diagnose`. Details: [SCN301-SCN307](/scion/
 
 | Code | Exit | Cause | Next action |
 |---|---|---|---|
-| `config_not_found` | 2 | No `scion.json` above the current folder. | `dotnet scion init`. |
+| `config_not_found` | 3 | No `scion.json` above the current folder. | `dotnet scion init`. |
 | warning `recipes_unchecked` | 0 | No scan file yet. | Open the project in Unity once. |
 
 ## Examples
@@ -6551,7 +6647,7 @@ dotnet scion trial diff 20261011-143200 20261011-150512 SlashHit
 
 <!-- validate: cli/trial-diff -->
 ```json
-{"schema_version":1,"command":"trial diff","ok":true,"a":"20261011-143200","b":"20261011-150512","recipes":[{"id":"SlashHit","hash":"same","frames":[46,48],"first_frame":14,"cause":"px","images":[{"file":"window.png","status":"changed","ratio":0.021,"diff":"diff/SlashHit/r1/window.diff.png"}]}],"next_step":"look at diff/SlashHit/r1/window.diff.png"}
+{"schema_version":1,"command":"trial diff","ok":true,"a":"20261011-143200","b":"20261011-150512","recipes":[{"id":"SlashHit","hash":"same","frames":[46,48],"first_frame":14,"cause":"px","images":[{"file":"window.png","status":"changed","ratio":0.021,"diff":"diff/SlashHit/r1/window.diff.png"}]}],"next_step":"look at /Users/alex/orchard/.scion/runs/20261011-150512/diff/SlashHit/r1/window.diff.png"}
 ```
 
 ### 3. Ask blind
@@ -6864,8 +6960,8 @@ more with the people's gold votes than the previous one.
 
 ## Before you begin
 
-- The judge configured in `scion.json` (`judge.dir`, `judge.eyes`, `judge.cache`); `dotnet scion doctor` checks that
-  the eye model is present.
+- The judge configured in `scion.json` (`judge.dir`, `judge.eyes`, `judge.cache`), and its eye model in the model
+  cache: run `dotnet scion judge model pull` once per machine ([Models and licenses](/scion/41664431a8f5/judge/models/)).
 - A few runs with captures of the thing to judge.
 
 ## Steps
@@ -6947,7 +7043,7 @@ promoted only by agreement with people.
 
 | Code | Exit | Cause | Next action |
 |---|---|---|---|
-| `model_missing` | 3 | The eye model is not downloaded. | `dotnet scion doctor` prints the download command. |
+| `model_missing` | 3 | The eye model is not in the model cache. | `dotnet scion judge model pull`. |
 | `no_match` | 2 | No head with that name. | `dotnet scion judge list`. |
 | training `promoted: false` | 0 | The new version does not beat the old one on gold. | Add near-miss votes; check `judge show` for where it errs. |
 
@@ -6990,6 +7086,7 @@ add style. This guide creates and uses a sequence head.
 
 ## Before you begin
 
+- The eye model in the model cache (`dotnet scion judge model pull`, once per machine).
 - Runs made with `--motion`, so `metrics.json` exists for each recipe.
 - The gates still run first: a sequence that fails photosensitivity is never ranked.
 
@@ -7044,7 +7141,7 @@ image.
 | Code | Exit | Cause | Next action |
 |---|---|---|---|
 | `bad_value` | 2 | The run has no `metrics.json`. | Run with `--motion`. |
-| `model_missing` | 3 | The eyes are not installed. | `dotnet scion doctor`. |
+| `model_missing` | 3 | The eye model is not in the model cache. | `dotnet scion judge model pull`. |
 
 ## Examples
 
@@ -7169,6 +7266,7 @@ pairs, and a person picks between the final two. The vote trains the judge for n
 
 ## Before you begin
 
+- The eye model in the model cache (`dotnet scion judge model pull`, once per machine).
 - The `HudStates` static trial ([Capture every HUD state](/scion/41664431a8f5/cookbook/hud-states/)).
 - Trained heads `readability`, `has_glitch` and `looks_like_orchard` ([Train a head](/scion/41664431a8f5/judge/training/)).
 - Optional: a reference library of screens from other games, indexed by the judge (`scion/judge/references/`).
@@ -7259,9 +7357,21 @@ dotnet scion judge train readability
 
 # Models and licenses
 
-The judge's eyes are pre-trained vision encoders that run locally. Scion does not ship model weights: `dotnet scion
-doctor` checks the configured model and prints the command that downloads it into the local model cache. This page
+The judge's eyes are pre-trained vision encoders that run locally. Scion does not ship model weights: download the
+configured model once per machine with `dotnet scion judge model pull` ([judge](/scion/41664431a8f5/cli/judge/#judge-model-pull)),
+into the model cache `~/.cache/scion/models/`. `dotnet scion doctor --level 3` checks that it is there. This page
 lists the supported models, their cost, where the judge keeps its data and what to check in each license.
+
+## Get the model
+
+```sh
+dotnet scion judge model pull                  # the eyes in judge.eyes
+dotnet scion judge model pull dinov2-base      # another one
+```
+
+Every other judge command reads only the cache. Without the model it stops with
+[`model_missing`](/scion/41664431a8f5/reference/errors/#model_missing) (exit 3). On an offline machine, copy the
+`~/.cache/scion/models/<eyes>/` folder from a machine that has it.
 
 ## Supported eyes
 
@@ -7291,9 +7401,9 @@ The judge runs the eyes with ONNX Runtime, on the GPU when one is available:
 |---|---|---|
 | Questions, heads, votes, gold sets | `judge.dir` (`scion/judge/`) | Yes (small JSON and JSONL) |
 | Embeddings cache | `judge.cache` (`.scion/judge/`) | No |
-| Model weights | the local model cache (`~/.cache/scion/models/`) | No |
+| Model weights | the model cache, `~/.cache/scion/models/<eyes>/` | No |
 
-Nothing leaves the machine: the judge makes no network calls after the model is downloaded.
+Nothing leaves the machine: only `judge model pull` uses the network.
 
 ## Licenses
 
@@ -7332,6 +7442,8 @@ balance change does to a real match.
 - Adoption level 3: the rules registered as an `ISimulation`, deterministic in plain .NET
   ([Find non-determinism](/scion/41664431a8f5/determinism/diagnose/)).
 - A captured match ([Turn any match into a recipe](/scion/41664431a8f5/trials/captured-matches/)).
+- For `grafts:` variants and presentation tunables: a test build (`dotnet scion build test`), and an `IMatchCapture`
+  whose `Replay` writes a `turn` event with the state hash after every turn.
 
 ## Steps
 
@@ -7341,7 +7453,8 @@ balance change does to a real match.
 dotnet scion multiverse run knight-dies-to-crit --at-turn 2 --variants base,heavy,crit-1200
 ```
 
-`crit-1200` is a preset that sets the rule tunable `Balance.CritPermille` to 1200.
+`crit-1200` is a preset that sets the rule tunable `Balance.CritPermille` to 1200, so it runs on the core simulator.
+`heavy` is a feel preset of graft tunables (`CritShake.Strength` and others), so it runs in the test build.
 
 <!-- validate: cli/multiverse -->
 ```json
@@ -7369,23 +7482,49 @@ With `--mosaic`, the test build replays the variants side by side from the fork 
 
 ### Variants
 
-| Kind | Given as | Changes |
-|---|---|---|
-| `preset` | a preset name or blend | tunables |
-| `tunables` | `tunable:Balance.CritPermille=1200` | one or more tunables |
-| `grafts` | `grafts:<dll>` | presentation code (the rules must not diverge) |
-| `bot` | `bot:<name>` | who plays the remaining turns |
+| Kind | Given as | Changes | Runs on |
+|---|---|---|---|
+| `preset` | a preset name or blend | tunables | the core simulator when every tunable is in the core assembly; otherwise the test build |
+| `tunables` | `tunable:Balance.CritPermille=1200` | one or more tunables | the same rule as `preset` |
+| `grafts` | `grafts:<dll>` | presentation code (the rules must not diverge) | the test build, always |
+| `bot` | `bot:<name>` | who plays the remaining turns | the core simulator |
 
 `--variants` takes a comma-separated list, or a JSON file with one object per variant.
 
 ### How it runs
+
+Each variant runs where the code it changes runs: rule variants on the core simulator, presentation variants in the
+test build.
+
+#### On the core simulator
+
+Rule variants (rule tunables, presets of rule tunables, bots) change only what the `ISimulation` reads:
 
 1. The `ISimulation` replays the match's commands up to `--at-turn` and saves the state (`ISaveable`).
 2. For each variant, it loads the state, applies the variant and plays the remaining commands (or the bot).
 3. After every turn it records `Hash()`; the first turn whose hash differs from the base is `first_turn`.
 4. At that turn, `IInspectable.Diff` names the first field that differs (`units[0].hp`).
 
-Steps 1 to 4 run in plain .NET, in parallel, in milliseconds per turn. Only `--mosaic` starts the test build.
+These steps run in plain .NET, in parallel, in milliseconds per turn.
+
+#### In the test build
+
+A graft hangs on a game method such as `HitPresenter.Play`, which the plain .NET `ISimulation` never calls; the same
+holds for tunables read by presentation code. On the core simulator such a variant could never diverge, so it would
+prove nothing. These variants run in the test build instead:
+
+1. One copy replays the match without changes (`-scion-match <file>`): the base. After every turn, `Replay` writes
+   a `turn` event with the state hash.
+2. Each variant gets its own copy. It replays the same commands to `--at-turn`, then applies the variant at that turn
+   boundary (the DLL is injected through the copy's control channel; tunables are set) and plays the remaining turns,
+   writing the same `turn` events.
+3. The CLI compares the per-turn hashes of each variant with the base, turn by turn; the first that differs is
+   `first_turn`.
+4. At that turn, both copies save the state (`ISaveable`) and `IInspectable.Diff` names the first field that differs.
+
+A `grafts:` variant whose hashes match the base on every turn after the fork really leaves the rules alone, because
+the graft ran on every presentation call of the replay. This takes seconds per variant (one copy each), and the copies
+run in parallel. `--mosaic` uses the same copies to write `mosaic.png`.
 
 ## Errors
 
@@ -7401,8 +7540,15 @@ Steps 1 to 4 run in plain .NET, in parallel, in milliseconds per turn. Only `--m
 ### Prove a draft graft is visual
 
 ```sh
+dotnet scion build test
+dotnet scion graft build
 dotnet scion multiverse run knight-dies-to-crit --at-turn 0 --variants base,grafts:.scion/grafts/ScionGrafts_51c2.dll
 ```
+
+Take the DLL path from the `dll` field of `graft build`. Both variants replay in the test build, and the graft runs on
+every hit of the match. Exit 0 with `diverged: false` means the state hash matched the base after every turn. For a
+recipe instead of a match, `trial run <Id> --grafts <dll>` gives the same proof on one recipe: `hash: same` against
+the baseline.
 
 ### Let bots finish the match
 
@@ -7865,7 +8011,7 @@ Copy the values of the options you like into presets (`scion/presets/punchy.json
 | Code | Exit | Cause | Next action |
 |---|---|---|---|
 | `bad_value` | 2 | A tunable has no range. | Add `[Tunable(min, max)]` (SCN005). |
-| `model_missing` | 3 | The spec's judge head is not trained. | Train it, or remove `Judge` from the spec. |
+| `model_missing` | 3 | The spec's judge head is not trained, or the eye model is not in the model cache. | Train the head, or `dotnet scion judge model pull`; or remove `Judge` from the spec. |
 
 ## Examples
 
@@ -8392,7 +8538,7 @@ dotnet scion --help | --version
 | `diagnose` | | [diagnose](/scion/41664431a8f5/cli/diagnose/) |
 | `index`, `guard` | | [index, guard](/scion/41664431a8f5/cli/index-and-guard/) |
 | `gen` | | [gen](/scion/41664431a8f5/cli/gen/) |
-| `judge` | `list`, `show`, `new`, `vote`, `train`, `run` | [judge](/scion/41664431a8f5/cli/judge/) |
+| `judge` | `model pull`, `list`, `show`, `new`, `vote`, `train`, `run` | [judge](/scion/41664431a8f5/cli/judge/) |
 | `multiverse` | `run`, `show` | [multiverse](/scion/41664431a8f5/cli/multiverse/) |
 | `hunt`, `search` | `run` | [hunt, search](/scion/41664431a8f5/cli/hunt-and-search/) |
 | `mcp` | | [mcp](/scion/41664431a8f5/cli/mcp/) |
@@ -8424,8 +8570,9 @@ The CLI and the package must have the same version: a DLL injected into a build 
 ### Behavior every command shares
 
 - Commands that write accept `--dry-run` and are idempotent: running one twice changes nothing the second time.
-- Output is compact JSON (about 1.5 KB at most): long lists are cut with `"more": N`, and the full data goes to a
-  file (`summary.json`) whose path is in the envelope.
+- Output is compact JSON (about 1.5 KB at most). A long list is cut, and its last item is then one object
+  `{"more": N}` after the kept items (`"created":["scion.json", ..., {"more":14}]`), so parse each list item as either
+  its documented type or `{"more": N}`. The full data goes to a file (`summary.json`) whose path is in the envelope.
 - Arguments after `--` go to every player process; a flag also present in `player_args` replaces it.
 
 ## Options
@@ -8451,11 +8598,18 @@ Every command prints one envelope:
 |---|---|
 | `schema_version` | 1. |
 | `command` | The command as typed, without options (`trial run`). |
-| `ok` | True when the exit code is 0. |
+| `ok` | True when the exit code is 0 ([`ok` and `changed`](#ok-and-changed)). |
 | `next_step` | One line: what to do next. Always present. |
 | `warnings[]` | `{code, message}`; never change the exit code. |
 | `error` | Only on exit 2 and 3: `code`, `message`, `hint`, `did_you_mean`. |
 | command fields | Documented on each command's page and in its JSON Schema. |
+
+### `ok` and `changed`
+
+`ok` is `true` exactly when the exit code is 0. A `changed` verdict (like `within`, `px_changed`, `new` and `stale`)
+is a review signal, not a failure: `trial run` still exits 0 with `ok: true` and lists the id in `changed[]`. So
+exit 0 does not mean "nothing to look at": read `changed[]` and `runs.new` before you call a task done. Only failed
+recipes, checks, graft checks and specs exit 1 with `ok: false`. Other pages link here for this rule.
 
 ## Exit codes
 
@@ -8473,7 +8627,7 @@ then 0. See [Exit codes](/scion/41664431a8f5/reference/exit-codes/).
 
 | Code | Exit | Cause | Next action |
 |---|---|---|---|
-| `config_not_found` | 2 | No `scion.json` above the current folder. | `dotnet scion init`, or `cd` into the project. |
+| `config_not_found` | 3 | No `scion.json` above the current folder. | `dotnet scion init`, or `cd` into the project. |
 | `config_invalid` | 3 | `scion.json` does not match its schema. | Fix the key in the message. |
 | `unknown_command`, `unknown_option` | 2 | A typo. | Use `did_you_mean`. |
 | `build_not_found` | 3 | No test build found. | `dotnet scion build test`. |
@@ -8524,9 +8678,11 @@ dotnet scion doctor [--level 1|2|3] [--format json|text]
 
 | Level | Checks |
 |---|---|
-| 1 (default) | `scion.json` and `ScionSettings.json` parse; CLI and package versions match; .NET SDK; Unity of the project's version; the editor lock. |
-| 2 | Level 1, plus: the test build exists, has `SCION_TRIALS`, is not stale; `scion-build.json` reads; the output folder is writable; free memory and cores. |
-| 3 | Level 2, plus: starts the test build with `-scion-list` (recipes, adapters, SCN201 to SCN203); the judge's eye model; Git LFS for baselines; suppressions with justifications. |
+| 1 | `scion.json` and `ScionSettings.json` parse; CLI and package versions match; .NET SDK; git; the output folder is writable; free memory and cores. |
+| 2 (default) | Level 1, plus: Unity of the project's version; the editor lock and `com.unity.pipeline`; the test build exists, has `SCION_TRIALS`, is not stale; `scion-build.json` reads; free disk under `trials.out`. |
+| 3 | Level 2, plus: starts the test build with `-scion-list` (recipes, adapters, SCN201 to SCN203; up to 60 s); the judge's eye model; Git LFS for baselines; suppressions with justifications. |
+
+On a fresh project the `build` check warns until the first `dotnet scion build test`; a warning never fails `doctor`.
 
 Each check has an `id`, a `status` (`ok`, `warn`, `fail`), a `detail` and, unless ok, a `hint`.
 
@@ -8537,7 +8693,7 @@ measurement or 600 MB.
 
 | Option | Default | Meaning |
 |---|---|---|
-| `--level 1\|2\|3` | 1 | Check depth (not the adoption level). |
+| `--level 1\|2\|3` | 2 | Check depth (not the adoption level). |
 | `--format json\|text` | auto | Output format. |
 
 ## Output
@@ -8570,11 +8726,11 @@ Schema: `https://jand-s.github.io/scion/41664431a8f5/schemas/v1/cli/doctor.schem
 
 | Code | Exit | Cause | Next action |
 |---|---|---|---|
-| `config_not_found` | 2 | No `scion.json`. | `dotnet scion init`. |
+| `config_not_found` | 3 | No `scion.json`. | `dotnet scion init`. |
 | warning `version_mismatch` | 0 | The CLI and the package differ. | Install the same version of both. |
 | warning `build_stale` | 0 | The test build is older than the sources. | `dotnet scion build test`. |
 | warning `low_memory` | 0 | Not enough free memory for 2 copies. | Close apps or run `-j 1`. |
-| `model_missing` | 3 | Level 3: the judge's eye model is not downloaded. | Run the command in `hint`. |
+| `model_missing` | 3 | Level 3: the judge's eye model is not in the model cache. | `dotnet scion judge model pull` ([Models and licenses](/scion/41664431a8f5/judge/models/)). |
 
 ## Examples
 
@@ -8985,7 +9141,7 @@ dotnet scion trial run [patterns] [-j N] [--rounds N] [selection options] [captu
 
 <!-- validate: cli/trial-run -->
 ```json
-{"schema_version":1,"command":"trial run","ok":false,"run":"/Users/alex/orchard/.scion/runs/20261011-143200","build_id":"4c49a1e0b2f3","copies":6,"wall_s":27.1,"runs":{"recipes":6,"rounds":2,"total":12,"ok":11,"failed":1,"changed":1,"within":0,"px_changed":0,"new":0,"stale":0},"failed":[{"id":"KnightFalls","round":1,"copy":3,"error":"timeout (30s): unit down animation","report":"q3/KnightFalls/r1/report.md"}],"changed":[{"id":"SlashHit","vs_approved":"changed","hash":"same","image":"q0/SlashHit/r1/window.png","diff":"diff/SlashHit/r1/window.diff.png"}],"determinism":{"hash_stable":true,"frame_jitter":[]},"next_step":"read q3/KnightFalls/r1/report.md; SlashHit changed only in images: see diff/SlashHit/r1/window.diff.png"}
+{"schema_version":1,"command":"trial run","ok":false,"run":"/Users/alex/orchard/.scion/runs/20261011-143200","build_id":"4c49a1e0b2f3","copies":6,"wall_s":27.1,"runs":{"recipes":6,"rounds":2,"total":12,"ok":11,"failed":1,"changed":1,"within":0,"px_changed":0,"new":0,"stale":0},"failed":[{"id":"KnightFalls","round":1,"copy":3,"error":"timeout (30s): unit down animation","report":"q3/KnightFalls/r1/report.md"}],"changed":[{"id":"SlashHit","vs_approved":"changed","hash":"same","image":"q0/SlashHit/r1/window.png","diff":"diff/SlashHit/r1/window.diff.png"}],"determinism":{"hash_stable":true,"frame_jitter":[]},"next_step":"read /Users/alex/orchard/.scion/runs/20261011-143200/q3/KnightFalls/r1/report.md; SlashHit changed only in images: see /Users/alex/orchard/.scion/runs/20261011-143200/diff/SlashHit/r1/window.diff.png"}
 ```
 
 | Field | Meaning |
@@ -9005,7 +9161,7 @@ Files: [summary.json, summary.tsv, compare.json](/scion/41664431a8f5/reference/f
 
 | Code | When |
 |---|---|
-| 0 | Every recipe passed. Verdicts such as `changed` do not fail a run. |
+| 0 | Every recipe passed. Verdicts such as `changed` do not fail a run: `ok` stays `true` and `changed[]` lists them ([`ok` and `changed`](/scion/41664431a8f5/cli/#ok-and-changed)). |
 | 1 | A recipe or check failed, or a spec failed. |
 | 2 | Bad option or a pattern matched nothing. |
 | 3 | No build, a copy crashed or timed out, environment errors. |
@@ -9026,7 +9182,7 @@ Copies are combined with precedence 2 > 3 > 1 > 0.
 | `mosaic_unsupported` | 3 | `--mosaic` and no `IMosaicAdapter`. | Implement it or drop `--mosaic`. |
 | warning `build_stale` | 0 | Sources changed after the build. | Rebuild before trusting the result. |
 | warning `px_unstable` | 0 | Pixels vary between rounds. | See [Verify determinism](/scion/41664431a8f5/determinism/verify/). |
-| warning `shard_ignored` | 0 | `-scion-shard` passed after `--`. | Let the CLI shard. |
+| `shard_ignored` | 3 | Two copies ran the same (recipe, round): the build ignores `-scion-shard`. | `dotnet scion build test`, or run with `-j 1`. |
 
 ## Examples
 
@@ -9092,7 +9248,7 @@ writes `diff/<IdDir>/r<n>/<artifact>.grid.png` (baseline, current, heatmap in th
 
 <!-- validate: cli/trial-show -->
 ```json
-{"schema_version":1,"command":"trial show","ok":true,"run":"/Users/alex/orchard/.scion/runs/20261011-143200","count":1,"recipes":[{"id":"KnightFalls","rounds":{"ok":1,"failed":1},"hashes":["1B44E07AC9D20F13"],"frames":[52],"vs_approved":"same","round":1,"copy":3,"report":"q3/KnightFalls/r1/report.md","images":["q3/KnightFalls/r1/window.png","q3/KnightFalls/r1/context.png"],"failed":[{"round":1,"copy":3,"error":"timeout (30s): unit down animation"}]}],"next_step":"read q3/KnightFalls/r1/report.md"}
+{"schema_version":1,"command":"trial show","ok":true,"run":"/Users/alex/orchard/.scion/runs/20261011-143200","count":1,"recipes":[{"id":"KnightFalls","rounds":{"ok":1,"failed":1},"hashes":["1B44E07AC9D20F13"],"frames":[52],"vs_approved":"same","round":1,"copy":3,"report":"q3/KnightFalls/r1/report.md","images":["q3/KnightFalls/r1/window.png","q3/KnightFalls/r1/context.png"],"failed":[{"round":1,"copy":3,"error":"timeout (30s): unit down animation"}]}],"next_step":"read /Users/alex/orchard/.scion/runs/20261011-143200/q3/KnightFalls/r1/report.md"}
 ```
 
 | Field | Meaning |
@@ -9342,7 +9498,7 @@ both. Frame data is compared column by column in the cause order of `determinism
 
 <!-- validate: cli/trial-diff -->
 ```json
-{"schema_version":1,"command":"trial diff","ok":true,"a":"20261011-143200","b":"20261011-150512","recipes":[{"id":"SlashHit","hash":"same","frames":[46,46],"first_frame":14,"cause":"px","images":[{"file":"window.png","status":"changed","ratio":0.021,"diff":"diff/SlashHit/r1/window.diff.png"}]},{"id":"KnightFalls","hash":"same","frames":[52,52],"first_frame":null,"cause":null,"images":[{"file":"window.png","status":"same","ratio":0,"diff":null}]}],"next_step":"look at diff/SlashHit/r1/window.diff.png"}
+{"schema_version":1,"command":"trial diff","ok":true,"a":"20261011-143200","b":"20261011-150512","recipes":[{"id":"SlashHit","hash":"same","frames":[46,46],"first_frame":14,"cause":"px","images":[{"file":"window.png","status":"changed","ratio":0.021,"diff":"diff/SlashHit/r1/window.diff.png"}]},{"id":"KnightFalls","hash":"same","frames":[52,52],"first_frame":null,"cause":null,"images":[{"file":"window.png","status":"same","ratio":0,"diff":null}]}],"next_step":"look at /Users/alex/orchard/.scion/runs/20261011-150512/diff/SlashHit/r1/window.diff.png"}
 ```
 
 ## Exit codes
@@ -9517,7 +9673,7 @@ dotnet scion trial loop <Id> [--from <file>] [--span a..b] [--passes N] [--windo
 |---|---|---|---|
 | `not_forkable` | 3 | `--span` needs `ISaveable`. | Implement it, or loop the whole recipe. |
 | `bad_value` | 2 | `--span` outside the match. | Check `turns`. |
-| `interrupted` | 0 | Ctrl-C. | Normal stop. |
+| Ctrl-C (no error) | 0 | The normal way to end a loop without `--passes`; `stopped_by` is `interrupt`. | Nothing; the passes so far stay in the run folder. |
 
 ## Examples
 
@@ -9953,7 +10109,7 @@ leaving the rest of the file alone. With `--hook`, wraps it as `hookSpecificOutp
 | An edit or write under `scion/baselines/` | `deny`: only `trial approve` writes baselines. |
 | An edit of `scion.manifest.json` or `GRAFTS.md` | `deny`: generated by `gen`. |
 | `trial approve` of ids that are only `new` | `allow`. |
-| `trial approve` that would replace a baseline (`--approve`) | `ask`, with what changed and the review command. |
+| `trial approve` that would replace a baseline (`--approve`) | `deny`, with what changed, the review command and the approve command the person runs at a terminal. An agent's shell has no terminal, so asking could not help: the CLI would answer `human_required`. |
 | Anything else | `allow`. |
 
 With `--hook`, `guard` reads the hook input from stdin (tool name, path, command) and prints
@@ -9979,7 +10135,7 @@ guard, which fails closed.
 
 <!-- validate: cli/guard -->
 ```json
-{"schema_version":1,"command":"guard","ok":true,"decision":"ask","reason":"This approves SlashHit (changed: image) and replaces a baseline a person approved.","path":null,"approve":"SlashHit","next_step":"a person reviews: dotnet scion trial show SlashHit --grid"}
+{"schema_version":1,"command":"guard","ok":true,"decision":"deny","reason":"This approves SlashHit (changed: image) and replaces a baseline a person approved; only a person approves it, at a terminal.","path":null,"approve":"SlashHit","next_step":"a person reviews (dotnet scion trial show SlashHit --grid), then runs: dotnet scion trial approve SlashHit --reason \"...\""}
 ```
 
 ## Exit codes
@@ -9993,7 +10149,7 @@ guard, which fails closed.
 
 | Code | Exit | Cause | Next action |
 |---|---|---|---|
-| `config_not_found` | 0 in hook mode | Not a Scion project. | The hooks do nothing outside Scion projects. |
+| `config_not_found` | 3, or 0 with `--hook` | Not a Scion project. | The hooks do nothing outside Scion projects. |
 | `usage` | 2 | `guard` without `--hook`, `--path` or `--command`. | Pass one. |
 
 ## Examples
@@ -10098,7 +10254,8 @@ dotnet scion gen --list tunables --search Balance
 
 # judge
 
-The `judge` commands manage the Scion Judge: `judge list` and `judge show` describe heads, `judge new` creates one
+The `judge` commands manage the Scion Judge: `judge model pull` downloads the eye model into the model cache,
+`judge list` and `judge show` describe heads, `judge new` creates one
 from a question file, `judge vote` opens a local page for blind duels and labels, `judge train` trains and promotes a
 new head version, and `judge run` scores a run's captures. Heads, questions and votes live in `judge.dir`
 (`scion/judge/`); embeddings in `judge.cache`.
@@ -10106,6 +10263,7 @@ new head version, and `judge run` scores a run's captures. Heads, questions and 
 ## Synopsis
 
 ```text
+dotnet scion judge model pull [<eyes>]
 dotnet scion judge list
 dotnet scion judge show <head>
 dotnet scion judge new <head> --question <file> [--view full|hud|corners|actor] [--sequence]
@@ -10117,6 +10275,13 @@ dotnet scion judge run <run> [--heads a,b] [--references N] [--pairs <run>]
 ## Description
 
 The judge never changes a verdict or an exit code of trials. It runs locally with the eye model in `judge.eyes`.
+
+## judge model pull
+
+Downloads the eye model (`<eyes>`, default `judge.eyes`) into the model cache, `~/.cache/scion/models/<eyes>/`, and
+checks its hash. This is the only judge command that uses the network; every other one reads the cache and fails with
+`model_missing` when the model is not there. It is idempotent: a model already in the cache is not downloaded again
+(`downloaded: false`). On a machine without network, copy the `<eyes>/` folder from another machine's cache.
 
 ## judge list
 
@@ -10152,6 +10317,7 @@ same id in another run.
 
 | Option | Commands | Meaning |
 |---|---|---|
+| `<eyes>` | model pull | `siglip2-so400m`, `siglip2-base`, `dinov2-base` or `uiclip` ([Models and licenses](/scion/41664431a8f5/judge/models/)); default `judge.eyes`. |
 | `--question <file>` | new | The question. |
 | `--view <view>` | new | `full`, `hud`, `corners`, `actor`. |
 | `--sequence` | new | A motion head. |
@@ -10166,27 +10332,38 @@ same id in another run.
 {"schema_version":1,"command":"judge run","ok":true,"results":".scion/runs/20261011-150512/judge.json","escalate":["HudStates/turn-banner.720p.png"],"next_step":"look at the escalated captures, or ask an evaluator: dotnet scion trial eval 20261011-150512 --with agent"}
 ```
 
-`judge list` returns `heads[]`; `judge show` and `judge train` return `head` (and `training`); `judge vote` returns
-`url` and `votes`.
+`judge model pull` returns `model` (`eyes`, `path`, `bytes`, `downloaded`); `judge list` returns `heads[]`;
+`judge show` and `judge train` return `head` (and `training`); `judge vote` returns `url` and `votes`.
+
+<!-- validate: cli/judge -->
+```json
+{"schema_version":1,"command":"judge model pull","ok":true,"model":{"eyes":"siglip2-so400m","path":"/Users/alex/.cache/scion/models/siglip2-so400m","bytes":1612000000,"downloaded":true},"next_step":"dotnet scion judge list"}
+```
 
 ## Exit codes
 
 | Code | When |
 |---|---|
 | 0 | Done. |
-| 2 | Unknown head, bad question file. |
-| 3 | The eye model is missing. |
+| 2 | Unknown head or eyes, bad question file. |
+| 3 | The eye model is missing, or `judge model pull` could not download it. |
 
 ## Errors
 
 | Code | Exit | Cause | Next action |
 |---|---|---|---|
-| `model_missing` | 3 | The eye model is not downloaded. | Run the command in `hint` (also in `doctor --level 3`). |
+| `model_missing` | 3 | The eye model is not in the model cache. | `dotnet scion judge model pull` (the `hint` names the eyes). |
 | `no_match` | 2 | Unknown head. | `judge list`. |
 | `bad_value` | 2 | The question file does not validate. | Check it against `judge-question.schema.json`. |
 | `not_supported` | 2 | `judge vote` without a browser (an agent). | Votes are for people; agents use `trial eval`. |
 
 ## Examples
+
+### Get the eye model once per machine
+
+```sh
+dotnet scion judge model pull
+```
 
 ### Score a run with two heads
 
@@ -10212,10 +10389,10 @@ dotnet scion judge vote --head hit_weight
 
 # multiverse
 
-`dotnet scion multiverse run` replays a captured match on the core simulator up to a turn, forks it, plays each
-variant to the end and reports, per variant, whether the rules diverged, the first turn and the first field.
-`dotnet scion multiverse show` prints a past result. With `--mosaic`, the test build replays the variants side by
-side.
+`dotnet scion multiverse run` replays a captured match up to a turn, forks it, plays each variant to the end and
+reports, per variant, whether the rules diverged, the first turn and the first field. Rule variants run on the core
+simulator; `grafts:` variants and presentation tunables run in the test build. `dotnet scion multiverse show` prints a
+past result. With `--mosaic`, the test build replays the variants side by side.
 
 ## Synopsis
 
@@ -10226,7 +10403,11 @@ dotnet scion multiverse show <run>
 
 ## Description
 
-Everything except `--mosaic` runs in plain .NET on the registered `ISimulation`, in parallel, without Unity.
+Variants that change only what the rules read (rule tunables in the core assembly, presets of them, bots) run in plain
+.NET on the registered `ISimulation`, in parallel, without Unity. Variants that change presentation code (`grafts:`
+DLLs, tunables declared outside the core assembly) run in copies of the test build: each copy replays the match to
+the fork turn, applies the variant there (a DLL through the control channel) and plays on, and the CLI compares its
+per-turn `turn` hashes with a base copy's. The full rule is on [The multiverse](/scion/41664431a8f5/explore/multiverse/#in-the-test-build).
 
 ## multiverse run
 
@@ -10260,7 +10441,7 @@ Prints the envelope of a past run from its `multiverse.json`.
 | 0 | Done. Divergence of tunable or preset variants is information, not failure. |
 | 1 | A `grafts:` variant diverged (grafts must be visual). |
 | 2 | Unknown match, variant or turn. |
-| 3 | No simulation, or the state cannot be saved. |
+| 3 | No simulation, the state cannot be saved, or no test build for a `grafts:` variant. |
 
 ## Errors
 
@@ -10269,6 +10450,7 @@ Prints the envelope of a past run from its `multiverse.json`.
 | `no_simulation` | 3 | No `[assembly: Simulation]`. | Register an `ISimulation`. |
 | `not_forkable` | 3 | No `ISaveable`. | Implement `Save` and `Load`. |
 | `mosaic_unsupported` | 3 | `--mosaic` without `IMosaicAdapter`. | Implement it or drop `--mosaic`. |
+| `build_not_found` | 3 | A `grafts:` variant or a presentation tunable, and no test build. | `dotnet scion build test`. |
 | `no_match` | 2 | Unknown match or preset. | `trial list`; `scion/presets/`. |
 
 ## Examples
@@ -10276,8 +10458,11 @@ Prints the envelope of a past run from its `multiverse.json`.
 ### Prove a draft is visual
 
 ```sh
+dotnet scion graft build
 dotnet scion multiverse run knight-dies-to-crit --at-turn 0 --variants base,grafts:.scion/grafts/ScionGrafts_51c2.dll
 ```
+
+The DLL path comes from the `dll` field of `graft build`. Both variants replay in the test build with per-turn hashes.
 
 ### See variants side by side
 
@@ -10361,7 +10546,7 @@ simulator for balance-only specs), drops those failing the spec, ranks with the 
 | Code | Exit | Cause | Next action |
 |---|---|---|---|
 | `no_simulation` | 3 | No `ISimulation`. | Register one. |
-| `model_missing` | 3 | The spec uses a judge head and the eyes are missing. | `doctor --level 3`. |
+| `model_missing` | 3 | The spec uses a judge head and the eye model is not in the model cache. | `dotnet scion judge model pull`. |
 | `bad_value` | 2 | A tunable without a range. | `[Tunable(min, max)]`. |
 | `no_match` | 2 | Unknown spec or recipe. | `did_you_mean`. |
 
@@ -10683,7 +10868,8 @@ Comma-separated tags. Only recipes with any of them. CLI: `--tag`.
 
 ### -scion-mode
 
-A mode name from `[assembly: TrialModes]`. `name=WxH` modes set the capture size; others go to `ITrialModeAware`.
+A mode name. `name=WxH` modes from `[assembly: TrialModes]` set the capture size; any other name, declared or not,
+keeps the default size and goes to `ITrialModeAware`.
 CLI: `--mode`.
 
 ### -scion-seeds
@@ -10734,7 +10920,7 @@ step uses 125 to tell `git bisect` to skip a commit.
 
 | Code | Meaning | Player examples | CLI examples |
 |---|---|---|---|
-| 0 | Everything ok. Warnings do not count. | Five recipes passed; `-scion-list`; a shard with no pairs. | `trial run` with all passing (even with `changed` verdicts); `doctor` without failed checks. |
+| 0 | Everything ok. Warnings do not count. | Five recipes passed; `-scion-list`; a shard with no pairs. | `trial run` with all passing, even with `changed` verdicts (`ok: true`, `changed[]` filled; see [`ok` and `changed`](/scion/41664431a8f5/cli/#ok-and-changed)); `doctor` without failed checks. |
 | 1 | A recipe, check, graft check or spec failed. | Timeout; `Fail`; `Check(false)`; an error in the log; hash differs between rounds; a graft threw. | `graft check` with errors; `trial approve` refused; `gen --check` stale. |
 | 2 | Usage: the call is wrong. | No `-scion-out`; `-scion-only Slsh` (`did_you_mean: ["SlashHit"]`); `-scion-rond`; `-scion-shard 6/6`. | Unknown command or option; no match; `human_required`. |
 | 3 | Environment: something outside the call is wrong. | No adapter; `Prepare` failed; watchdog; empty captures; output not writable. | No build; no Unity; editor open; a copy crashed or timed out. |
@@ -10812,7 +10998,8 @@ on a build without `SCION_SLOTS`, `judge vote` without a browser, an evaluator w
 
 ### config_not_found
 
-Exit 2, CLI. No `scion.json` in the current folder or above. Run `dotnet scion init` or change folder.
+Exit 3, CLI. No `scion.json` in the current folder or above. Run `dotnet scion init` or change folder. The hook
+commands (`index --hook`, `guard --hook`) are the exception: outside a Scion project they do nothing and exit 0.
 
 ### config_invalid
 
@@ -10848,7 +11035,9 @@ Exit 3, CLI. A copy exited without writing its outputs. Read `q<i>/player.log` a
 
 ### shard_ignored
 
-Exit 0 with a warning, CLI. `-scion-shard` was passed after `--`; the CLI shards the run itself and ignored it.
+Exit 3, CLI. The same (recipe, round) ran in more than one copy: the build ignores `-scion-shard`, because it was
+built with another Scion. Rebuild with `dotnet scion build test`, or run with `-j 1`. Passing `-scion-shard` yourself
+after `--` is a `usage` error (exit 2): the CLI shards the run.
 
 ### copy_timeout
 
@@ -10865,7 +11054,8 @@ Exit 3, CLI and player. The output folder cannot be created or written. Fix perm
 
 ### interrupted
 
-Exit 3, CLI. Ctrl-C or a cancelled MCP call. Partial outputs stay in the run folder.
+Exit 3, CLI. Ctrl-C or a cancelled MCP call. Partial outputs stay in the run folder. `trial loop` is the one
+exception: it runs until stopped, so Ctrl-C ends it normally with exit 0 and `stopped_by: "interrupt"`.
 
 ### internal_error
 
@@ -10895,7 +11085,10 @@ Exit 3, CLI. `--mosaic` and no adapter implements `IMosaicAdapter`. Implement it
 
 ### model_missing
 
-Exit 3, CLI. The judge's eye model is not downloaded. Run the command in `error.hint`.
+Exit 3, CLI. The eye model of the Judge is not in the model cache (`~/.cache/scion/models/<eyes>/`), or a head the
+command needs is not trained yet. For the model, run `dotnet scion judge model pull <eyes>` (the exact command is in
+`error.hint`), or copy the `<eyes>/` folder into the cache on an offline machine. For a head, train it
+([Train a head](/scion/41664431a8f5/judge/training/)). See [Models and licenses](/scion/41664431a8f5/judge/models/).
 
 ## Player errors
 
@@ -13053,6 +13246,156 @@ A test build that prepared its adapters and waits idle for work. See [Warm copie
 
 > Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
 
+# Orchard sample
+
+Every example on this site plays the same small game: Orchard Tactics, the sample that
+`dotnet scion new --genre tactics --name Orchard` writes. This page fixes its types once. A snippet on any other page
+uses only the names below, with the signatures below; when a page needs one more line (a variant grid, a mode, a
+tunable), the snippet shows it and says so. Units are named by their `UnitKind.Id` string everywhere, so recipes,
+variants and `--set` all set them from text.
+
+## Assemblies
+
+| Assembly | Namespace | Holds |
+|---|---|---|
+| `Orchard.Core` | `Orchard.Core` | The rules: plain C#, integers, no `UnityEngine`. Registers the `ISimulation`. |
+| `Orchard.Runtime` | `Orchard.Runtime`, `Orchard.Presentation` | The battle in the scene, input, the HUD and the presenters. References `Scion.Runtime`. |
+| `Orchard.Grafts` (`.asmref`) | `Orchard.Grafts` | Promoted grafts; compiles into `Orchard.Runtime`. |
+| `Orchard.Trials` | `Orchard.Trials` | `OrchardRecipe`, `OrchardAdapter`, the recipes. `defineConstraints: ["SCION_TRIALS"]`. |
+
+## Rules types
+
+```csharp
+namespace Orchard.Core
+{
+    // "knight", "skeleton", "mage", "rogue".
+    public sealed class UnitKind { public string Id { get; } public int MaxHp { get; } }
+    public static class UnitKinds { public static IReadOnlyList<UnitKind> All { get; } public static UnitKind Get(string id); }
+
+    public readonly struct HitEvent
+    {
+        public HitEvent(int attacker, int target, int amount, bool crit);
+        public int Attacker { get; } public int Target { get; } public int Amount { get; } public bool Crit { get; }
+    }
+
+    // Units 0 .. players-1 attack; units players .. players+defenders-1 defend.
+    public sealed class BattleSetup
+    {
+        public BattleSetup(string attacker, string defender, int defenderHp, int distance,
+                           int defenders = 1, int players = 1, int seed = 1);
+        public string Attacker { get; } public string Defender { get; } public int DefenderHp { get; }
+        public int Distance { get; } public int Defenders { get; } public int Players { get; } public int Seed { get; }
+    }
+
+    public sealed class Command
+    {
+        public static Command Ability(string ability, int attacker, int target);   // "slash", "fireball"
+        public static Command FromJson(string json);
+        public int Turn { get; } public int Player { get; }
+        public string ToJson();
+    }
+
+    public sealed class BattleState
+    {
+        public long Hash64 { get; } public long Tick { get; } public int Turn { get; }
+        public UnitState Unit(int index);          // UnitState: Kind, Hp, Down
+    }
+
+    public static class Balance
+    {
+        [Tunable(500, 2000, Doc = "Critical damage multiplier, in permille.")] public static int CritPermille = 1500;
+        [Tunable(500, 2000, Doc = "Enemy HP, in permille of the unit data.")] public static int EnemyHpPermille = 1000;
+    }
+}
+```
+
+## Runtime and presentation types
+
+```csharp
+namespace Orchard.Runtime
+{
+    public sealed class Battle
+    {
+        public static Battle Current { get; }                           // null between battles
+        public static Battle Start(BattleSetup setup, Transform root = null);
+        public static void End();
+        public BattleSetup Setup { get; } public BattleState State { get; }
+        public bool Ready { get; } public bool Idle { get; }
+        public IReadOnlyList<Command> Log { get; }
+        public void Issue(Command command);
+    }
+
+    public static class Boot { public static bool Ready { get; } }
+    public static class Lobby { public static int Connected { get; } public static int LocalPlayer { get; } }
+    public static class Gallery { public static void Place(UnitKind k); public static void Clear(); public static bool Ready { get; } public static int HeightPx { get; } }
+    public static class Arenas { public static Transform Root(int arena); }
+}
+
+namespace Orchard.Presentation
+{
+    public sealed class HitPresenter : MonoBehaviour
+    {
+        [Anchor(Id = "presentation.hit", Doc = "Plays one hit and returns how long it lasts.")]
+        public float Play(HitEvent e);
+        public UnitView UnitView(int unit);
+        public Vector3 TargetPosition { get; }
+    }
+
+    public sealed class UnitView : MonoBehaviour { public void PlayStatus(string status); public static bool AnyAnimating { get; } }
+    public sealed class Hud : MonoBehaviour { public static Hud Current { get; } public void ShowTurn(int turn); }
+}
+```
+
+## Recipe base class
+
+```csharp
+namespace Orchard.Trials
+{
+    public abstract class OrchardRecipe : TrialRecipe
+    {
+        public string Attacker = "knight";     // a UnitKind.Id
+        public string Defender = "skeleton";   // a UnitKind.Id
+        public int DefenderHp = 20;
+        public int Defenders = 1;
+        public int Distance = 1;
+        public string Ability = "slash";
+    }
+}
+```
+
+`OrchardAdapter : TrialAdapter<OrchardRecipe>` plays every recipe: it builds the battle with
+`SetupFor(r, s)`, which is `new BattleSetup(r.Attacker, r.Defender, r.DefenderHp, r.Distance, defenders: r.Defenders,
+players: r.Players, seed: s.RunSeed)`, issues `Command.Ability(r.Ability, attacker: 0, target: r.Players)`, and
+probes `damage` and `defender_hp`. Its full code is on [Write an adapter](/scion/41664431a8f5/trials/adapters/).
+
+## Recipes
+
+| Recipe | Players | What it shows | Where it comes from |
+|---|---|---|---|
+| `SlashHit` | 1 | The knight slashes a skeleton next to it. | The template |
+| `FireballArea` | 1 | A mage's fireball hits three skeletons (`Defenders = 3`). | The template |
+| `CoopTurn` | 4 | Four knights each act once; every peer agrees on the state. | The template |
+| `HudStates` | 1 | The HUD in each of its states, as a static trial. | The template |
+| `UnitGallery` | 1 | Every `UnitKind` in its idle pose, as a static trial. | The template |
+| `KnightFalls` | 1 | A skeleton finishes a wounded knight (`DefenderHp = 3`). | Step 9 of the [Quickstart](/scion/41664431a8f5/start/quickstart/) |
+| `CapturedMatch[match=<name>]` | 1 | A match captured with F9 and replayed. | [Captured matches](/scion/41664431a8f5/trials/captured-matches/) |
+
+The graft examples hang on `HitPresenter.Play` (anchor `presentation.hit`): `HitFlash` (the quickstart) and
+`CritShake` (the agent loop and the graft guides). The rule tunables are `Balance.CritPermille` and
+`Balance.EnemyHpPermille`; the graft tunable is `CritShake.Strength`.
+
+## See also
+
+- [Quickstart](/scion/41664431a8f5/start/quickstart/)
+- [Start a new project](/scion/41664431a8f5/start/new-project/)
+- [Write a recipe](/scion/41664431a8f5/trials/recipes/)
+- [Write an adapter](/scion/41664431a8f5/trials/adapters/)
+- [The Scion Standard](/scion/41664431a8f5/standard/overview/)
+
+---
+
+> Scion 1.0.0 documentation. Index of every page: https://jand-s.github.io/scion/41664431a8f5/llms.txt
+
 # C# API
 
 Scion's public API is small and split by where it runs. `Scion.Runtime` has what every build needs (grafts, `Fx`,
@@ -13538,7 +13881,9 @@ public sealed class VaryAttribute : Attribute
 }
 ```
 
-Every combination of `[Vary]` values is a variant, in declaration order.
+Every combination of `[Vary]` values is a variant, in declaration order. `[Vary]` applies to members the recipe class
+declares itself; a `[Vary]` field that hides an inherited member with `new` fails the recipe. Vary inherited members
+from `Variants()` ([Variants, modes and seeds](/scion/41664431a8f5/trials/variants/)).
 
 ## TrialArgs
 
@@ -13551,7 +13896,8 @@ public sealed class TrialArgs : IEnumerable<KeyValuePair<string, object>>
 }
 ```
 
-Keys are recipe members or `tunable:<Type>.<Field>`.
+Keys are names of recipe members, looked up on the recipe class and then on its base classes, or
+`tunable:<Type>.<Field>`.
 
 ## TrialModesAttribute
 
@@ -13576,7 +13922,8 @@ public interface ITrialModeAware
 }
 ```
 
-Adapters implement it for modes that are not resolutions.
+Adapters implement it for modes that are not resolutions. A `-scion-mode` that `TrialModes` does not declare also
+goes to `ApplyMode`, with the default capture size.
 
 ## CapturedMatch
 
@@ -14544,7 +14891,8 @@ jobs:
 
 ### 3. Fail on unapproved changes
 
-A run exits 0 when recipes pass, even with `changed` verdicts. To require that visual changes come with approved
+A run exits 0 with `ok: true` when recipes pass, even with `changed` verdicts
+([`ok` and `changed`](/scion/41664431a8f5/cli/#ok-and-changed)). To require that visual changes come with approved
 baselines, fail the job when any id is `changed` or `new`:
 
 ```yaml

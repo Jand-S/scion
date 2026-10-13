@@ -79,7 +79,7 @@ simulator for balance-only specs), drops those failing the spec, ranks with the 
 | Code | Exit | Cause | Next action |
 |---|---|---|---|
 | `no_simulation` | 3 | No `ISimulation`. | Register one. |
-| `model_missing` | 3 | The spec uses a judge head and the eyes are missing. | `doctor --level 3`. |
+| `model_missing` | 3 | The spec uses a judge head and the eye model is not in the model cache. | `dotnet scion judge model pull`. |
 | `bad_value` | 2 | A tunable without a range. | `[Tunable(min, max)]`. |
 | `no_match` | 2 | Unknown spec or recipe. | `did_you_mean`. |
 

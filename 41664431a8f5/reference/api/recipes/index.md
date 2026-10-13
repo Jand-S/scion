@@ -67,7 +67,9 @@ public sealed class VaryAttribute : Attribute
 }
 ```
 
-Every combination of `[Vary]` values is a variant, in declaration order.
+Every combination of `[Vary]` values is a variant, in declaration order. `[Vary]` applies to members the recipe class
+declares itself; a `[Vary]` field that hides an inherited member with `new` fails the recipe. Vary inherited members
+from `Variants()` ([Variants, modes and seeds](/scion/41664431a8f5/trials/variants/)).
 
 ## TrialArgs
 
@@ -80,7 +82,8 @@ public sealed class TrialArgs : IEnumerable<KeyValuePair<string, object>>
 }
 ```
 
-Keys are recipe members or `tunable:<Type>.<Field>`.
+Keys are names of recipe members, looked up on the recipe class and then on its base classes, or
+`tunable:<Type>.<Field>`.
 
 ## TrialModesAttribute
 
@@ -105,7 +108,8 @@ public interface ITrialModeAware
 }
 ```
 
-Adapters implement it for modes that are not resolutions.
+Adapters implement it for modes that are not resolutions. A `-scion-mode` that `TrialModes` does not declare also
+goes to `ApplyMode`, with the default capture size.
 
 ## CapturedMatch
 

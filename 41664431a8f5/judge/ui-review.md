@@ -22,6 +22,7 @@ pairs, and a person picks between the final two. The vote trains the judge for n
 
 ## Before you begin
 
+- The eye model in the model cache (`dotnet scion judge model pull`, once per machine).
 - The `HudStates` static trial ([Capture every HUD state](/scion/41664431a8f5/cookbook/hud-states/)).
 - Trained heads `readability`, `has_glitch` and `looks_like_orchard` ([Train a head](/scion/41664431a8f5/judge/training/)).
 - Optional: a reference library of screens from other games, indexed by the judge (`scion/judge/references/`).

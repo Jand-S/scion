@@ -1,6 +1,6 @@
 ---
 title: "judge"
-description: "Manage judge heads - list, show, create, vote, train and run them on a run's captures - with data in scion/judge."
+description: "Download the judge's eye model and manage judge heads - list, show, create, vote, train and run them on a run's captures."
 type: cli
 url: https://jand-s.github.io/scion/41664431a8f5/cli/judge/
 markdown_url: https://jand-s.github.io/scion/41664431a8f5/cli/judge.md
@@ -15,7 +15,8 @@ related:
 
 # judge
 
-The `judge` commands manage the Scion Judge: `judge list` and `judge show` describe heads, `judge new` creates one
+The `judge` commands manage the Scion Judge: `judge model pull` downloads the eye model into the model cache,
+`judge list` and `judge show` describe heads, `judge new` creates one
 from a question file, `judge vote` opens a local page for blind duels and labels, `judge train` trains and promotes a
 new head version, and `judge run` scores a run's captures. Heads, questions and votes live in `judge.dir`
 (`scion/judge/`); embeddings in `judge.cache`.
@@ -23,6 +24,7 @@ new head version, and `judge run` scores a run's captures. Heads, questions and 
 ## Synopsis
 
 ```text
+dotnet scion judge model pull [<eyes>]
 dotnet scion judge list
 dotnet scion judge show <head>
 dotnet scion judge new <head> --question <file> [--view full|hud|corners|actor] [--sequence]
@@ -34,6 +36,13 @@ dotnet scion judge run <run> [--heads a,b] [--references N] [--pairs <run>]
 ## Description
 
 The judge never changes a verdict or an exit code of trials. It runs locally with the eye model in `judge.eyes`.
+
+## judge model pull
+
+Downloads the eye model (`<eyes>`, default `judge.eyes`) into the model cache, `~/.cache/scion/models/<eyes>/`, and
+checks its hash. This is the only judge command that uses the network; every other one reads the cache and fails with
+`model_missing` when the model is not there. It is idempotent: a model already in the cache is not downloaded again
+(`downloaded: false`). On a machine without network, copy the `<eyes>/` folder from another machine's cache.
 
 ## judge list
 
@@ -69,6 +78,7 @@ same id in another run.
 
 | Option | Commands | Meaning |
 |---|---|---|
+| `<eyes>` | model pull | `siglip2-so400m`, `siglip2-base`, `dinov2-base` or `uiclip` ([Models and licenses](/scion/41664431a8f5/judge/models/)); default `judge.eyes`. |
 | `--question <file>` | new | The question. |
 | `--view <view>` | new | `full`, `hud`, `corners`, `actor`. |
 | `--sequence` | new | A motion head. |
@@ -83,27 +93,38 @@ same id in another run.
 {"schema_version":1,"command":"judge run","ok":true,"results":".scion/runs/20261011-150512/judge.json","escalate":["HudStates/turn-banner.720p.png"],"next_step":"look at the escalated captures, or ask an evaluator: dotnet scion trial eval 20261011-150512 --with agent"}
 ```
 
-`judge list` returns `heads[]`; `judge show` and `judge train` return `head` (and `training`); `judge vote` returns
-`url` and `votes`.
+`judge model pull` returns `model` (`eyes`, `path`, `bytes`, `downloaded`); `judge list` returns `heads[]`;
+`judge show` and `judge train` return `head` (and `training`); `judge vote` returns `url` and `votes`.
+
+<!-- validate: cli/judge -->
+```json
+{"schema_version":1,"command":"judge model pull","ok":true,"model":{"eyes":"siglip2-so400m","path":"/Users/alex/.cache/scion/models/siglip2-so400m","bytes":1612000000,"downloaded":true},"next_step":"dotnet scion judge list"}
+```
 
 ## Exit codes
 
 | Code | When |
 |---|---|
 | 0 | Done. |
-| 2 | Unknown head, bad question file. |
-| 3 | The eye model is missing. |
+| 2 | Unknown head or eyes, bad question file. |
+| 3 | The eye model is missing, or `judge model pull` could not download it. |
 
 ## Errors
 
 | Code | Exit | Cause | Next action |
 |---|---|---|---|
-| `model_missing` | 3 | The eye model is not downloaded. | Run the command in `hint` (also in `doctor --level 3`). |
+| `model_missing` | 3 | The eye model is not in the model cache. | `dotnet scion judge model pull` (the `hint` names the eyes). |
 | `no_match` | 2 | Unknown head. | `judge list`. |
 | `bad_value` | 2 | The question file does not validate. | Check it against `judge-question.schema.json`. |
 | `not_supported` | 2 | `judge vote` without a browser (an agent). | Votes are for people; agents use `trial eval`. |
 
 ## Examples
+
+### Get the eye model once per machine
+
+```sh
+dotnet scion judge model pull
+```
 
 ### Score a run with two heads
 

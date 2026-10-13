@@ -25,6 +25,8 @@ balance change does to a real match.
 - Adoption level 3: the rules registered as an `ISimulation`, deterministic in plain .NET
   ([Find non-determinism](/scion/41664431a8f5/determinism/diagnose/)).
 - A captured match ([Turn any match into a recipe](/scion/41664431a8f5/trials/captured-matches/)).
+- For `grafts:` variants and presentation tunables: a test build (`dotnet scion build test`), and an `IMatchCapture`
+  whose `Replay` writes a `turn` event with the state hash after every turn.
 
 ## Steps
 
@@ -34,7 +36,8 @@ balance change does to a real match.
 dotnet scion multiverse run knight-dies-to-crit --at-turn 2 --variants base,heavy,crit-1200
 ```
 
-`crit-1200` is a preset that sets the rule tunable `Balance.CritPermille` to 1200.
+`crit-1200` is a preset that sets the rule tunable `Balance.CritPermille` to 1200, so it runs on the core simulator.
+`heavy` is a feel preset of graft tunables (`CritShake.Strength` and others), so it runs in the test build.
 
 <!-- validate: cli/multiverse -->
 ```json
@@ -62,23 +65,49 @@ With `--mosaic`, the test build replays the variants side by side from the fork 
 
 ### Variants
 
-| Kind | Given as | Changes |
-|---|---|---|
-| `preset` | a preset name or blend | tunables |
-| `tunables` | `tunable:Balance.CritPermille=1200` | one or more tunables |
-| `grafts` | `grafts:<dll>` | presentation code (the rules must not diverge) |
-| `bot` | `bot:<name>` | who plays the remaining turns |
+| Kind | Given as | Changes | Runs on |
+|---|---|---|---|
+| `preset` | a preset name or blend | tunables | the core simulator when every tunable is in the core assembly; otherwise the test build |
+| `tunables` | `tunable:Balance.CritPermille=1200` | one or more tunables | the same rule as `preset` |
+| `grafts` | `grafts:<dll>` | presentation code (the rules must not diverge) | the test build, always |
+| `bot` | `bot:<name>` | who plays the remaining turns | the core simulator |
 
 `--variants` takes a comma-separated list, or a JSON file with one object per variant.
 
 ### How it runs
+
+Each variant runs where the code it changes runs: rule variants on the core simulator, presentation variants in the
+test build.
+
+#### On the core simulator
+
+Rule variants (rule tunables, presets of rule tunables, bots) change only what the `ISimulation` reads:
 
 1. The `ISimulation` replays the match's commands up to `--at-turn` and saves the state (`ISaveable`).
 2. For each variant, it loads the state, applies the variant and plays the remaining commands (or the bot).
 3. After every turn it records `Hash()`; the first turn whose hash differs from the base is `first_turn`.
 4. At that turn, `IInspectable.Diff` names the first field that differs (`units[0].hp`).
 
-Steps 1 to 4 run in plain .NET, in parallel, in milliseconds per turn. Only `--mosaic` starts the test build.
+These steps run in plain .NET, in parallel, in milliseconds per turn.
+
+#### In the test build
+
+A graft hangs on a game method such as `HitPresenter.Play`, which the plain .NET `ISimulation` never calls; the same
+holds for tunables read by presentation code. On the core simulator such a variant could never diverge, so it would
+prove nothing. These variants run in the test build instead:
+
+1. One copy replays the match without changes (`-scion-match <file>`): the base. After every turn, `Replay` writes
+   a `turn` event with the state hash.
+2. Each variant gets its own copy. It replays the same commands to `--at-turn`, then applies the variant at that turn
+   boundary (the DLL is injected through the copy's control channel; tunables are set) and plays the remaining turns,
+   writing the same `turn` events.
+3. The CLI compares the per-turn hashes of each variant with the base, turn by turn; the first that differs is
+   `first_turn`.
+4. At that turn, both copies save the state (`ISaveable`) and `IInspectable.Diff` names the first field that differs.
+
+A `grafts:` variant whose hashes match the base on every turn after the fork really leaves the rules alone, because
+the graft ran on every presentation call of the replay. This takes seconds per variant (one copy each), and the copies
+run in parallel. `--mosaic` uses the same copies to write `mosaic.png`.
 
 ## Errors
 
@@ -94,8 +123,15 @@ Steps 1 to 4 run in plain .NET, in parallel, in milliseconds per turn. Only `--m
 ### Prove a draft graft is visual
 
 ```sh
+dotnet scion build test
+dotnet scion graft build
 dotnet scion multiverse run knight-dies-to-crit --at-turn 0 --variants base,grafts:.scion/grafts/ScionGrafts_51c2.dll
 ```
+
+Take the DLL path from the `dll` field of `graft build`. Both variants replay in the test build, and the graft runs on
+every hit of the match. Exit 0 with `diverged: false` means the state hash matched the base after every turn. For a
+recipe instead of a match, `trial run <Id> --grafts <dll>` gives the same proof on one recipe: `hash: same` against
+the baseline.
 
 ### Let bots finish the match
 
@@ -558,7 +594,7 @@ Copy the values of the options you like into presets (`scion/presets/punchy.json
 | Code | Exit | Cause | Next action |
 |---|---|---|---|
 | `bad_value` | 2 | A tunable has no range. | Add `[Tunable(min, max)]` (SCN005). |
-| `model_missing` | 3 | The spec's judge head is not trained. | Train it, or remove `Judge` from the spec. |
+| `model_missing` | 3 | The spec's judge head is not trained, or the eye model is not in the model cache. | Train the head, or `dotnet scion judge model pull`; or remove `Judge` from the spec. |
 
 ## Examples
 

@@ -85,7 +85,8 @@ jobs:
 
 ### 3. Fail on unapproved changes
 
-A run exits 0 when recipes pass, even with `changed` verdicts. To require that visual changes come with approved
+A run exits 0 with `ok: true` when recipes pass, even with `changed` verdicts
+([`ok` and `changed`](/scion/41664431a8f5/cli/#ok-and-changed)). To require that visual changes come with approved
 baselines, fail the job when any id is `changed` or `new`:
 
 ```yaml

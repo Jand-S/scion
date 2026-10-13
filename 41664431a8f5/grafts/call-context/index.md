@@ -84,6 +84,7 @@ changed value. In a `[Before]`, `Result` is the value returned if the target is 
 `Tag` is a `long`, 0 at the start of every call, shared by every graft of that call:
 
 ```csharp
+#if SCION_TRIALS   // a trials-only graft: TrialSession exists only in test builds
 public static class HitTiming
 {
     [Before(typeof(HitPresenter), nameof(HitPresenter.Play))]
@@ -93,6 +94,7 @@ public static class HitTiming
     public static void After(HitPresenter presenter, ref Call<float> c) =>
         TrialSession.Current?.Probe("hit_present_ticks", Stopwatch.GetTimestamp() - c.Tag);
 }
+#endif
 ```
 
 When two or more befores, or two or more afters, of one anchor use `Tag`, the weaver warns

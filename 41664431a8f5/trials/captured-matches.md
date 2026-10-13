@@ -36,7 +36,13 @@ match's setup, seed and command log to `scion/recipes/captured/<name>.match.json
 ### 1. Implement IMatchCapture
 
 ```csharp
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using Orchard.Core;
+using Orchard.Runtime;
 using Scion.Trials;
+using UnityEngine;
 
 [assembly: MatchCapture(typeof(Orchard.Trials.OrchardMatchCapture))]
 
@@ -60,6 +66,8 @@ namespace Orchard.Trials
             {
                 battle.Issue(Command.FromJson(c.Data));
                 yield return s.WaitUntil(() => battle.Idle, "turn " + c.Turn);
+                // Per-turn hash: co-op and the multiverse compare these between copies.
+                s.Event("turn", ("turn", c.Turn), ("hash", battle.State.Hash64.ToString("X16")));
             }
             s.EndCut();
         }

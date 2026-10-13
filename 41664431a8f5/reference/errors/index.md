@@ -57,7 +57,8 @@ on a build without `SCION_SLOTS`, `judge vote` without a browser, an evaluator w
 
 ### config_not_found
 
-Exit 2, CLI. No `scion.json` in the current folder or above. Run `dotnet scion init` or change folder.
+Exit 3, CLI. No `scion.json` in the current folder or above. Run `dotnet scion init` or change folder. The hook
+commands (`index --hook`, `guard --hook`) are the exception: outside a Scion project they do nothing and exit 0.
 
 ### config_invalid
 
@@ -93,7 +94,9 @@ Exit 3, CLI. A copy exited without writing its outputs. Read `q<i>/player.log` a
 
 ### shard_ignored
 
-Exit 0 with a warning, CLI. `-scion-shard` was passed after `--`; the CLI shards the run itself and ignored it.
+Exit 3, CLI. The same (recipe, round) ran in more than one copy: the build ignores `-scion-shard`, because it was
+built with another Scion. Rebuild with `dotnet scion build test`, or run with `-j 1`. Passing `-scion-shard` yourself
+after `--` is a `usage` error (exit 2): the CLI shards the run.
 
 ### copy_timeout
 
@@ -110,7 +113,8 @@ Exit 3, CLI and player. The output folder cannot be created or written. Fix perm
 
 ### interrupted
 
-Exit 3, CLI. Ctrl-C or a cancelled MCP call. Partial outputs stay in the run folder.
+Exit 3, CLI. Ctrl-C or a cancelled MCP call. Partial outputs stay in the run folder. `trial loop` is the one
+exception: it runs until stopped, so Ctrl-C ends it normally with exit 0 and `stopped_by: "interrupt"`.
 
 ### internal_error
 
@@ -140,7 +144,10 @@ Exit 3, CLI. `--mosaic` and no adapter implements `IMosaicAdapter`. Implement it
 
 ### model_missing
 
-Exit 3, CLI. The judge's eye model is not downloaded. Run the command in `error.hint`.
+Exit 3, CLI. The eye model of the Judge is not in the model cache (`~/.cache/scion/models/<eyes>/`), or a head the
+command needs is not trained yet. For the model, run `dotnet scion judge model pull <eyes>` (the exact command is in
+`error.hint`), or copy the `<eyes>/` folder into the cache on an offline machine. For a head, train it
+([Train a head](/scion/41664431a8f5/judge/training/)). See [Models and licenses](/scion/41664431a8f5/judge/models/).
 
 ## Player errors
 

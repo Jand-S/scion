@@ -23,7 +23,7 @@ step uses 125 to tell `git bisect` to skip a commit.
 
 | Code | Meaning | Player examples | CLI examples |
 |---|---|---|---|
-| 0 | Everything ok. Warnings do not count. | Five recipes passed; `-scion-list`; a shard with no pairs. | `trial run` with all passing (even with `changed` verdicts); `doctor` without failed checks. |
+| 0 | Everything ok. Warnings do not count. | Five recipes passed; `-scion-list`; a shard with no pairs. | `trial run` with all passing, even with `changed` verdicts (`ok: true`, `changed[]` filled; see [`ok` and `changed`](/scion/41664431a8f5/cli/#ok-and-changed)); `doctor` without failed checks. |
 | 1 | A recipe, check, graft check or spec failed. | Timeout; `Fail`; `Check(false)`; an error in the log; hash differs between rounds; a graft threw. | `graft check` with errors; `trial approve` refused; `gen --check` stale. |
 | 2 | Usage: the call is wrong. | No `-scion-out`; `-scion-only Slsh` (`did_you_mean: ["SlashHit"]`); `-scion-rond`; `-scion-shard 6/6`. | Unknown command or option; no match; `human_required`. |
 | 3 | Environment: something outside the call is wrong. | No adapter; `Prepare` failed; watchdog; empty captures; output not writable. | No build; no Unity; editor open; a copy crashed or timed out. |

@@ -27,8 +27,8 @@ more with the people's gold votes than the previous one.
 
 ## Before you begin
 
-- The judge configured in `scion.json` (`judge.dir`, `judge.eyes`, `judge.cache`); `dotnet scion doctor` checks that
-  the eye model is present.
+- The judge configured in `scion.json` (`judge.dir`, `judge.eyes`, `judge.cache`), and its eye model in the model
+  cache: run `dotnet scion judge model pull` once per machine ([Models and licenses](/scion/41664431a8f5/judge/models/)).
 - A few runs with captures of the thing to judge.
 
 ## Steps
@@ -110,7 +110,7 @@ promoted only by agreement with people.
 
 | Code | Exit | Cause | Next action |
 |---|---|---|---|
-| `model_missing` | 3 | The eye model is not downloaded. | `dotnet scion doctor` prints the download command. |
+| `model_missing` | 3 | The eye model is not in the model cache. | `dotnet scion judge model pull`. |
 | `no_match` | 2 | No head with that name. | `dotnet scion judge list`. |
 | training `promoted: false` | 0 | The new version does not beat the old one on gold. | Add near-miss votes; check `judge show` for where it errs. |
 

@@ -17,7 +17,8 @@
             "judge new",
             "judge vote",
             "judge train",
-            "judge run"
+            "judge run",
+            "judge model pull"
           ]
         },
         "heads": {
@@ -137,6 +138,35 @@
             ]
           },
           "description": "Items with low confidence (run)."
+        },
+        "model": {
+          "type": "object",
+          "description": "The eye model now in the model cache (model pull).",
+          "properties": {
+            "eyes": {
+              "type": "string",
+              "description": "The judge.eyes name, for example siglip2-so400m."
+            },
+            "path": {
+              "type": "string",
+              "description": "Folder of the model in the model cache, ~/.cache/scion/models/<eyes>/."
+            },
+            "bytes": {
+              "type": "integer",
+              "description": "Size on disk."
+            },
+            "downloaded": {
+              "type": "boolean",
+              "description": "False when the model was already in the cache."
+            }
+          },
+          "required": [
+            "eyes",
+            "path",
+            "bytes",
+            "downloaded"
+          ],
+          "additionalProperties": false
         }
       },
       "required": []

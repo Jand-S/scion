@@ -22,20 +22,29 @@ This guide covers the id grammar, `TrialArgs`, `Setup()`, modes, tags, patterns 
 
 ## When to use
 
-- Use `[Vary]` for a small grid of values (3 attackers x 3 distances).
-- Use `Variants()` when combinations are not a full grid, or values are computed.
+- Use `Variants()` to vary members the recipe inherits (the fields of `OrchardRecipe`), when combinations are not a
+  full grid, or when values are computed.
+- Use `[Vary]` for a small grid over fields the recipe class declares itself.
 - Use modes for capture settings that apply to every recipe (resolutions, a color-blind filter).
 - Use seed ranges to search for rare failures, not for baselines: each seed is its own id.
 
 ## Steps
 
-### 1. Vary fields
+### 1. Yield the variants
+
+This page turns the [Orchard sample](/scion/41664431a8f5/reference/orchard-sample/)'s `SlashHit` into a grid of three attackers
+and two distances. `Attacker` and `Distance` are fields of the base class `OrchardRecipe`, which is what the adapter
+reads, so the recipe sets them by name with `TrialArgs`:
 
 ```csharp
 public sealed class SlashHit : OrchardRecipe
 {
-    [Vary("knight", "mage", "rogue")] public new string Attacker = "knight";
-    [Vary(1, 3)] public new int Distance = 1;
+    protected override IEnumerable<TrialArgs> Variants()
+    {
+        foreach (var attacker in new[] { "knight", "mage", "rogue" })
+            foreach (var distance in new[] { 1, 3 })
+                yield return new TrialArgs { { "Attacker", attacker }, { "Distance", distance } };
+    }
 
     protected override void Setup()
     {
@@ -44,20 +53,36 @@ public sealed class SlashHit : OrchardRecipe
 }
 ```
 
-This gives 6 ids: `SlashHit[Attacker=knight,Distance=1]` through `SlashHit[Attacker=rogue,Distance=3]`.
-
-### 2. Or yield the variants
+This gives 6 ids: `SlashHit[Attacker=knight,Distance=1]` through `SlashHit[Attacker=rogue,Distance=3]`. Keys are
+field or property names, looked up on the recipe class and then on its base classes, so an inherited field is set
+where the adapter reads it. A key can also be `tunable:<Type>.<Field>`
+([Tunables and presets](/scion/41664431a8f5/grafts/tunables/)):
 
 ```csharp
-protected override IEnumerable<TrialArgs> Variants()
+yield return new TrialArgs { { "Attacker", "mage" }, { "Distance", 4 }, { "tunable:CritShake.Strength", 0.8f } };
+```
+
+### 2. Or vary the recipe's own fields
+
+`[Vary]` marks a field or property that the recipe class declares itself. Map it onto the base fields in `Setup()`:
+
+```csharp
+public sealed class SlashRange : OrchardRecipe
 {
-    yield return new TrialArgs { { "Attacker", "knight" }, { "Distance", 1 } };
-    yield return new TrialArgs { { "Attacker", "mage" }, { "Distance", 4 }, { "tunable:CritShake.Strength", 0.8f } };
+    [Vary("near", "far")] public string Range = "near";
+
+    protected override void Setup() => Distance = Range == "far" ? 3 : 1;
 }
 ```
 
-`Variants()` replaces the `[Vary]` grid when it returns non-null. Keys are field or property names of the recipe, or
-`tunable:<Type>.<Field>` ([Tunables and presets](/scion/41664431a8f5/grafts/tunables/)).
+This gives `SlashRange[Range=near]` and `SlashRange[Range=far]`. `Variants()` replaces the `[Vary]` grid when it
+returns non-null.
+
+:::caution[Never hide a base field]
+`[Vary] public new string Attacker` declares a second field. The adapter reads `OrchardRecipe.Attacker`, so every
+variant would play the same fight under a different id. The session fails such a recipe with
+`[Vary] hides OrchardRecipe.Attacker: use Variants()`.
+:::
 
 ### 3. Declare modes
 
@@ -65,8 +90,8 @@ protected override IEnumerable<TrialArgs> Variants()
 [assembly: TrialModes("360p=640x360", "720p=1280x720", "deuter")]
 ```
 
-A mode `name=WxH` sets the capture size. Any other mode is passed to every adapter that implements
-`ITrialModeAware`:
+A mode `name=WxH` sets the capture size. Any other mode, declared in `TrialModes` or not, keeps the default size and
+is passed to every adapter that implements `ITrialModeAware`:
 
 ```csharp
 public sealed class OrchardAdapter : TrialAdapter<OrchardRecipe>, ITrialModeAware
@@ -130,8 +155,9 @@ with `no_match` and `did_you_mean`. `Explicit` recipes run only when a pattern n
 | Code | Exit | Cause | Next action |
 |---|---|---|---|
 | `no_match` | 2 | No id matches. | Use `did_you_mean` or `trial list --ids`. |
-| `bad_value` | 2 | A `[Vary]` value does not convert to the field's type, or an unknown mode. | Fix the value; list modes in `TrialModes`. |
-| recipe error `unknown variant key <k>` | 1 | `TrialArgs` names a member the recipe does not have. | Use the field name. |
+| `bad_value` | 2 | A `[Vary]` or `TrialArgs` value does not convert to the member's type. | Fix the value. |
+| recipe error `unknown variant key <k>` | 1 | `TrialArgs` names a member neither the recipe nor its base classes have. | Use the field name. |
+| recipe error `[Vary] hides <Base>.<member>` | 1 | A `[Vary]` field hides an inherited one with `new`. | Remove the field; set the base member from `Variants()`. |
 
 ## Examples
 

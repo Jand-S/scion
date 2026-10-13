@@ -182,7 +182,8 @@ capture at 1280x720 and 30 fps.
 The Judge runs on the CPU, or on the GPU through ONNX Runtime when one is available (CoreML on macOS, DirectML on
 Windows, CUDA on Linux). Computing embeddings for 10,000 images takes about 5 to 10 minutes on an M5; training a head
 takes seconds; judging one image takes 10 to 50 ms. Eye models take 0.4 to 1.6 GB of disk each in
-`~/.scion/models/`. See [Models and licenses](/scion/41664431a8f5/judge/models/).
+the model cache, `~/.cache/scion/models/`; `dotnet scion judge model pull` downloads them. See
+[Models and licenses](/scion/41664431a8f5/judge/models/).
 
 ## See also
 
@@ -271,7 +272,7 @@ dotnet scion init --existing --dry-run
 
 <!-- validate: cli/init -->
 ```json
-{"schema_version":1,"command":"init","ok":true,"dry_run":true,"created":["scion.json","scion/grafts/","scion/recipes/","scion/baselines/","Assets/Orchard/Grafts/Orchard.Grafts.asmref",".config/dotnet-tools.json"],"changed":[".gitignore",".gitattributes","Packages/manifest.json"],"skipped":["ProjectSettings/ScionSettings.json"],"adoption_level":1,"next_step":"run without --dry-run: dotnet scion init --existing"}
+{"schema_version":1,"command":"init","ok":true,"dry_run":true,"created":["scion.json","ProjectSettings/ScionSettings.json","scion/grafts/","scion/recipes/","scion/baselines/","Assets/Orchard/Grafts/Orchard.Grafts.asmref"],"changed":[".gitignore",".gitattributes","Assets/Orchard/Runtime/Orchard.Runtime.asmdef"],"skipped":[".config/dotnet-tools.json","Packages/manifest.json"],"adoption_level":1,"next_step":"run without --dry-run: dotnet scion init --existing"}
 ```
 
 Then apply it:
@@ -324,6 +325,7 @@ dotnet scion doctor
 {"schema_version":1,"command":"doctor","ok":true,"level":2,"version":"1.0.0","adoption_level":1,"adoption_next":"level 2: write an adapter and a recipe (dotnet scion new trial MyFirstTrial)","checks":[{"id":"build","status":"warn","detail":"no test build at /Users/alex/orchard/.scion/builds/test/Orchard.app","hint":"run: dotnet scion build test"},{"id":"config","status":"ok","detail":"/Users/alex/orchard/scion.json"},{"id":"unity","status":"ok","detail":"6000.3.25f1"},{"id":"machine","status":"ok","detail":"10 cores, 9.1 GB free of 16.0 GB"}],"suggested_copies":4,"next_step":"run: dotnet scion build test"}
 ```
 
+Without `--level`, `doctor` runs level 2, which includes the test build ([doctor](/scion/41664431a8f5/cli/doctor/)).
 Exit 0 means the setup is usable; read the `hint` of each `warn`. On a fresh project, the `build` check warns until
 the first `dotnet scion build test`. Exit 3 means a check failed: fix what `error.hint` says and run `doctor` again.
 
@@ -364,18 +366,23 @@ verdict it causes. You finish with a second recipe of your own.
 
 ## Before you begin
 
-- Scion is installed: package, CLI and `dotnet scion doctor` passing ([Install](/scion/41664431a8f5/start/install/)).
-- An empty Unity 6000.3 project in a git repository, with the CLI tool manifest. The commands below create the
-  Orchard sample in it:
+- An empty Unity 6000.3 project (created by the Unity Hub) in a git repository.
+- The package and the CLI in that project: steps 1 and 2 of [Install](/scion/41664431a8f5/start/install/). Skip step 3 of Install
+  (`init --existing`): `new` below writes `scion.json` and every other file `init` would, and the two are never
+  mixed in one project.
+
+Create the Orchard sample and check the setup:
 
 ```sh
 dotnet scion new --genre tactics --name Orchard
+dotnet scion doctor
 git add -A && git commit -m "Orchard sample"
 ```
 
-`new --genre tactics` writes the Orchard game skeleton (`Assets/Orchard/Core`, `Runtime`, `Grafts`, `Trials`), a
-battle scene, the `OrchardAdapter`, the `SlashHit` recipe, `scion.json` and the agent block in `CLAUDE.md`
-([Start a new project](/scion/41664431a8f5/start/new-project/)).
+`new --genre tactics` writes the [Orchard sample](/scion/41664431a8f5/reference/orchard-sample/) (`Assets/Orchard/Core`,
+`Runtime`, `Grafts`, `Trials`), a battle scene, the `OrchardAdapter`, its recipes, `scion.json` and the agent block
+in `CLAUDE.md` ([Start a new project](/scion/41664431a8f5/start/new-project/)). `doctor` exits 0; its `build` check warns until
+step 1.
 
 ## Steps
 
@@ -461,7 +468,8 @@ Check it against the build, without Unity:
 dotnet scion graft check scion/grafts/HitFlash.cs
 ```
 
-A typo such as `nameof(HitPresenter.Ply)` comes back as `SCN103` with `did_you_mean: ["Play"]`.
+A target name with a typo, such as `[After(typeof(HitPresenter), "Ply")]`, comes back as `SCN103` with
+`did_you_mean: ["Play"]`. (With `nameof(HitPresenter.Ply)` the C# compiler stops first, with CS0117.)
 
 ### 6. Try it live in a running copy
 
@@ -490,10 +498,12 @@ compares the images with the baseline and finds the flash:
 
 <!-- validate: cli/trial-run -->
 ```json
-{"schema_version":1,"command":"trial run","ok":false,"run":"/Users/alex/orchard/.scion/runs/20261011-150410","build_id":"8d02f1c3a7b9","copies":1,"wall_s":4.1,"runs":{"recipes":1,"rounds":1,"total":1,"ok":1,"failed":0,"changed":1,"within":0,"px_changed":0,"new":0,"stale":0},"failed":[],"changed":[{"id":"SlashHit","vs_approved":"changed","hash":"same","image":"q0/SlashHit/r1/window.png","diff":"diff/SlashHit/r1/window.diff.png"}],"determinism":{"hash_stable":true,"frame_jitter":[]},"next_step":"review: dotnet scion trial show SlashHit --grid; a person approves at a terminal"}
+{"schema_version":1,"command":"trial run","ok":true,"run":"/Users/alex/orchard/.scion/runs/20261011-150410","build_id":"8d02f1c3a7b9","copies":1,"wall_s":4.1,"runs":{"recipes":1,"rounds":1,"total":1,"ok":1,"failed":0,"changed":1,"within":0,"px_changed":0,"new":0,"stale":0},"failed":[],"changed":[{"id":"SlashHit","vs_approved":"changed","hash":"same","image":"q0/SlashHit/r1/window.png","diff":"diff/SlashHit/r1/window.diff.png"}],"determinism":{"hash_stable":true,"frame_jitter":[]},"next_step":"review: dotnet scion trial show SlashHit --grid; a person approves at a terminal"}
 ```
 
-Exit code 1: `SlashHit` is `changed`. The rules did not change (`hash: same`); the image did, outside the tolerance.
+Exit code 0 with `ok: true` and `changed[]` filled: `SlashHit` is `changed`. A `changed` verdict is a review signal, not
+a failure ([`ok` and `changed`](/scion/41664431a8f5/cli/#ok-and-changed)), so always read `changed[]`. The rules did not change
+(`hash: same`); the image did, outside the tolerance.
 
 ### 8. Review and approve the change
 
@@ -501,8 +511,8 @@ Exit code 1: `SlashHit` is `changed`. The rules did not change (`hash: same`); t
 dotnet scion trial show SlashHit --grid
 ```
 
-`--grid` writes `grid.png` with three rows: the baseline, the current frames and the difference. If the flash is
-what you wanted, a person approves it at an interactive terminal:
+`--grid` writes `diff/SlashHit/r1/window.grid.png` with three columns: the baseline, the current frames and the
+difference. If the flash is what you wanted, a person approves it at an interactive terminal:
 
 ```sh
 dotnet scion trial approve SlashHit --reason "white hit flash on every hit"
@@ -513,10 +523,10 @@ result a person approved is only replaced by a person.
 
 ### 9. Write a second recipe
 
-Add `Assets/Orchard/Trials/KnightFalls.cs`:
+The template ships `SlashHit`, `FireballArea`, `CoopTurn`, `HudStates` and `UnitGallery`. Add the
+[Orchard sample](/scion/41664431a8f5/reference/orchard-sample/)'s last one, `Assets/Orchard/Trials/KnightFalls.cs`:
 
 ```csharp
-using Orchard.Core;
 using Scion.Trials;
 
 namespace Orchard.Trials
@@ -525,20 +535,18 @@ namespace Orchard.Trials
     {
         public KnightFalls()
         {
-            Description = "Three goblins attack a knight with 4 HP; the knight falls.";
-            Attacker = UnitKind.Goblin;
-            Defender = UnitKind.Knight;
-            Attackers = 3;
-            DefenderHp = 4;
-            Ability = "stab";
+            Attacker = "skeleton"; Defender = "knight"; DefenderHp = 3;
+            Description = "A skeleton finishes a wounded knight.";
             Tags = new[] { "combat", "death" };
         }
 
         protected override void Checks(TrialChecks c) =>
-            c.Order("IMPACT", "unit_down").ProbeIs("defender_hp", hp => hp == 0, "the knight ends at 0 HP");
+            c.Order("IMPACT", "unit_down").ProbeIs("defender_hp", hp => hp == 0, "the knight falls");
     }
 }
 ```
+
+`Attacker` and `Defender` are unit ids (`UnitKind.Id`); the other fields keep the defaults of `OrchardRecipe`.
 
 Build, run and approve it as a `new` recipe:
 
@@ -600,6 +608,9 @@ dotnet scion new --genre tactics --name Orchard --dry-run
 {"schema_version":1,"command":"new","ok":true,"dry_run":true,"created":["Assets/Orchard/Core/Orchard.Core.asmdef","Assets/Orchard/Runtime/Orchard.Runtime.asmdef","Assets/Orchard/Grafts/Orchard.Grafts.asmref","Assets/Orchard/Trials/Orchard.Trials.asmdef","Assets/Orchard/Trials/OrchardAdapter.cs","Assets/Orchard/Trials/SlashHit.cs",{"more":14}],"changed":["Packages/manifest.json",".gitignore"],"skipped":[],"adoption_level":3,"next_step":"run without --dry-run: dotnet scion new --genre tactics --name Orchard"}
 ```
 
+A list cut for length ends with one `{"more": N}` object, here 14 more files
+([Behavior every command shares](/scion/41664431a8f5/cli/#behavior-every-command-shares)).
+
 ### 2. Create it
 
 ```sh
@@ -638,7 +649,7 @@ recipe stub that exercises its anchor.
 
 | Genre | Sample game | Adapter | Recipes it starts with |
 |---|---|---|---|
-| `tactics` | Orchard Tactics: grid, turns, 1 to 4 players co-op | `OrchardAdapter : TrialAdapter<OrchardRecipe>` | `SlashHit`, `CoopTurn`, `HudStates` |
+| `tactics` | Orchard Tactics: grid, turns, 1 to 4 players co-op | `OrchardAdapter : TrialAdapter<OrchardRecipe>` | `SlashHit`, `FireballArea`, `CoopTurn`, `HudStates`, `UnitGallery` ([Orchard sample](/scion/41664431a8f5/reference/orchard-sample/)) |
 | `action` | A top-down arena with real-time combat | `ArenaAdapter : TrialAdapter<ArenaRecipe>` | `DashHit`, `WaveClear` |
 | `platformer` | A side-scrolling level with a controllable character | `LevelAdapter : TrialAdapter<LevelRecipe>` | `JumpLand`, `CoinPickup` |
 | `blank` | No game code; only the layout, an empty adapter and one recipe stub | `GameAdapter : TrialAdapter<GameRecipe>` | `FirstTrial` |
@@ -676,7 +687,7 @@ Runtime as a black box and Core to compare hashes. Nothing depends on Grafts. Se
 |---|---|---|---|
 | `usage` | 2 | `--genre` missing, or `new` in a project that already has `Assets/<Name>/`. | Pick another `--name`, or use `init --existing`. |
 | `bad_value` | 2 | Unknown genre. | Use a genre from `did_you_mean`. |
-| `config_not_found` | 3 | No Unity project here (`ProjectSettings/ProjectVersion.txt` missing). | Run it at the root of the Unity project. |
+| `usage` | 2 | Not at the root of a Unity project (`ProjectSettings/ProjectVersion.txt` missing). | Run it at the root of the Unity project. |
 | `out_not_writable` | 3 | A target file cannot be written. | Fix permissions and run again; `new` is idempotent. |
 
 ## Examples

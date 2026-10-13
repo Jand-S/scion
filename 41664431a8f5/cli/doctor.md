@@ -30,9 +30,11 @@ dotnet scion doctor [--level 1|2|3] [--format json|text]
 
 | Level | Checks |
 |---|---|
-| 1 (default) | `scion.json` and `ScionSettings.json` parse; CLI and package versions match; .NET SDK; Unity of the project's version; the editor lock. |
-| 2 | Level 1, plus: the test build exists, has `SCION_TRIALS`, is not stale; `scion-build.json` reads; the output folder is writable; free memory and cores. |
-| 3 | Level 2, plus: starts the test build with `-scion-list` (recipes, adapters, SCN201 to SCN203); the judge's eye model; Git LFS for baselines; suppressions with justifications. |
+| 1 | `scion.json` and `ScionSettings.json` parse; CLI and package versions match; .NET SDK; git; the output folder is writable; free memory and cores. |
+| 2 (default) | Level 1, plus: Unity of the project's version; the editor lock and `com.unity.pipeline`; the test build exists, has `SCION_TRIALS`, is not stale; `scion-build.json` reads; free disk under `trials.out`. |
+| 3 | Level 2, plus: starts the test build with `-scion-list` (recipes, adapters, SCN201 to SCN203; up to 60 s); the judge's eye model; Git LFS for baselines; suppressions with justifications. |
+
+On a fresh project the `build` check warns until the first `dotnet scion build test`; a warning never fails `doctor`.
 
 Each check has an `id`, a `status` (`ok`, `warn`, `fail`), a `detail` and, unless ok, a `hint`.
 
@@ -43,7 +45,7 @@ measurement or 600 MB.
 
 | Option | Default | Meaning |
 |---|---|---|
-| `--level 1\|2\|3` | 1 | Check depth (not the adoption level). |
+| `--level 1\|2\|3` | 2 | Check depth (not the adoption level). |
 | `--format json\|text` | auto | Output format. |
 
 ## Output
@@ -76,11 +78,11 @@ Schema: `https://jand-s.github.io/scion/41664431a8f5/schemas/v1/cli/doctor.schem
 
 | Code | Exit | Cause | Next action |
 |---|---|---|---|
-| `config_not_found` | 2 | No `scion.json`. | `dotnet scion init`. |
+| `config_not_found` | 3 | No `scion.json`. | `dotnet scion init`. |
 | warning `version_mismatch` | 0 | The CLI and the package differ. | Install the same version of both. |
 | warning `build_stale` | 0 | The test build is older than the sources. | `dotnet scion build test`. |
 | warning `low_memory` | 0 | Not enough free memory for 2 copies. | Close apps or run `-j 1`. |
-| `model_missing` | 3 | Level 3: the judge's eye model is not downloaded. | Run the command in `hint`. |
+| `model_missing` | 3 | Level 3: the judge's eye model is not in the model cache. | `dotnet scion judge model pull` ([Models and licenses](/scion/41664431a8f5/judge/models/)). |
 
 ## Examples
 

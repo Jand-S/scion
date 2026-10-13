@@ -91,7 +91,7 @@ appear only in the scan file and in `diagnose`. Details: [SCN301-SCN307](/scion/
 
 | Code | Exit | Cause | Next action |
 |---|---|---|---|
-| `config_not_found` | 2 | No `scion.json` above the current folder. | `dotnet scion init`. |
+| `config_not_found` | 3 | No `scion.json` above the current folder. | `dotnet scion init`. |
 | warning `recipes_unchecked` | 0 | No scan file yet. | Open the project in Unity once. |
 
 ## Examples

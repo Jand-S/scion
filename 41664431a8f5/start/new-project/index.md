@@ -47,6 +47,9 @@ dotnet scion new --genre tactics --name Orchard --dry-run
 {"schema_version":1,"command":"new","ok":true,"dry_run":true,"created":["Assets/Orchard/Core/Orchard.Core.asmdef","Assets/Orchard/Runtime/Orchard.Runtime.asmdef","Assets/Orchard/Grafts/Orchard.Grafts.asmref","Assets/Orchard/Trials/Orchard.Trials.asmdef","Assets/Orchard/Trials/OrchardAdapter.cs","Assets/Orchard/Trials/SlashHit.cs",{"more":14}],"changed":["Packages/manifest.json",".gitignore"],"skipped":[],"adoption_level":3,"next_step":"run without --dry-run: dotnet scion new --genre tactics --name Orchard"}
 ```
 
+A list cut for length ends with one `{"more": N}` object, here 14 more files
+([Behavior every command shares](/scion/41664431a8f5/cli/#behavior-every-command-shares)).
+
 ### 2. Create it
 
 ```sh
@@ -85,7 +88,7 @@ recipe stub that exercises its anchor.
 
 | Genre | Sample game | Adapter | Recipes it starts with |
 |---|---|---|---|
-| `tactics` | Orchard Tactics: grid, turns, 1 to 4 players co-op | `OrchardAdapter : TrialAdapter<OrchardRecipe>` | `SlashHit`, `CoopTurn`, `HudStates` |
+| `tactics` | Orchard Tactics: grid, turns, 1 to 4 players co-op | `OrchardAdapter : TrialAdapter<OrchardRecipe>` | `SlashHit`, `FireballArea`, `CoopTurn`, `HudStates`, `UnitGallery` ([Orchard sample](/scion/41664431a8f5/reference/orchard-sample/)) |
 | `action` | A top-down arena with real-time combat | `ArenaAdapter : TrialAdapter<ArenaRecipe>` | `DashHit`, `WaveClear` |
 | `platformer` | A side-scrolling level with a controllable character | `LevelAdapter : TrialAdapter<LevelRecipe>` | `JumpLand`, `CoinPickup` |
 | `blank` | No game code; only the layout, an empty adapter and one recipe stub | `GameAdapter : TrialAdapter<GameRecipe>` | `FirstTrial` |
@@ -123,7 +126,7 @@ Runtime as a black box and Core to compare hashes. Nothing depends on Grafts. Se
 |---|---|---|---|
 | `usage` | 2 | `--genre` missing, or `new` in a project that already has `Assets/<Name>/`. | Pick another `--name`, or use `init --existing`. |
 | `bad_value` | 2 | Unknown genre. | Use a genre from `did_you_mean`. |
-| `config_not_found` | 3 | No Unity project here (`ProjectSettings/ProjectVersion.txt` missing). | Run it at the root of the Unity project. |
+| `usage` | 2 | Not at the root of a Unity project (`ProjectSettings/ProjectVersion.txt` missing). | Run it at the root of the Unity project. |
 | `out_not_writable` | 3 | A target file cannot be written. | Fix permissions and run again; `new` is idempotent. |
 
 ## Examples

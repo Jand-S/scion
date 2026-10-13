@@ -23,18 +23,23 @@ verdict it causes. You finish with a second recipe of your own.
 
 ## Before you begin
 
-- Scion is installed: package, CLI and `dotnet scion doctor` passing ([Install](/scion/41664431a8f5/start/install/)).
-- An empty Unity 6000.3 project in a git repository, with the CLI tool manifest. The commands below create the
-  Orchard sample in it:
+- An empty Unity 6000.3 project (created by the Unity Hub) in a git repository.
+- The package and the CLI in that project: steps 1 and 2 of [Install](/scion/41664431a8f5/start/install/). Skip step 3 of Install
+  (`init --existing`): `new` below writes `scion.json` and every other file `init` would, and the two are never
+  mixed in one project.
+
+Create the Orchard sample and check the setup:
 
 ```sh
 dotnet scion new --genre tactics --name Orchard
+dotnet scion doctor
 git add -A && git commit -m "Orchard sample"
 ```
 
-`new --genre tactics` writes the Orchard game skeleton (`Assets/Orchard/Core`, `Runtime`, `Grafts`, `Trials`), a
-battle scene, the `OrchardAdapter`, the `SlashHit` recipe, `scion.json` and the agent block in `CLAUDE.md`
-([Start a new project](/scion/41664431a8f5/start/new-project/)).
+`new --genre tactics` writes the [Orchard sample](/scion/41664431a8f5/reference/orchard-sample/) (`Assets/Orchard/Core`,
+`Runtime`, `Grafts`, `Trials`), a battle scene, the `OrchardAdapter`, its recipes, `scion.json` and the agent block
+in `CLAUDE.md` ([Start a new project](/scion/41664431a8f5/start/new-project/)). `doctor` exits 0; its `build` check warns until
+step 1.
 
 ## Steps
 
@@ -120,7 +125,8 @@ Check it against the build, without Unity:
 dotnet scion graft check scion/grafts/HitFlash.cs
 ```
 
-A typo such as `nameof(HitPresenter.Ply)` comes back as `SCN103` with `did_you_mean: ["Play"]`.
+A target name with a typo, such as `[After(typeof(HitPresenter), "Ply")]`, comes back as `SCN103` with
+`did_you_mean: ["Play"]`. (With `nameof(HitPresenter.Ply)` the C# compiler stops first, with CS0117.)
 
 ### 6. Try it live in a running copy
 
@@ -149,10 +155,12 @@ compares the images with the baseline and finds the flash:
 
 <!-- validate: cli/trial-run -->
 ```json
-{"schema_version":1,"command":"trial run","ok":false,"run":"/Users/alex/orchard/.scion/runs/20261011-150410","build_id":"8d02f1c3a7b9","copies":1,"wall_s":4.1,"runs":{"recipes":1,"rounds":1,"total":1,"ok":1,"failed":0,"changed":1,"within":0,"px_changed":0,"new":0,"stale":0},"failed":[],"changed":[{"id":"SlashHit","vs_approved":"changed","hash":"same","image":"q0/SlashHit/r1/window.png","diff":"diff/SlashHit/r1/window.diff.png"}],"determinism":{"hash_stable":true,"frame_jitter":[]},"next_step":"review: dotnet scion trial show SlashHit --grid; a person approves at a terminal"}
+{"schema_version":1,"command":"trial run","ok":true,"run":"/Users/alex/orchard/.scion/runs/20261011-150410","build_id":"8d02f1c3a7b9","copies":1,"wall_s":4.1,"runs":{"recipes":1,"rounds":1,"total":1,"ok":1,"failed":0,"changed":1,"within":0,"px_changed":0,"new":0,"stale":0},"failed":[],"changed":[{"id":"SlashHit","vs_approved":"changed","hash":"same","image":"q0/SlashHit/r1/window.png","diff":"diff/SlashHit/r1/window.diff.png"}],"determinism":{"hash_stable":true,"frame_jitter":[]},"next_step":"review: dotnet scion trial show SlashHit --grid; a person approves at a terminal"}
 ```
 
-Exit code 1: `SlashHit` is `changed`. The rules did not change (`hash: same`); the image did, outside the tolerance.
+Exit code 0 with `ok: true` and `changed[]` filled: `SlashHit` is `changed`. A `changed` verdict is a review signal, not
+a failure ([`ok` and `changed`](/scion/41664431a8f5/cli/#ok-and-changed)), so always read `changed[]`. The rules did not change
+(`hash: same`); the image did, outside the tolerance.
 
 ### 8. Review and approve the change
 
@@ -160,8 +168,8 @@ Exit code 1: `SlashHit` is `changed`. The rules did not change (`hash: same`); t
 dotnet scion trial show SlashHit --grid
 ```
 
-`--grid` writes `grid.png` with three rows: the baseline, the current frames and the difference. If the flash is
-what you wanted, a person approves it at an interactive terminal:
+`--grid` writes `diff/SlashHit/r1/window.grid.png` with three columns: the baseline, the current frames and the
+difference. If the flash is what you wanted, a person approves it at an interactive terminal:
 
 ```sh
 dotnet scion trial approve SlashHit --reason "white hit flash on every hit"
@@ -172,10 +180,10 @@ result a person approved is only replaced by a person.
 
 ### 9. Write a second recipe
 
-Add `Assets/Orchard/Trials/KnightFalls.cs`:
+The template ships `SlashHit`, `FireballArea`, `CoopTurn`, `HudStates` and `UnitGallery`. Add the
+[Orchard sample](/scion/41664431a8f5/reference/orchard-sample/)'s last one, `Assets/Orchard/Trials/KnightFalls.cs`:
 
 ```csharp
-using Orchard.Core;
 using Scion.Trials;
 
 namespace Orchard.Trials
@@ -184,20 +192,18 @@ namespace Orchard.Trials
     {
         public KnightFalls()
         {
-            Description = "Three goblins attack a knight with 4 HP; the knight falls.";
-            Attacker = UnitKind.Goblin;
-            Defender = UnitKind.Knight;
-            Attackers = 3;
-            DefenderHp = 4;
-            Ability = "stab";
+            Attacker = "skeleton"; Defender = "knight"; DefenderHp = 3;
+            Description = "A skeleton finishes a wounded knight.";
             Tags = new[] { "combat", "death" };
         }
 
         protected override void Checks(TrialChecks c) =>
-            c.Order("IMPACT", "unit_down").ProbeIs("defender_hp", hp => hp == 0, "the knight ends at 0 HP");
+            c.Order("IMPACT", "unit_down").ProbeIs("defender_hp", hp => hp == 0, "the knight falls");
     }
 }
 ```
+
+`Attacker` and `Defender` are unit ids (`UnitKind.Id`); the other fields keep the defaults of `OrchardRecipe`.
 
 Build, run and approve it as a `new` recipe:
 

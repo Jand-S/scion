@@ -77,7 +77,7 @@ Copy the values of the options you like into presets (`scion/presets/punchy.json
 | Code | Exit | Cause | Next action |
 |---|---|---|---|
 | `bad_value` | 2 | A tunable has no range. | Add `[Tunable(min, max)]` (SCN005). |
-| `model_missing` | 3 | The spec's judge head is not trained. | Train it, or remove `Judge` from the spec. |
+| `model_missing` | 3 | The spec's judge head is not trained, or the eye model is not in the model cache. | Train the head, or `dotnet scion judge model pull`; or remove `Judge` from the spec. |
 
 ## Examples
 

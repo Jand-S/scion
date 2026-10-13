@@ -67,7 +67,7 @@ dotnet scion trial loop <Id> [--from <file>] [--span a..b] [--passes N] [--windo
 |---|---|---|---|
 | `not_forkable` | 3 | `--span` needs `ISaveable`. | Implement it, or loop the whole recipe. |
 | `bad_value` | 2 | `--span` outside the match. | Check `turns`. |
-| `interrupted` | 0 | Ctrl-C. | Normal stop. |
+| Ctrl-C (no error) | 0 | The normal way to end a loop without `--passes`; `stopped_by` is `interrupt`. | Nothing; the passes so far stay in the run folder. |
 
 ## Examples
 

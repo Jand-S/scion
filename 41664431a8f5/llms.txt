@@ -9,7 +9,7 @@ Docs version: 1.0.0. Every page below is Markdown. Append `.md` to any page URL 
 - Run `dotnet scion doctor` first. Exit 0 means usable; exit 3 means fix what `error.hint` says.
 - Every command prints one JSON object on stdout (`schema_version`, `ok`, `next_step`, `error` on exits 2 and 3). Parse it; do not scrape text. Follow `next_step`.
 - Exit codes: 0 ok, 1 a check failed, 2 usage error (see `did_you_mean`), 3 environment. Next actions: `https://jand-s.github.io/scion/41664431a8f5/agents/next-action.md`
-- You may approve only `new` baselines (`trial approve --new --reason "..."`). Never approve `changed`, `stale` or `px_changed`, and never edit `scion/baselines/` by hand: ask a person.
+- You may approve only `new` baselines (`trial approve --new --reason "..."`). Never approve `changed`, `stale`, `within` or `px_changed`, and never edit `scion/baselines/` by hand: ask a person.
 - Read `report.md` only for failed or changed recipes; open images only when pixels changed or the task is visual.
 
 ## Start here
@@ -132,8 +132,8 @@ Docs version: 1.0.0. Every page below is Markdown. Append `.md` to any page URL 
 - [diagnose](https://jand-s.github.io/scion/41664431a8f5/cli/diagnose.md): Report the adoption level, determinism blockers with file and line, mosaic singletons and a plan, from the weaver's scan of each game assembly.
 - [index, guard](https://jand-s.github.io/scion/41664431a8f5/cli/index-and-guard.md): Print the short project index for agents at session start, and guard baselines and generated files against agent edits and approvals.
 - [gen](https://jand-s.github.io/scion/41664431a8f5/cli/gen.md): Generate scion.manifest.json and GRAFTS.md from the code - anchors, grafts, tunables, recipes and probes - or list one kind of item.
-- [judge](https://jand-s.github.io/scion/41664431a8f5/cli/judge.md): Manage judge heads - list, show, create, vote, train and run them on a run's captures - with data in scion/judge.
-- [multiverse](https://jand-s.github.io/scion/41664431a8f5/cli/multiverse.md): Fork a captured match at a turn, play variants on the core simulator, report where rules diverge, and show the result or a side-by-side mosaic.
+- [judge](https://jand-s.github.io/scion/41664431a8f5/cli/judge.md): Download the judge's eye model and manage judge heads - list, show, create, vote, train and run them on a run's captures.
+- [multiverse](https://jand-s.github.io/scion/41664431a8f5/cli/multiverse.md): Fork a captured match at a turn, play variants on the core simulator or in the test build, report where rules diverge, and show a mosaic.
 - [hunt, search](https://jand-s.github.io/scion/41664431a8f5/cli/hunt-and-search.md): Hunt rare game states with coverage-guided fuzzing on the simulator, and search tunables with guided optimization and a gallery of diverse options.
 - [mcp](https://jand-s.github.io/scion/41664431a8f5/cli/mcp.md): Run Scion as a Model Context Protocol server over stdio, exposing CLI commands as scion tools and the installed docs as docs_search and docs_read.
 
@@ -167,6 +167,7 @@ Docs version: 1.0.0. Every page below is Markdown. Append `.md` to any page URL 
 - [Judge data files](https://jand-s.github.io/scion/41664431a8f5/reference/files/judge-data.md): Where the judge keeps heads, questions, votes and gold sets, and the shape of a head file and a vote line.
 - [Control protocol](https://jand-s.github.io/scion/41664431a8f5/reference/control-protocol.md): The local TCP protocol of a running test build - transport, token, execution model, every op with its arguments and answers, and every error.
 - [Glossary](https://jand-s.github.io/scion/41664431a8f5/reference/glossary.md): Short definitions of every Scion term, from anchor and slot to verdict, warm copy, multiverse and adoption level, with links to the pages that explain them.
+- [Orchard sample](https://jand-s.github.io/scion/41664431a8f5/reference/orchard-sample.md): The frozen Orchard Tactics sample every snippet uses - its assemblies, rules types, presentation types, recipe base class, adapter and recipes.
 - [C# API](https://jand-s.github.io/scion/41664431a8f5/reference/api.md): Scion's public C# API by assembly, namespace and scripting define, with one line per type and a link to its reference.
 - [Grafts API](https://jand-s.github.io/scion/41664431a8f5/reference/api/grafts.md): The attributes and types grafts use - Before, After, Anchor, AnchorScope, Call, Call of T, Faults, Anchors, WallClock and ScionPromoted.
 - [Injection API](https://jand-s.github.io/scion/41664431a8f5/reference/api/injection.md): Injection and InjectReport - load draft graft DLLs into a running test build, restore promoted grafts, disable slots and read the result.

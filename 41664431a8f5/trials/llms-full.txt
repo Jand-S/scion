@@ -53,7 +53,7 @@ virtual, so the same recipe gives the same frames on any machine.
 | `same` | Hash, frame count and images match the baseline. | 0 |
 | `within` | Images differ but inside the tolerance. | 0 |
 | `px_changed` | Hash and frames match; pixel hashes differ and the recipe compares no images. Informative. | 0 |
-| `changed` | Hash, frame count (beyond ±1) or images outside the tolerance differ. | 0 (it is a review signal, not a failure) |
+| `changed` | Hash, frame count (beyond ±1) or images outside the tolerance differ. | 0 with `ok: true` and `changed[]` filled: a review signal, not a failure ([`ok` and `changed`](/scion/41664431a8f5/cli/#ok-and-changed)) |
 | `new` | No `baseline.json` for this id. | 0 |
 | `stale` | The baseline is for another platform, fps, Unity or player args; images are suspended, the hash still counts. | 0 |
 
@@ -133,14 +133,17 @@ namespace Orchard.Trials
 {
     public abstract class OrchardRecipe : TrialRecipe
     {
-        public string Attacker = "knight";
-        public string Defender = "skeleton";
+        public string Attacker = "knight";     // a UnitKind.Id
+        public string Defender = "skeleton";   // a UnitKind.Id
         public int DefenderHp = 20;
+        public int Defenders = 1;
         public int Distance = 1;
         public string Ability = "slash";
     }
 }
 ```
+
+These are the fields of the [Orchard sample](/scion/41664431a8f5/reference/orchard-sample/); your game has its own.
 
 ### 2. One recipe
 
@@ -168,18 +171,34 @@ namespace Orchard.Trials
 The adapter decides when the interesting part starts and ends:
 
 ```csharp
-session.BeginCut();                 // frames from here on are captured
-battle.Issue(Command.Attack(recipe.Ability, target));
-yield return session.WaitUntil(() => battle.Idle, "attack finished");
-yield return session.WaitSeconds(recipe.TailSeconds);
-session.EndCut();
+// Inside OrchardAdapter.Run(OrchardRecipe r, TrialSession s)
+s.BeginCut();                       // frames from here on are captured
+battle.Issue(Command.Ability(r.Ability, attacker: 0, target: r.Players));
+yield return s.WaitUntil(() => battle.Idle, "ability resolved");
+yield return s.WaitSeconds(r.TailSeconds);
+s.EndCut();
 ```
 
-The moment that matters is marked from a trials-only observer graft, so `window.png` centers on it:
+The moment that matters is marked from a trials-only observer graft, so `window.png` centers on it. It uses
+`TrialSession`, which exists only in test builds, so the whole graft sits inside `#if SCION_TRIALS`
+([Build modes](/scion/41664431a8f5/grafts/build-modes/)); without it the final build fails to compile:
 
 ```csharp
-[Before(typeof(HitPresenter), nameof(HitPresenter.Play), Observe = true)]
-public static void Before(HitPresenter presenter, HitEvent e) => TrialSession.Current?.MarkImpact();
+#if SCION_TRIALS
+using Orchard.Core;
+using Orchard.Presentation;
+using Scion;
+using Scion.Trials;
+
+namespace Orchard.Grafts
+{
+    public static class ImpactMark
+    {
+        [Before(typeof(HitPresenter), nameof(HitPresenter.Play), Observe = true)]
+        public static void Before(HitPresenter presenter, HitEvent e) => TrialSession.Current?.MarkImpact();
+    }
+}
+#endif
 ```
 
 ### 4. List and run it
@@ -244,14 +263,14 @@ They run only when named: `dotnet scion trial run KnightFallsSlow`.
 
 ## Examples
 
-### Three attackers
+### Three targets
 
 ```csharp
 public sealed class FireballArea : OrchardRecipe
 {
     public FireballArea()
     {
-        Attacker = "mage"; Ability = "fireball"; Distance = 4;
+        Attacker = "mage"; Ability = "fireball"; Distance = 4; Defenders = 3;
         Description = "A fireball hits three skeletons in an area.";
         Tags = new[] { "combat", "area" };
     }
@@ -317,6 +336,11 @@ namespace Orchard.Trials
         string hash;
         public override string StateHash => hash;
 
+        // One battle setup for every recipe; co-op and mosaic runs use it too.
+        public static BattleSetup SetupFor(OrchardRecipe r, TrialSession s) =>
+            new BattleSetup(r.Attacker, r.Defender, r.DefenderHp, r.Distance,
+                            defenders: r.Defenders, players: r.Players, seed: s.RunSeed);
+
         public override IEnumerator Prepare(TrialSession s)
         {
             s.Sensor("state", () => Battle.Current?.State.Hash64 ?? 0L);
@@ -326,21 +350,23 @@ namespace Orchard.Trials
 
         protected override IEnumerator Run(OrchardRecipe r, TrialSession s)
         {
+            if (r.Players > 1) { yield return RunCoop(r, s); yield break; }   // see Co-op trials
             hash = null;
-            var battle = Battle.Start(new BattleSetup(r.Attacker, r.Defender, r.DefenderHp, r.Distance, seed: s.RunSeed));
+            var battle = Battle.Start(SetupFor(r, s));
             yield return s.WaitUntil(() => battle.Ready, "battle ready");
             s.Still("before");
             yield return null;
 
-            int hp = battle.State.Unit(1).Hp;
+            int target = r.Players;          // the first defender
+            int hp = battle.State.Unit(target).Hp;
             s.BeginCut();
-            battle.Issue(Command.Ability(r.Ability, attacker: 0, target: 1));
+            battle.Issue(Command.Ability(r.Ability, attacker: 0, target: target));
             yield return s.WaitUntil(() => battle.Idle, "ability resolved");
             yield return s.WaitSeconds(r.TailSeconds);
             s.EndCut();
 
-            s.Probe("damage", hp - battle.State.Unit(1).Hp);
-            s.Probe("defender_hp", battle.State.Unit(1).Hp);
+            s.Probe("damage", hp - battle.State.Unit(target).Hp);
+            s.Probe("defender_hp", battle.State.Unit(target).Hp);
             hash = battle.State.Hash64.ToString("X16");
         }
 
@@ -422,7 +448,7 @@ A selected recipe no adapter accepts fails alone, naming the registered adapters
 |---|---|---|---|
 | `SCN202` | 3 | A registered type is not a valid adapter. | Derive from `TrialAdapter<TRecipe>` with a public parameterless constructor. |
 | `SCN203` | 3 | Two adapters handle the same recipe type. | Keep one per type; make one more specific. |
-| `no_adapter` | 3 | No `[assembly: TrialAdapter]` in the build. | Register the adapter; `dotnet scion diagnose` writes a skeleton. |
+| `no_adapter` | 3 | No `[assembly: TrialAdapter]` in the build. | Register the adapter; `dotnet scion diagnose --adapter` writes a skeleton. |
 | `prepare_failed` | 3 | `Prepare` threw, timed out or called `Fail`. | Read `player.log` of the copy. |
 
 ## Examples
@@ -689,20 +715,29 @@ This guide covers the id grammar, `TrialArgs`, `Setup()`, modes, tags, patterns 
 
 ## When to use
 
-- Use `[Vary]` for a small grid of values (3 attackers x 3 distances).
-- Use `Variants()` when combinations are not a full grid, or values are computed.
+- Use `Variants()` to vary members the recipe inherits (the fields of `OrchardRecipe`), when combinations are not a
+  full grid, or when values are computed.
+- Use `[Vary]` for a small grid over fields the recipe class declares itself.
 - Use modes for capture settings that apply to every recipe (resolutions, a color-blind filter).
 - Use seed ranges to search for rare failures, not for baselines: each seed is its own id.
 
 ## Steps
 
-### 1. Vary fields
+### 1. Yield the variants
+
+This page turns the [Orchard sample](/scion/41664431a8f5/reference/orchard-sample/)'s `SlashHit` into a grid of three attackers
+and two distances. `Attacker` and `Distance` are fields of the base class `OrchardRecipe`, which is what the adapter
+reads, so the recipe sets them by name with `TrialArgs`:
 
 ```csharp
 public sealed class SlashHit : OrchardRecipe
 {
-    [Vary("knight", "mage", "rogue")] public new string Attacker = "knight";
-    [Vary(1, 3)] public new int Distance = 1;
+    protected override IEnumerable<TrialArgs> Variants()
+    {
+        foreach (var attacker in new[] { "knight", "mage", "rogue" })
+            foreach (var distance in new[] { 1, 3 })
+                yield return new TrialArgs { { "Attacker", attacker }, { "Distance", distance } };
+    }
 
     protected override void Setup()
     {
@@ -711,20 +746,36 @@ public sealed class SlashHit : OrchardRecipe
 }
 ```
 
-This gives 6 ids: `SlashHit[Attacker=knight,Distance=1]` through `SlashHit[Attacker=rogue,Distance=3]`.
-
-### 2. Or yield the variants
+This gives 6 ids: `SlashHit[Attacker=knight,Distance=1]` through `SlashHit[Attacker=rogue,Distance=3]`. Keys are
+field or property names, looked up on the recipe class and then on its base classes, so an inherited field is set
+where the adapter reads it. A key can also be `tunable:<Type>.<Field>`
+([Tunables and presets](/scion/41664431a8f5/grafts/tunables/)):
 
 ```csharp
-protected override IEnumerable<TrialArgs> Variants()
+yield return new TrialArgs { { "Attacker", "mage" }, { "Distance", 4 }, { "tunable:CritShake.Strength", 0.8f } };
+```
+
+### 2. Or vary the recipe's own fields
+
+`[Vary]` marks a field or property that the recipe class declares itself. Map it onto the base fields in `Setup()`:
+
+```csharp
+public sealed class SlashRange : OrchardRecipe
 {
-    yield return new TrialArgs { { "Attacker", "knight" }, { "Distance", 1 } };
-    yield return new TrialArgs { { "Attacker", "mage" }, { "Distance", 4 }, { "tunable:CritShake.Strength", 0.8f } };
+    [Vary("near", "far")] public string Range = "near";
+
+    protected override void Setup() => Distance = Range == "far" ? 3 : 1;
 }
 ```
 
-`Variants()` replaces the `[Vary]` grid when it returns non-null. Keys are field or property names of the recipe, or
-`tunable:<Type>.<Field>` ([Tunables and presets](/scion/41664431a8f5/grafts/tunables/)).
+This gives `SlashRange[Range=near]` and `SlashRange[Range=far]`. `Variants()` replaces the `[Vary]` grid when it
+returns non-null.
+
+:::caution[Never hide a base field]
+`[Vary] public new string Attacker` declares a second field. The adapter reads `OrchardRecipe.Attacker`, so every
+variant would play the same fight under a different id. The session fails such a recipe with
+`[Vary] hides OrchardRecipe.Attacker: use Variants()`.
+:::
 
 ### 3. Declare modes
 
@@ -732,8 +783,8 @@ protected override IEnumerable<TrialArgs> Variants()
 [assembly: TrialModes("360p=640x360", "720p=1280x720", "deuter")]
 ```
 
-A mode `name=WxH` sets the capture size. Any other mode is passed to every adapter that implements
-`ITrialModeAware`:
+A mode `name=WxH` sets the capture size. Any other mode, declared in `TrialModes` or not, keeps the default size and
+is passed to every adapter that implements `ITrialModeAware`:
 
 ```csharp
 public sealed class OrchardAdapter : TrialAdapter<OrchardRecipe>, ITrialModeAware
@@ -797,8 +848,9 @@ with `no_match` and `did_you_mean`. `Explicit` recipes run only when a pattern n
 | Code | Exit | Cause | Next action |
 |---|---|---|---|
 | `no_match` | 2 | No id matches. | Use `did_you_mean` or `trial list --ids`. |
-| `bad_value` | 2 | A `[Vary]` value does not convert to the field's type, or an unknown mode. | Fix the value; list modes in `TrialModes`. |
-| recipe error `unknown variant key <k>` | 1 | `TrialArgs` names a member the recipe does not have. | Use the field name. |
+| `bad_value` | 2 | A `[Vary]` or `TrialArgs` value does not convert to the member's type. | Fix the value. |
+| recipe error `unknown variant key <k>` | 1 | `TrialArgs` names a member neither the recipe nor its base classes have. | Use the field name. |
+| recipe error `[Vary] hides <Base>.<member>` | 1 | A `[Vary]` field hides an inherited one with `new`. | Remove the field; set the base member from `Variants()`. |
 
 ## Examples
 
@@ -845,7 +897,10 @@ static trial needs no adapter of its own.
 ```csharp
 using System.Collections;
 using System.Collections.Generic;
+using Orchard.Core;
+using Orchard.Runtime;
 using Scion.Trials;
+using UnityEngine;
 
 namespace Orchard.Trials
 {
@@ -1003,14 +1058,21 @@ public sealed class CoopTurn : OrchardRecipe
 
 ### 3. Play it by role in the adapter
 
+`OrchardAdapter.Run` calls this method when `r.Players > 1`. `hash` is the adapter's field behind `StateHash`, and
+`SetupFor` builds the battle ([Write an adapter](/scion/41664431a8f5/trials/adapters/)):
+
 ```csharp
-protected override IEnumerator Run(OrchardRecipe r, TrialSession s)
+// In OrchardAdapter (Orchard.Trials). Units 0..Players-1 are the players' knights; unit Players is the skeleton.
+IEnumerator RunCoop(OrchardRecipe r, TrialSession s)
 {
-    yield return s.WaitUntil(() => Lobby.Connected == r.Players, "all players connected");
+    hash = null;
+    var battle = Battle.Start(SetupFor(r, s));
+    yield return s.WaitUntil(() => battle.Ready && Lobby.Connected == r.Players, "all players connected");
     s.BeginCut();
     for (int turn = 1; turn <= r.Players; turn++)
     {
-        if (Lobby.LocalPlayer == turn - 1) battle.Issue(Command.Ability("slash", attacker: turn - 1, target: 4));
+        int player = turn - 1;
+        if (Lobby.LocalPlayer == player) battle.Issue(Command.Ability(r.Ability, attacker: player, target: r.Players));
         yield return s.WaitUntil(() => battle.State.Turn > turn, "turn " + turn);
         s.Event("turn", ("turn", turn), ("hash", battle.State.Hash64.ToString("X16")));
     }
@@ -1078,7 +1140,7 @@ dotnet scion trial run --players 2
 dotnet scion trial run --players 4
 ```
 
-### A two-player recipe with a pass-through flag
+### A co-op recipe with a pass-through flag
 
 ```sh
 dotnet scion trial run CoopTurn -- -orchard-latency 80
@@ -1460,7 +1522,7 @@ dotnet scion trial show --changed
 
 <!-- validate: cli/trial-show -->
 ```json
-{"schema_version":1,"command":"trial show","ok":true,"run":"/Users/alex/orchard/.scion/runs/20261011-143200","count":1,"recipes":[{"id":"SlashHit","rounds":{"ok":2,"failed":0},"hashes":["9F3A0C11D2E4B5A6"],"frames":[46],"vs_approved":"changed","report":"q0/SlashHit/r1/report.md","images":["q0/SlashHit/r1/window.png"],"reasons":["image"],"stale":[],"px_diff":0.12}],"next_step":"look at q0/SlashHit/r1/window.png; if intended, a person approves: dotnet scion trial approve SlashHit --reason \"...\""}
+{"schema_version":1,"command":"trial show","ok":true,"run":"/Users/alex/orchard/.scion/runs/20261011-143200","count":1,"recipes":[{"id":"SlashHit","rounds":{"ok":2,"failed":0},"hashes":["9F3A0C11D2E4B5A6"],"frames":[46],"vs_approved":"changed","report":"q0/SlashHit/r1/report.md","images":["q0/SlashHit/r1/window.png"],"reasons":["image"],"stale":[],"px_diff":0.12}],"next_step":"look at /Users/alex/orchard/.scion/runs/20261011-143200/q0/SlashHit/r1/window.png; if intended, a person approves: dotnet scion trial approve SlashHit --reason \"...\""}
 ```
 
 ### 2. Compare side by side
@@ -1509,9 +1571,9 @@ dotnet scion trial approve SlashHit --reason "crit shake is stronger"
 | failed recipe | no | no |
 | run with `--grafts` or `--warm` | no | no |
 
-Approval is all or nothing: if one id is refused, nothing is written and `refused[]` says why. The `guard` hook
-asks the person before an agent's `trial approve` and denies edits under `scion/baselines/`
-([Hooks](/scion/41664431a8f5/agents/hooks/)).
+Approval is all or nothing: if one id is refused, nothing is written and `refused[]` says why. The `guard` hook lets
+an agent's `trial approve` run only when every id is `new`; any other approval is denied with the command the person
+runs at their terminal. It also denies edits under `scion/baselines/` ([Hooks](/scion/41664431a8f5/agents/hooks/)).
 
 ### Storage
 
@@ -1798,7 +1860,7 @@ for a duel, then approve.
 |---|---|---|---|
 | `no_match` | 2 | No spec with that name in `specs.project`. | Use `did_you_mean`. |
 | `no_simulation` | 3 | `Balance` needs an `ISimulation` and the core declares none. | Implement `ISimulation` ([Core API](/scion/41664431a8f5/reference/api/core/)). |
-| `model_missing` | 3 | `Judge` needs a head that is not trained. | `dotnet scion judge list`; train the head. |
+| `model_missing` | 3 | `Judge` needs a head that is not trained, or the eye model is not in the model cache. | `dotnet scion judge list` and train the head; or `dotnet scion judge model pull`. |
 | spec `ok: false` | 1 | No variant passes. | Read `spec.variants[].failed`. |
 
 ## Examples
@@ -1850,7 +1912,13 @@ match's setup, seed and command log to `scion/recipes/captured/<name>.match.json
 ### 1. Implement IMatchCapture
 
 ```csharp
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using Orchard.Core;
+using Orchard.Runtime;
 using Scion.Trials;
+using UnityEngine;
 
 [assembly: MatchCapture(typeof(Orchard.Trials.OrchardMatchCapture))]
 
@@ -1874,6 +1942,8 @@ namespace Orchard.Trials
             {
                 battle.Issue(Command.FromJson(c.Data));
                 yield return s.WaitUntil(() => battle.Idle, "turn " + c.Turn);
+                // Per-turn hash: co-op and the multiverse compare these between copies.
+                s.Event("turn", ("turn", c.Turn), ("hash", battle.State.Hash64.ToString("X16")));
             }
             s.EndCut();
         }
@@ -2005,7 +2075,7 @@ public sealed class OrchardAdapter : TrialAdapter<OrchardRecipe>, IMosaicAdapter
     protected override IEnumerator Run(OrchardRecipe r, TrialSession s)
     {
         var arena = s.Arena;                     // 0..K-1
-        var battle = Battle.Start(setup, root: Arenas.Root(arena));
+        var battle = Battle.Start(SetupFor(r, s), root: Arenas.Root(arena));
         // ... the same as a single run, through battle and arena-local objects ...
     }
 }

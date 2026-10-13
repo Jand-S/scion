@@ -25,7 +25,7 @@ These rules are also at the top of [/scion/llms.txt](/scion/41664431a8f5/llms.tx
 - Run `dotnet scion doctor` first. Exit 0 means usable; exit 3 means fix what `error.hint` says.
 - Every command prints one JSON object on stdout (`schema_version`, `ok`, `next_step`, `error` on exits 2 and 3). Parse it; do not scrape text. Follow `next_step`.
 - Exit codes: 0 ok, 1 a check failed, 2 usage error (see `did_you_mean`), 3 environment. Next actions: `https://jand-s.github.io/scion/41664431a8f5/agents/next-action.md`
-- You may approve only `new` baselines (`trial approve --new --reason "..."`). Never approve `changed`, `stale` or `px_changed`, and never edit `scion/baselines/` by hand: ask a person.
+- You may approve only `new` baselines (`trial approve --new --reason "..."`). Never approve `changed`, `stale`, `within` or `px_changed`, and never edit `scion/baselines/` by hand: ask a person.
 - Read `report.md` only for failed or changed recipes; open images only when pixels changed or the task is visual.
 
 Two more that follow from the design:
@@ -131,7 +131,7 @@ recipe ([The Scion skill](/scion/41664431a8f5/agents/skill/)).
 | Signal | Next action |
 |---|---|
 | Exit 1, `failed[]` | Read `failed[].report`, fix, run again. |
-| Exit 1, `changed[]` | Explain the change with `trial show --changed`; ask a person to approve or fix it. |
+| Exit 0, `changed[]` not empty | A review signal, not a failure ([`ok` and `changed`](/scion/41664431a8f5/cli/#ok-and-changed)). Explain the change with `trial show --changed`; ask a person to approve or fix it. |
 | Exit 2 | Fix the call with `error.hint` and `did_you_mean`; never retry unchanged. |
 | Exit 3 | Fix the environment with `error.hint`; `doctor` names the failing check. |
 
@@ -147,9 +147,13 @@ dotnet scion anchor list --search shake
 dotnet scion graft new CritShake --after Orchard.Presentation.HitPresenter.Play
 dotnet scion graft check scion/grafts/CritShake.cs
 dotnet scion build test
+dotnet scion graft build
 dotnet scion trial run --grafts .scion/grafts/ScionGrafts_51c2.dll
 dotnet scion trial show --changed
 ```
+
+`graft build` compiles the drafts against the test build; take the DLL path for `--grafts` from the `dll` field of
+its envelope, never from memory.
 
 The run reports `SlashHit` as `changed` with `hash: same`: only pixels moved. The agent reports to the person:
 "CritShake adds a 0.3 shake on critical hits; SlashHit changed in pixels only (window.png). To accept, promote the
@@ -363,16 +367,16 @@ The skill is facts and commands, not a long tutorial: every detail it does not h
 | Field | Value |
 |---|---|
 | Input | A run folder and a list of recipe ids (usually `changed[]` of a `trial run`) |
-| Reads | `compare.json`, each recipe's `report.md`, then `window.png` or `grid.png` |
+| Reads | `compare.json`, each recipe's `report.md`, then `window.png` or `<artifact>.grid.png` |
 | Returns | One line per recipe: id, verdict, what changed in the frames, whether it looks intended, and the file it looked at |
 | Never does | Approve, edit files or run commands other than `trial show` |
 
 Example return:
 
 ```text
-SlashHit      changed   white flash on the goblin, frames 12-14; looks intended (HitFlash)   diff/SlashHit/r1/grid.png
+SlashHit      changed   white flash on the skeleton, frames 12-14; looks intended (HitFlash) diff/SlashHit/r1/window.grid.png
 FireballArea  within    no visible change                                                     q1/FireballArea/r1/window.png
-KnightFalls   changed   knight falls one frame later; hash same; check HitStop                diff/KnightFalls/r1/grid.png
+KnightFalls   changed   knight falls one frame later; hash same; check HitStop                diff/KnightFalls/r1/window.grid.png
 ```
 
 ## Scoped rules
@@ -468,15 +472,16 @@ command passes untouched. For an approval it runs the approve as `--dry-run` and
 | The approval would replace | Decision | Effect |
 |---|---|---|
 | Only `new` recipes | allow | The command runs. |
-| Any `changed`, `stale` or `px_changed` recipe | ask | Claude Code asks the person, showing the reason. |
+| Any `changed`, `stale`, `within` or `px_changed` recipe | deny | The command does not run. The reason gives the person the review command and the approve command to run at their own terminal. |
 | A run made with `--grafts`, or a refused recipe | deny | The command does not run; the reason says why. |
 
 ```json
-{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"ask","permissionDecisionReason":"This approves SlashHit (changed: image) and replaces a baseline a person approved. Review: dotnet scion trial show SlashHit --grid"}}
+{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"SlashHit is changed (image) and replaces a baseline a person approved; only a person approves it, at a terminal. Review: dotnet scion trial show SlashHit --grid. Then the person runs: dotnet scion trial approve SlashHit --reason \"...\""}}
 ```
 
-The CLI itself also refuses such approvals without a terminal (`human_required`); the guard explains it before the
-command runs.
+The guard denies instead of asking because asking could not help: an agent's shell has no terminal, so the CLI would
+refuse the approval anyway (`human_required`, exit 2). The person runs the command from the reason at their own
+terminal.
 
 ## PreToolUse Edit and Write: baseline guard
 
@@ -623,16 +628,19 @@ GitMCP turns the public site into a remote MCP server with no setup: `https://ja
 Look up the exit code and the signal a Scion command returned, and do the action in the last column. The signals are
 the envelope fields (`error.code`, `warnings[].code`, `failed[]`, `changed[]`, `vs_approved`, `determinism`), the
 `SCNxxx` ids of diagnostics and the control-protocol errors. Every code links to its full entry in
-[Error and warning codes](/scion/41664431a8f5/reference/errors/). When two rows apply, handle the higher exit code first.
+[Error and warning codes](/scion/41664431a8f5/reference/errors/), which is the single source for the exit code of each error.
+When two rows apply, handle the higher exit code first. Exit 0 is not always "done": a `changed` verdict exits 0
+with `ok: true` ([`ok` and `changed`](/scion/41664431a8f5/cli/#ok-and-changed)), so check `changed[]` too.
 
 ## Exit 0
 
 | Signal | Meaning | Next action |
 |---|---|---|
-| `warnings` empty | Done. | Follow `next_step`. |
+| `warnings` and `changed[]` empty, `runs.new` 0 | Done. | Follow `next_step`. |
+| `vs_approved: changed` (in `changed[]`) | Hash, frames (off by more than one), images outside tolerance or the rule digest changed. A review signal, not a failure. | If intended: explain it with `trial show --changed` (and `--grid`) and ask a person to approve. If not: fix the code. Never approve it yourself. |
 | `vs_approved: same` | Hash, frames and images match the baseline. | Nothing to do. |
 | `vs_approved: new` | The recipe has no baseline yet. | Read its `report.md`; if it shows what the recipe should, `dotnet scion trial approve --new --reason "..."` and commit the staged files. |
-| `vs_approved: within` | Pixels differ, inside the recipe's tolerance. | Nothing to approve. Mention it if the task was visual. |
+| `vs_approved: within` | Pixels differ, inside the recipe's tolerance. | Nothing to approve; only a person may refresh it. Mention it if the task was visual. |
 | `vs_approved: px_changed` | Pixel hashes changed for a recipe that keeps no images. Informative. | Open `window.png` only if the task is visual; if intended, a person may approve it. |
 | `vs_approved: stale` | The baseline was approved on another platform, Unity version, fps or player arguments; images were not compared. | Tell the person; a person approves on this platform when the result looks right. |
 | warning [`build_stale`](/scion/41664431a8f5/reference/errors/#build_stale) | Sources or rule files changed after the build. | `dotnet scion build test`, then run again before trusting the result. |
@@ -649,11 +657,12 @@ the envelope fields (`error.code`, `warnings[].code`, `failed[]`, `changed[]`, `
 | Signal | Meaning | Next action |
 |---|---|---|
 | `failed[]` | A (recipe, round) failed: timeout, `Fail`, a check, a logged error, a graft that threw. | Read `failed[].report`; fix the cause; run again. |
-| `vs_approved: changed` | Hash, frames (off by more than one), images outside tolerance or the rule digest changed. | If intended: explain it with `trial show --changed` (and `--grid`) and ask a person to approve. If not: fix the code. |
 | `determinism.hash_stable: false` | Rounds of one recipe disagree, or no round passed. | Check `failed[]` first. Then `dotnet scion trial run <Id> --rounds 4 --check`; read `determinism.tsv`; see [Verify determinism](/scion/41664431a8f5/determinism/verify/). |
 | [`refused`](/scion/41664431a8f5/reference/errors/#refused) in `trial approve` | A selected recipe has a failed round, an unstable hash or was run with `--grafts`. Nothing was written. | Fix that recipe; `next_step` gives the command that approves the others. |
 | `diagnostics[]` in `graft check` or `graft build` | Graft errors with SCN ids. | Apply each `hint` and `did_you_mean`; check again. |
 | `errors[]` in `build test` | Compiler (`CSxxxx`) or Scion (`SCNxxx`) errors. | Fix the file and line; build again. |
+| [`SCN130`](/scion/41664431a8f5/reference/diagnostics/builds-and-injection/#scn130) in `graft inject` or `trial run --grafts` | The graft DLL was built for another build. Nothing was injected. | `dotnet scion graft build`, then inject again. |
+| [`SCN131`](/scion/41664431a8f5/reference/diagnostics/builds-and-injection/#scn131) in `graft inject` or `trial run --grafts` | The graft DLL or the build has another Scion ABI. Nothing was injected. | Use the same Scion version for the CLI and the build. |
 | `spec.ok: false` in `trial run --spec` | An expectation of the spec failed. | Read `spec.json`; never edit the spec to make it pass. |
 
 ## Exit 2
@@ -680,15 +689,13 @@ the envelope fields (`error.code`, `warnings[].code`, `failed[]`, `changed[]`, `
 | [`no_adapter`](/scion/41664431a8f5/reference/errors/#no_adapter), [`prepare_failed`](/scion/41664431a8f5/reference/errors/#prepare_failed) | No valid adapter, or an adapter's `Prepare` failed. | Read `error.message` (it names SCN202 or SCN203 when relevant) and the player log. |
 | [`capture_broken`](/scion/41664431a8f5/reference/errors/#capture_broken) | Frame capture failed. | Read the player log; run once with `--window` to compare. |
 | [`out_not_writable`](/scion/41664431a8f5/reference/errors/#out_not_writable), [`no_free_port`](/scion/41664431a8f5/reference/errors/#no_free_port) | The machine blocks the run. | Fix permissions or `trials.out`; close programs that hold ports, or use fewer copies. |
-| [`shard_ignored`](/scion/41664431a8f5/reference/errors/#shard_ignored) | The build predates sharding. | `dotnet scion build test`. |
+| [`shard_ignored`](/scion/41664431a8f5/reference/errors/#shard_ignored) | Two copies ran the same (recipe, round): the build ignores `-scion-shard`. | `dotnet scion build test`, or run with `-j 1`. |
 | [`no_copies`](/scion/41664431a8f5/reference/errors/#no_copies) | `graft inject`, `--warm` or `trial loop` found no warm copy. | `dotnet scion trial serve -j 2`. |
 | [`no_simulation`](/scion/41664431a8f5/reference/errors/#no_simulation), [`not_forkable`](/scion/41664431a8f5/reference/errors/#not_forkable) | A level 3 command without an `ISimulation`. | Register one; see [Add Scion to an existing game](/scion/41664431a8f5/start/existing-project/). |
 | [`mosaic_unsupported`](/scion/41664431a8f5/reference/errors/#mosaic_unsupported) | `--mosaic` with an adapter that is not an `IMosaicAdapter`. | Run without `--mosaic`, or see [Mosaic](/scion/41664431a8f5/trials/mosaic/). |
-| [`model_missing`](/scion/41664431a8f5/reference/errors/#model_missing) | A Judge eye model is not downloaded and the machine is offline. | Connect once, or copy the model into `~/.scion/models/`. |
-| [`SCN130`](/scion/41664431a8f5/reference/diagnostics/builds-and-injection/#scn130) | The graft DLL was built for another build. | `dotnet scion graft build`, then inject again. |
-| [`SCN131`](/scion/41664431a8f5/reference/diagnostics/builds-and-injection/#scn131) | The graft DLL or the build has another Scion ABI. | Use the same Scion version for the CLI and the build. |
+| [`model_missing`](/scion/41664431a8f5/reference/errors/#model_missing) | The eye model of the Judge is not in the model cache, or a needed head is not trained. | `dotnet scion judge model pull` (the `error.hint` names the eyes), then run the command again; for a head, ask a person to train it. See [Models and licenses](/scion/41664431a8f5/judge/models/). |
 | [`SCN202`](/scion/41664431a8f5/reference/diagnostics/trials/#scn202), [`SCN203`](/scion/41664431a8f5/reference/diagnostics/trials/#scn203) | Invalid adapter, or two adapters for one recipe type. | Fix the adapter as the hint says. |
-| [`interrupted`](/scion/41664431a8f5/reference/errors/#interrupted) | Ctrl-C stopped the command. | Run it again. |
+| [`interrupted`](/scion/41664431a8f5/reference/errors/#interrupted) | Ctrl-C or a cancelled MCP call stopped the command. | Run it again. |
 | [`internal_error`](/scion/41664431a8f5/reference/errors/#internal_error) | A bug in Scion. | Report it with the stack trace; do not loop. |
 
 ## Exit 125
@@ -765,8 +772,9 @@ probes, notes and logged errors. Most failures are explained here, without an im
 
 Open an image when `changed[].hash` is `same` (only pixels moved), when the verdict is `px_changed` or `within` and the
 task is visual, or when the task itself is about the look. `window.png` holds up to 12 consecutive frames around the
-impact, 3 columns, numbered with their game time and marks. Prefer `grid.png` from `trial show <Id> --grid` for a
-`changed` recipe: baseline, current and difference rows in one image.
+impact, 3 columns, numbered with their game time and marks. Prefer the grid image from `trial show <Id> --grid` for a
+`changed` recipe: `diff/<IdDir>/r<n>/<artifact>.grid.png`, with the baseline, the current frames and the difference
+in three columns.
 
 ### 4. Open context.png only if the window is not enough
 
@@ -835,7 +843,7 @@ asked in both orders.
 | `report.md` missing for a failed pair | The copy crashed: read `q<i>/player.log` (`player_crashed`). |
 | `window.png` missing | The recipe never called `MarkImpact` and had no cut; read `report.md` and the recipe. |
 | An image is blank or magenta | The `blank` or `magenta` check failed too; it is in `report.md`. |
-| `grid.png` missing | The recipe keeps no images (`Tolerance = null`); compare `window.png` of both runs with `trial diff`. |
+| `<artifact>.grid.png` missing | The recipe keeps no images (`Tolerance = null`); compare `window.png` of both runs with `trial diff`. |
 
 ## Examples
 
@@ -854,7 +862,8 @@ the rule code first.
 {"changed":[{"id":"SlashHit","vs_approved":"changed","hash":"same","image":"q0/SlashHit/r1/window.png","diff":"diff/SlashHit/r1/window.diff.png"}]}
 ```
 
-`hash: same`: the rules did not change. Open `grid.png` (`trial show SlashHit --grid`) to see the visual change and
+`hash: same`: the rules did not change. Open `diff/SlashHit/r1/window.grid.png` (`trial show SlashHit --grid`) to see
+the visual change and
 report it to the person.
 
 ## See also

@@ -15,9 +15,21 @@ related:
 
 # Models and licenses
 
-The judge's eyes are pre-trained vision encoders that run locally. Scion does not ship model weights: `dotnet scion
-doctor` checks the configured model and prints the command that downloads it into the local model cache. This page
+The judge's eyes are pre-trained vision encoders that run locally. Scion does not ship model weights: download the
+configured model once per machine with `dotnet scion judge model pull` ([judge](/scion/41664431a8f5/cli/judge/#judge-model-pull)),
+into the model cache `~/.cache/scion/models/`. `dotnet scion doctor --level 3` checks that it is there. This page
 lists the supported models, their cost, where the judge keeps its data and what to check in each license.
+
+## Get the model
+
+```sh
+dotnet scion judge model pull                  # the eyes in judge.eyes
+dotnet scion judge model pull dinov2-base      # another one
+```
+
+Every other judge command reads only the cache. Without the model it stops with
+[`model_missing`](/scion/41664431a8f5/reference/errors/#model_missing) (exit 3). On an offline machine, copy the
+`~/.cache/scion/models/<eyes>/` folder from a machine that has it.
 
 ## Supported eyes
 
@@ -47,9 +59,9 @@ The judge runs the eyes with ONNX Runtime, on the GPU when one is available:
 |---|---|---|
 | Questions, heads, votes, gold sets | `judge.dir` (`scion/judge/`) | Yes (small JSON and JSONL) |
 | Embeddings cache | `judge.cache` (`.scion/judge/`) | No |
-| Model weights | the local model cache (`~/.cache/scion/models/`) | No |
+| Model weights | the model cache, `~/.cache/scion/models/<eyes>/` | No |
 
-Nothing leaves the machine: the judge makes no network calls after the model is downloaded.
+Nothing leaves the machine: only `judge model pull` uses the network.
 
 ## Licenses
 

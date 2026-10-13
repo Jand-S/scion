@@ -45,7 +45,7 @@ writes `diff/<IdDir>/r<n>/<artifact>.grid.png` (baseline, current, heatmap in th
 
 <!-- validate: cli/trial-show -->
 ```json
-{"schema_version":1,"command":"trial show","ok":true,"run":"/Users/alex/orchard/.scion/runs/20261011-143200","count":1,"recipes":[{"id":"KnightFalls","rounds":{"ok":1,"failed":1},"hashes":["1B44E07AC9D20F13"],"frames":[52],"vs_approved":"same","round":1,"copy":3,"report":"q3/KnightFalls/r1/report.md","images":["q3/KnightFalls/r1/window.png","q3/KnightFalls/r1/context.png"],"failed":[{"round":1,"copy":3,"error":"timeout (30s): unit down animation"}]}],"next_step":"read q3/KnightFalls/r1/report.md"}
+{"schema_version":1,"command":"trial show","ok":true,"run":"/Users/alex/orchard/.scion/runs/20261011-143200","count":1,"recipes":[{"id":"KnightFalls","rounds":{"ok":1,"failed":1},"hashes":["1B44E07AC9D20F13"],"frames":[52],"vs_approved":"same","round":1,"copy":3,"report":"q3/KnightFalls/r1/report.md","images":["q3/KnightFalls/r1/window.png","q3/KnightFalls/r1/context.png"],"failed":[{"round":1,"copy":3,"error":"timeout (30s): unit down animation"}]}],"next_step":"read /Users/alex/orchard/.scion/runs/20261011-143200/q3/KnightFalls/r1/report.md"}
 ```
 
 | Field | Meaning |

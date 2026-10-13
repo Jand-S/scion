@@ -48,16 +48,16 @@ The skill is facts and commands, not a long tutorial: every detail it does not h
 | Field | Value |
 |---|---|
 | Input | A run folder and a list of recipe ids (usually `changed[]` of a `trial run`) |
-| Reads | `compare.json`, each recipe's `report.md`, then `window.png` or `grid.png` |
+| Reads | `compare.json`, each recipe's `report.md`, then `window.png` or `<artifact>.grid.png` |
 | Returns | One line per recipe: id, verdict, what changed in the frames, whether it looks intended, and the file it looked at |
 | Never does | Approve, edit files or run commands other than `trial show` |
 
 Example return:
 
 ```text
-SlashHit      changed   white flash on the goblin, frames 12-14; looks intended (HitFlash)   diff/SlashHit/r1/grid.png
+SlashHit      changed   white flash on the skeleton, frames 12-14; looks intended (HitFlash) diff/SlashHit/r1/window.grid.png
 FireballArea  within    no visible change                                                     q1/FireballArea/r1/window.png
-KnightFalls   changed   knight falls one frame later; hash same; check HitStop                diff/KnightFalls/r1/grid.png
+KnightFalls   changed   knight falls one frame later; hash same; check HitStop                diff/KnightFalls/r1/window.grid.png
 ```
 
 ## Scoped rules

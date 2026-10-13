@@ -47,6 +47,11 @@ namespace Orchard.Trials
         string hash;
         public override string StateHash => hash;
 
+        // One battle setup for every recipe; co-op and mosaic runs use it too.
+        public static BattleSetup SetupFor(OrchardRecipe r, TrialSession s) =>
+            new BattleSetup(r.Attacker, r.Defender, r.DefenderHp, r.Distance,
+                            defenders: r.Defenders, players: r.Players, seed: s.RunSeed);
+
         public override IEnumerator Prepare(TrialSession s)
         {
             s.Sensor("state", () => Battle.Current?.State.Hash64 ?? 0L);
@@ -56,21 +61,23 @@ namespace Orchard.Trials
 
         protected override IEnumerator Run(OrchardRecipe r, TrialSession s)
         {
+            if (r.Players > 1) { yield return RunCoop(r, s); yield break; }   // see Co-op trials
             hash = null;
-            var battle = Battle.Start(new BattleSetup(r.Attacker, r.Defender, r.DefenderHp, r.Distance, seed: s.RunSeed));
+            var battle = Battle.Start(SetupFor(r, s));
             yield return s.WaitUntil(() => battle.Ready, "battle ready");
             s.Still("before");
             yield return null;
 
-            int hp = battle.State.Unit(1).Hp;
+            int target = r.Players;          // the first defender
+            int hp = battle.State.Unit(target).Hp;
             s.BeginCut();
-            battle.Issue(Command.Ability(r.Ability, attacker: 0, target: 1));
+            battle.Issue(Command.Ability(r.Ability, attacker: 0, target: target));
             yield return s.WaitUntil(() => battle.Idle, "ability resolved");
             yield return s.WaitSeconds(r.TailSeconds);
             s.EndCut();
 
-            s.Probe("damage", hp - battle.State.Unit(1).Hp);
-            s.Probe("defender_hp", battle.State.Unit(1).Hp);
+            s.Probe("damage", hp - battle.State.Unit(target).Hp);
+            s.Probe("defender_hp", battle.State.Unit(target).Hp);
             hash = battle.State.Hash64.ToString("X16");
         }
 
@@ -152,7 +159,7 @@ A selected recipe no adapter accepts fails alone, naming the registered adapters
 |---|---|---|---|
 | `SCN202` | 3 | A registered type is not a valid adapter. | Derive from `TrialAdapter<TRecipe>` with a public parameterless constructor. |
 | `SCN203` | 3 | Two adapters handle the same recipe type. | Keep one per type; make one more specific. |
-| `no_adapter` | 3 | No `[assembly: TrialAdapter]` in the build. | Register the adapter; `dotnet scion diagnose` writes a skeleton. |
+| `no_adapter` | 3 | No `[assembly: TrialAdapter]` in the build. | Register the adapter; `dotnet scion diagnose --adapter` writes a skeleton. |
 | `prepare_failed` | 3 | `Prepare` threw, timed out or called `Fail`. | Read `player.log` of the copy. |
 
 ## Examples

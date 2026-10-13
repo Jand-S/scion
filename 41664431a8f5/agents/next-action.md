@@ -18,16 +18,19 @@ related:
 Look up the exit code and the signal a Scion command returned, and do the action in the last column. The signals are
 the envelope fields (`error.code`, `warnings[].code`, `failed[]`, `changed[]`, `vs_approved`, `determinism`), the
 `SCNxxx` ids of diagnostics and the control-protocol errors. Every code links to its full entry in
-[Error and warning codes](/scion/41664431a8f5/reference/errors/). When two rows apply, handle the higher exit code first.
+[Error and warning codes](/scion/41664431a8f5/reference/errors/), which is the single source for the exit code of each error.
+When two rows apply, handle the higher exit code first. Exit 0 is not always "done": a `changed` verdict exits 0
+with `ok: true` ([`ok` and `changed`](/scion/41664431a8f5/cli/#ok-and-changed)), so check `changed[]` too.
 
 ## Exit 0
 
 | Signal | Meaning | Next action |
 |---|---|---|
-| `warnings` empty | Done. | Follow `next_step`. |
+| `warnings` and `changed[]` empty, `runs.new` 0 | Done. | Follow `next_step`. |
+| `vs_approved: changed` (in `changed[]`) | Hash, frames (off by more than one), images outside tolerance or the rule digest changed. A review signal, not a failure. | If intended: explain it with `trial show --changed` (and `--grid`) and ask a person to approve. If not: fix the code. Never approve it yourself. |
 | `vs_approved: same` | Hash, frames and images match the baseline. | Nothing to do. |
 | `vs_approved: new` | The recipe has no baseline yet. | Read its `report.md`; if it shows what the recipe should, `dotnet scion trial approve --new --reason "..."` and commit the staged files. |
-| `vs_approved: within` | Pixels differ, inside the recipe's tolerance. | Nothing to approve. Mention it if the task was visual. |
+| `vs_approved: within` | Pixels differ, inside the recipe's tolerance. | Nothing to approve; only a person may refresh it. Mention it if the task was visual. |
 | `vs_approved: px_changed` | Pixel hashes changed for a recipe that keeps no images. Informative. | Open `window.png` only if the task is visual; if intended, a person may approve it. |
 | `vs_approved: stale` | The baseline was approved on another platform, Unity version, fps or player arguments; images were not compared. | Tell the person; a person approves on this platform when the result looks right. |
 | warning [`build_stale`](/scion/41664431a8f5/reference/errors/#build_stale) | Sources or rule files changed after the build. | `dotnet scion build test`, then run again before trusting the result. |
@@ -44,11 +47,12 @@ the envelope fields (`error.code`, `warnings[].code`, `failed[]`, `changed[]`, `
 | Signal | Meaning | Next action |
 |---|---|---|
 | `failed[]` | A (recipe, round) failed: timeout, `Fail`, a check, a logged error, a graft that threw. | Read `failed[].report`; fix the cause; run again. |
-| `vs_approved: changed` | Hash, frames (off by more than one), images outside tolerance or the rule digest changed. | If intended: explain it with `trial show --changed` (and `--grid`) and ask a person to approve. If not: fix the code. |
 | `determinism.hash_stable: false` | Rounds of one recipe disagree, or no round passed. | Check `failed[]` first. Then `dotnet scion trial run <Id> --rounds 4 --check`; read `determinism.tsv`; see [Verify determinism](/scion/41664431a8f5/determinism/verify/). |
 | [`refused`](/scion/41664431a8f5/reference/errors/#refused) in `trial approve` | A selected recipe has a failed round, an unstable hash or was run with `--grafts`. Nothing was written. | Fix that recipe; `next_step` gives the command that approves the others. |
 | `diagnostics[]` in `graft check` or `graft build` | Graft errors with SCN ids. | Apply each `hint` and `did_you_mean`; check again. |
 | `errors[]` in `build test` | Compiler (`CSxxxx`) or Scion (`SCNxxx`) errors. | Fix the file and line; build again. |
+| [`SCN130`](/scion/41664431a8f5/reference/diagnostics/builds-and-injection/#scn130) in `graft inject` or `trial run --grafts` | The graft DLL was built for another build. Nothing was injected. | `dotnet scion graft build`, then inject again. |
+| [`SCN131`](/scion/41664431a8f5/reference/diagnostics/builds-and-injection/#scn131) in `graft inject` or `trial run --grafts` | The graft DLL or the build has another Scion ABI. Nothing was injected. | Use the same Scion version for the CLI and the build. |
 | `spec.ok: false` in `trial run --spec` | An expectation of the spec failed. | Read `spec.json`; never edit the spec to make it pass. |
 
 ## Exit 2
@@ -75,15 +79,13 @@ the envelope fields (`error.code`, `warnings[].code`, `failed[]`, `changed[]`, `
 | [`no_adapter`](/scion/41664431a8f5/reference/errors/#no_adapter), [`prepare_failed`](/scion/41664431a8f5/reference/errors/#prepare_failed) | No valid adapter, or an adapter's `Prepare` failed. | Read `error.message` (it names SCN202 or SCN203 when relevant) and the player log. |
 | [`capture_broken`](/scion/41664431a8f5/reference/errors/#capture_broken) | Frame capture failed. | Read the player log; run once with `--window` to compare. |
 | [`out_not_writable`](/scion/41664431a8f5/reference/errors/#out_not_writable), [`no_free_port`](/scion/41664431a8f5/reference/errors/#no_free_port) | The machine blocks the run. | Fix permissions or `trials.out`; close programs that hold ports, or use fewer copies. |
-| [`shard_ignored`](/scion/41664431a8f5/reference/errors/#shard_ignored) | The build predates sharding. | `dotnet scion build test`. |
+| [`shard_ignored`](/scion/41664431a8f5/reference/errors/#shard_ignored) | Two copies ran the same (recipe, round): the build ignores `-scion-shard`. | `dotnet scion build test`, or run with `-j 1`. |
 | [`no_copies`](/scion/41664431a8f5/reference/errors/#no_copies) | `graft inject`, `--warm` or `trial loop` found no warm copy. | `dotnet scion trial serve -j 2`. |
 | [`no_simulation`](/scion/41664431a8f5/reference/errors/#no_simulation), [`not_forkable`](/scion/41664431a8f5/reference/errors/#not_forkable) | A level 3 command without an `ISimulation`. | Register one; see [Add Scion to an existing game](/scion/41664431a8f5/start/existing-project/). |
 | [`mosaic_unsupported`](/scion/41664431a8f5/reference/errors/#mosaic_unsupported) | `--mosaic` with an adapter that is not an `IMosaicAdapter`. | Run without `--mosaic`, or see [Mosaic](/scion/41664431a8f5/trials/mosaic/). |
-| [`model_missing`](/scion/41664431a8f5/reference/errors/#model_missing) | A Judge eye model is not downloaded and the machine is offline. | Connect once, or copy the model into `~/.scion/models/`. |
-| [`SCN130`](/scion/41664431a8f5/reference/diagnostics/builds-and-injection/#scn130) | The graft DLL was built for another build. | `dotnet scion graft build`, then inject again. |
-| [`SCN131`](/scion/41664431a8f5/reference/diagnostics/builds-and-injection/#scn131) | The graft DLL or the build has another Scion ABI. | Use the same Scion version for the CLI and the build. |
+| [`model_missing`](/scion/41664431a8f5/reference/errors/#model_missing) | The eye model of the Judge is not in the model cache, or a needed head is not trained. | `dotnet scion judge model pull` (the `error.hint` names the eyes), then run the command again; for a head, ask a person to train it. See [Models and licenses](/scion/41664431a8f5/judge/models/). |
 | [`SCN202`](/scion/41664431a8f5/reference/diagnostics/trials/#scn202), [`SCN203`](/scion/41664431a8f5/reference/diagnostics/trials/#scn203) | Invalid adapter, or two adapters for one recipe type. | Fix the adapter as the hint says. |
-| [`interrupted`](/scion/41664431a8f5/reference/errors/#interrupted) | Ctrl-C stopped the command. | Run it again. |
+| [`interrupted`](/scion/41664431a8f5/reference/errors/#interrupted) | Ctrl-C or a cancelled MCP call stopped the command. | Run it again. |
 | [`internal_error`](/scion/41664431a8f5/reference/errors/#internal_error) | A bug in Scion. | Report it with the stack trace; do not loop. |
 
 ## Exit 125

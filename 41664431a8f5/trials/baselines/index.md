@@ -37,7 +37,7 @@ dotnet scion trial show --changed
 
 <!-- validate: cli/trial-show -->
 ```json
-{"schema_version":1,"command":"trial show","ok":true,"run":"/Users/alex/orchard/.scion/runs/20261011-143200","count":1,"recipes":[{"id":"SlashHit","rounds":{"ok":2,"failed":0},"hashes":["9F3A0C11D2E4B5A6"],"frames":[46],"vs_approved":"changed","report":"q0/SlashHit/r1/report.md","images":["q0/SlashHit/r1/window.png"],"reasons":["image"],"stale":[],"px_diff":0.12}],"next_step":"look at q0/SlashHit/r1/window.png; if intended, a person approves: dotnet scion trial approve SlashHit --reason \"...\""}
+{"schema_version":1,"command":"trial show","ok":true,"run":"/Users/alex/orchard/.scion/runs/20261011-143200","count":1,"recipes":[{"id":"SlashHit","rounds":{"ok":2,"failed":0},"hashes":["9F3A0C11D2E4B5A6"],"frames":[46],"vs_approved":"changed","report":"q0/SlashHit/r1/report.md","images":["q0/SlashHit/r1/window.png"],"reasons":["image"],"stale":[],"px_diff":0.12}],"next_step":"look at /Users/alex/orchard/.scion/runs/20261011-143200/q0/SlashHit/r1/window.png; if intended, a person approves: dotnet scion trial approve SlashHit --reason \"...\""}
 ```
 
 ### 2. Compare side by side
@@ -86,9 +86,9 @@ dotnet scion trial approve SlashHit --reason "crit shake is stronger"
 | failed recipe | no | no |
 | run with `--grafts` or `--warm` | no | no |
 
-Approval is all or nothing: if one id is refused, nothing is written and `refused[]` says why. The `guard` hook
-asks the person before an agent's `trial approve` and denies edits under `scion/baselines/`
-([Hooks](/scion/41664431a8f5/agents/hooks/)).
+Approval is all or nothing: if one id is refused, nothing is written and `refused[]` says why. The `guard` hook lets
+an agent's `trial approve` run only when every id is `new`; any other approval is denied with the command the person
+runs at their terminal. It also denies edits under `scion/baselines/` ([Hooks](/scion/41664431a8f5/agents/hooks/)).
 
 ### Storage
 

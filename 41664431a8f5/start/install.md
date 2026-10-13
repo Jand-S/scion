@@ -90,7 +90,7 @@ dotnet scion init --existing --dry-run
 
 <!-- validate: cli/init -->
 ```json
-{"schema_version":1,"command":"init","ok":true,"dry_run":true,"created":["scion.json","scion/grafts/","scion/recipes/","scion/baselines/","Assets/Orchard/Grafts/Orchard.Grafts.asmref",".config/dotnet-tools.json"],"changed":[".gitignore",".gitattributes","Packages/manifest.json"],"skipped":["ProjectSettings/ScionSettings.json"],"adoption_level":1,"next_step":"run without --dry-run: dotnet scion init --existing"}
+{"schema_version":1,"command":"init","ok":true,"dry_run":true,"created":["scion.json","ProjectSettings/ScionSettings.json","scion/grafts/","scion/recipes/","scion/baselines/","Assets/Orchard/Grafts/Orchard.Grafts.asmref"],"changed":[".gitignore",".gitattributes","Assets/Orchard/Runtime/Orchard.Runtime.asmdef"],"skipped":[".config/dotnet-tools.json","Packages/manifest.json"],"adoption_level":1,"next_step":"run without --dry-run: dotnet scion init --existing"}
 ```
 
 Then apply it:
@@ -143,6 +143,7 @@ dotnet scion doctor
 {"schema_version":1,"command":"doctor","ok":true,"level":2,"version":"1.0.0","adoption_level":1,"adoption_next":"level 2: write an adapter and a recipe (dotnet scion new trial MyFirstTrial)","checks":[{"id":"build","status":"warn","detail":"no test build at /Users/alex/orchard/.scion/builds/test/Orchard.app","hint":"run: dotnet scion build test"},{"id":"config","status":"ok","detail":"/Users/alex/orchard/scion.json"},{"id":"unity","status":"ok","detail":"6000.3.25f1"},{"id":"machine","status":"ok","detail":"10 cores, 9.1 GB free of 16.0 GB"}],"suggested_copies":4,"next_step":"run: dotnet scion build test"}
 ```
 
+Without `--level`, `doctor` runs level 2, which includes the test build ([doctor](/scion/41664431a8f5/cli/doctor/)).
 Exit 0 means the setup is usable; read the `hint` of each `warn`. On a fresh project, the `build` check warns until
 the first `dotnet scion build test`. Exit 3 means a check failed: fix what `error.hint` says and run `doctor` again.
 

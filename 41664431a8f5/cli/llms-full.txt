@@ -33,7 +33,7 @@ dotnet scion --help | --version
 | `diagnose` | | [diagnose](/scion/41664431a8f5/cli/diagnose/) |
 | `index`, `guard` | | [index, guard](/scion/41664431a8f5/cli/index-and-guard/) |
 | `gen` | | [gen](/scion/41664431a8f5/cli/gen/) |
-| `judge` | `list`, `show`, `new`, `vote`, `train`, `run` | [judge](/scion/41664431a8f5/cli/judge/) |
+| `judge` | `model pull`, `list`, `show`, `new`, `vote`, `train`, `run` | [judge](/scion/41664431a8f5/cli/judge/) |
 | `multiverse` | `run`, `show` | [multiverse](/scion/41664431a8f5/cli/multiverse/) |
 | `hunt`, `search` | `run` | [hunt, search](/scion/41664431a8f5/cli/hunt-and-search/) |
 | `mcp` | | [mcp](/scion/41664431a8f5/cli/mcp/) |
@@ -65,8 +65,9 @@ The CLI and the package must have the same version: a DLL injected into a build 
 ### Behavior every command shares
 
 - Commands that write accept `--dry-run` and are idempotent: running one twice changes nothing the second time.
-- Output is compact JSON (about 1.5 KB at most): long lists are cut with `"more": N`, and the full data goes to a
-  file (`summary.json`) whose path is in the envelope.
+- Output is compact JSON (about 1.5 KB at most). A long list is cut, and its last item is then one object
+  `{"more": N}` after the kept items (`"created":["scion.json", ..., {"more":14}]`), so parse each list item as either
+  its documented type or `{"more": N}`. The full data goes to a file (`summary.json`) whose path is in the envelope.
 - Arguments after `--` go to every player process; a flag also present in `player_args` replaces it.
 
 ## Options
@@ -92,11 +93,18 @@ Every command prints one envelope:
 |---|---|
 | `schema_version` | 1. |
 | `command` | The command as typed, without options (`trial run`). |
-| `ok` | True when the exit code is 0. |
+| `ok` | True when the exit code is 0 ([`ok` and `changed`](#ok-and-changed)). |
 | `next_step` | One line: what to do next. Always present. |
 | `warnings[]` | `{code, message}`; never change the exit code. |
 | `error` | Only on exit 2 and 3: `code`, `message`, `hint`, `did_you_mean`. |
 | command fields | Documented on each command's page and in its JSON Schema. |
+
+### `ok` and `changed`
+
+`ok` is `true` exactly when the exit code is 0. A `changed` verdict (like `within`, `px_changed`, `new` and `stale`)
+is a review signal, not a failure: `trial run` still exits 0 with `ok: true` and lists the id in `changed[]`. So
+exit 0 does not mean "nothing to look at": read `changed[]` and `runs.new` before you call a task done. Only failed
+recipes, checks, graft checks and specs exit 1 with `ok: false`. Other pages link here for this rule.
 
 ## Exit codes
 
@@ -114,7 +122,7 @@ then 0. See [Exit codes](/scion/41664431a8f5/reference/exit-codes/).
 
 | Code | Exit | Cause | Next action |
 |---|---|---|---|
-| `config_not_found` | 2 | No `scion.json` above the current folder. | `dotnet scion init`, or `cd` into the project. |
+| `config_not_found` | 3 | No `scion.json` above the current folder. | `dotnet scion init`, or `cd` into the project. |
 | `config_invalid` | 3 | `scion.json` does not match its schema. | Fix the key in the message. |
 | `unknown_command`, `unknown_option` | 2 | A typo. | Use `did_you_mean`. |
 | `build_not_found` | 3 | No test build found. | `dotnet scion build test`. |
@@ -165,9 +173,11 @@ dotnet scion doctor [--level 1|2|3] [--format json|text]
 
 | Level | Checks |
 |---|---|
-| 1 (default) | `scion.json` and `ScionSettings.json` parse; CLI and package versions match; .NET SDK; Unity of the project's version; the editor lock. |
-| 2 | Level 1, plus: the test build exists, has `SCION_TRIALS`, is not stale; `scion-build.json` reads; the output folder is writable; free memory and cores. |
-| 3 | Level 2, plus: starts the test build with `-scion-list` (recipes, adapters, SCN201 to SCN203); the judge's eye model; Git LFS for baselines; suppressions with justifications. |
+| 1 | `scion.json` and `ScionSettings.json` parse; CLI and package versions match; .NET SDK; git; the output folder is writable; free memory and cores. |
+| 2 (default) | Level 1, plus: Unity of the project's version; the editor lock and `com.unity.pipeline`; the test build exists, has `SCION_TRIALS`, is not stale; `scion-build.json` reads; free disk under `trials.out`. |
+| 3 | Level 2, plus: starts the test build with `-scion-list` (recipes, adapters, SCN201 to SCN203; up to 60 s); the judge's eye model; Git LFS for baselines; suppressions with justifications. |
+
+On a fresh project the `build` check warns until the first `dotnet scion build test`; a warning never fails `doctor`.
 
 Each check has an `id`, a `status` (`ok`, `warn`, `fail`), a `detail` and, unless ok, a `hint`.
 
@@ -178,7 +188,7 @@ measurement or 600 MB.
 
 | Option | Default | Meaning |
 |---|---|---|
-| `--level 1\|2\|3` | 1 | Check depth (not the adoption level). |
+| `--level 1\|2\|3` | 2 | Check depth (not the adoption level). |
 | `--format json\|text` | auto | Output format. |
 
 ## Output
@@ -211,11 +221,11 @@ Schema: `https://jand-s.github.io/scion/41664431a8f5/schemas/v1/cli/doctor.schem
 
 | Code | Exit | Cause | Next action |
 |---|---|---|---|
-| `config_not_found` | 2 | No `scion.json`. | `dotnet scion init`. |
+| `config_not_found` | 3 | No `scion.json`. | `dotnet scion init`. |
 | warning `version_mismatch` | 0 | The CLI and the package differ. | Install the same version of both. |
 | warning `build_stale` | 0 | The test build is older than the sources. | `dotnet scion build test`. |
 | warning `low_memory` | 0 | Not enough free memory for 2 copies. | Close apps or run `-j 1`. |
-| `model_missing` | 3 | Level 3: the judge's eye model is not downloaded. | Run the command in `hint`. |
+| `model_missing` | 3 | Level 3: the judge's eye model is not in the model cache. | `dotnet scion judge model pull` ([Models and licenses](/scion/41664431a8f5/judge/models/)). |
 
 ## Examples
 
@@ -626,7 +636,7 @@ dotnet scion trial run [patterns] [-j N] [--rounds N] [selection options] [captu
 
 <!-- validate: cli/trial-run -->
 ```json
-{"schema_version":1,"command":"trial run","ok":false,"run":"/Users/alex/orchard/.scion/runs/20261011-143200","build_id":"4c49a1e0b2f3","copies":6,"wall_s":27.1,"runs":{"recipes":6,"rounds":2,"total":12,"ok":11,"failed":1,"changed":1,"within":0,"px_changed":0,"new":0,"stale":0},"failed":[{"id":"KnightFalls","round":1,"copy":3,"error":"timeout (30s): unit down animation","report":"q3/KnightFalls/r1/report.md"}],"changed":[{"id":"SlashHit","vs_approved":"changed","hash":"same","image":"q0/SlashHit/r1/window.png","diff":"diff/SlashHit/r1/window.diff.png"}],"determinism":{"hash_stable":true,"frame_jitter":[]},"next_step":"read q3/KnightFalls/r1/report.md; SlashHit changed only in images: see diff/SlashHit/r1/window.diff.png"}
+{"schema_version":1,"command":"trial run","ok":false,"run":"/Users/alex/orchard/.scion/runs/20261011-143200","build_id":"4c49a1e0b2f3","copies":6,"wall_s":27.1,"runs":{"recipes":6,"rounds":2,"total":12,"ok":11,"failed":1,"changed":1,"within":0,"px_changed":0,"new":0,"stale":0},"failed":[{"id":"KnightFalls","round":1,"copy":3,"error":"timeout (30s): unit down animation","report":"q3/KnightFalls/r1/report.md"}],"changed":[{"id":"SlashHit","vs_approved":"changed","hash":"same","image":"q0/SlashHit/r1/window.png","diff":"diff/SlashHit/r1/window.diff.png"}],"determinism":{"hash_stable":true,"frame_jitter":[]},"next_step":"read /Users/alex/orchard/.scion/runs/20261011-143200/q3/KnightFalls/r1/report.md; SlashHit changed only in images: see /Users/alex/orchard/.scion/runs/20261011-143200/diff/SlashHit/r1/window.diff.png"}
 ```
 
 | Field | Meaning |
@@ -646,7 +656,7 @@ Files: [summary.json, summary.tsv, compare.json](/scion/41664431a8f5/reference/f
 
 | Code | When |
 |---|---|
-| 0 | Every recipe passed. Verdicts such as `changed` do not fail a run. |
+| 0 | Every recipe passed. Verdicts such as `changed` do not fail a run: `ok` stays `true` and `changed[]` lists them ([`ok` and `changed`](/scion/41664431a8f5/cli/#ok-and-changed)). |
 | 1 | A recipe or check failed, or a spec failed. |
 | 2 | Bad option or a pattern matched nothing. |
 | 3 | No build, a copy crashed or timed out, environment errors. |
@@ -667,7 +677,7 @@ Copies are combined with precedence 2 > 3 > 1 > 0.
 | `mosaic_unsupported` | 3 | `--mosaic` and no `IMosaicAdapter`. | Implement it or drop `--mosaic`. |
 | warning `build_stale` | 0 | Sources changed after the build. | Rebuild before trusting the result. |
 | warning `px_unstable` | 0 | Pixels vary between rounds. | See [Verify determinism](/scion/41664431a8f5/determinism/verify/). |
-| warning `shard_ignored` | 0 | `-scion-shard` passed after `--`. | Let the CLI shard. |
+| `shard_ignored` | 3 | Two copies ran the same (recipe, round): the build ignores `-scion-shard`. | `dotnet scion build test`, or run with `-j 1`. |
 
 ## Examples
 
@@ -733,7 +743,7 @@ writes `diff/<IdDir>/r<n>/<artifact>.grid.png` (baseline, current, heatmap in th
 
 <!-- validate: cli/trial-show -->
 ```json
-{"schema_version":1,"command":"trial show","ok":true,"run":"/Users/alex/orchard/.scion/runs/20261011-143200","count":1,"recipes":[{"id":"KnightFalls","rounds":{"ok":1,"failed":1},"hashes":["1B44E07AC9D20F13"],"frames":[52],"vs_approved":"same","round":1,"copy":3,"report":"q3/KnightFalls/r1/report.md","images":["q3/KnightFalls/r1/window.png","q3/KnightFalls/r1/context.png"],"failed":[{"round":1,"copy":3,"error":"timeout (30s): unit down animation"}]}],"next_step":"read q3/KnightFalls/r1/report.md"}
+{"schema_version":1,"command":"trial show","ok":true,"run":"/Users/alex/orchard/.scion/runs/20261011-143200","count":1,"recipes":[{"id":"KnightFalls","rounds":{"ok":1,"failed":1},"hashes":["1B44E07AC9D20F13"],"frames":[52],"vs_approved":"same","round":1,"copy":3,"report":"q3/KnightFalls/r1/report.md","images":["q3/KnightFalls/r1/window.png","q3/KnightFalls/r1/context.png"],"failed":[{"round":1,"copy":3,"error":"timeout (30s): unit down animation"}]}],"next_step":"read /Users/alex/orchard/.scion/runs/20261011-143200/q3/KnightFalls/r1/report.md"}
 ```
 
 | Field | Meaning |
@@ -983,7 +993,7 @@ both. Frame data is compared column by column in the cause order of `determinism
 
 <!-- validate: cli/trial-diff -->
 ```json
-{"schema_version":1,"command":"trial diff","ok":true,"a":"20261011-143200","b":"20261011-150512","recipes":[{"id":"SlashHit","hash":"same","frames":[46,46],"first_frame":14,"cause":"px","images":[{"file":"window.png","status":"changed","ratio":0.021,"diff":"diff/SlashHit/r1/window.diff.png"}]},{"id":"KnightFalls","hash":"same","frames":[52,52],"first_frame":null,"cause":null,"images":[{"file":"window.png","status":"same","ratio":0,"diff":null}]}],"next_step":"look at diff/SlashHit/r1/window.diff.png"}
+{"schema_version":1,"command":"trial diff","ok":true,"a":"20261011-143200","b":"20261011-150512","recipes":[{"id":"SlashHit","hash":"same","frames":[46,46],"first_frame":14,"cause":"px","images":[{"file":"window.png","status":"changed","ratio":0.021,"diff":"diff/SlashHit/r1/window.diff.png"}]},{"id":"KnightFalls","hash":"same","frames":[52,52],"first_frame":null,"cause":null,"images":[{"file":"window.png","status":"same","ratio":0,"diff":null}]}],"next_step":"look at /Users/alex/orchard/.scion/runs/20261011-150512/diff/SlashHit/r1/window.diff.png"}
 ```
 
 ## Exit codes
@@ -1158,7 +1168,7 @@ dotnet scion trial loop <Id> [--from <file>] [--span a..b] [--passes N] [--windo
 |---|---|---|---|
 | `not_forkable` | 3 | `--span` needs `ISaveable`. | Implement it, or loop the whole recipe. |
 | `bad_value` | 2 | `--span` outside the match. | Check `turns`. |
-| `interrupted` | 0 | Ctrl-C. | Normal stop. |
+| Ctrl-C (no error) | 0 | The normal way to end a loop without `--passes`; `stopped_by` is `interrupt`. | Nothing; the passes so far stay in the run folder. |
 
 ## Examples
 
@@ -1594,7 +1604,7 @@ leaving the rest of the file alone. With `--hook`, wraps it as `hookSpecificOutp
 | An edit or write under `scion/baselines/` | `deny`: only `trial approve` writes baselines. |
 | An edit of `scion.manifest.json` or `GRAFTS.md` | `deny`: generated by `gen`. |
 | `trial approve` of ids that are only `new` | `allow`. |
-| `trial approve` that would replace a baseline (`--approve`) | `ask`, with what changed and the review command. |
+| `trial approve` that would replace a baseline (`--approve`) | `deny`, with what changed, the review command and the approve command the person runs at a terminal. An agent's shell has no terminal, so asking could not help: the CLI would answer `human_required`. |
 | Anything else | `allow`. |
 
 With `--hook`, `guard` reads the hook input from stdin (tool name, path, command) and prints
@@ -1620,7 +1630,7 @@ guard, which fails closed.
 
 <!-- validate: cli/guard -->
 ```json
-{"schema_version":1,"command":"guard","ok":true,"decision":"ask","reason":"This approves SlashHit (changed: image) and replaces a baseline a person approved.","path":null,"approve":"SlashHit","next_step":"a person reviews: dotnet scion trial show SlashHit --grid"}
+{"schema_version":1,"command":"guard","ok":true,"decision":"deny","reason":"This approves SlashHit (changed: image) and replaces a baseline a person approved; only a person approves it, at a terminal.","path":null,"approve":"SlashHit","next_step":"a person reviews (dotnet scion trial show SlashHit --grid), then runs: dotnet scion trial approve SlashHit --reason \"...\""}
 ```
 
 ## Exit codes
@@ -1634,7 +1644,7 @@ guard, which fails closed.
 
 | Code | Exit | Cause | Next action |
 |---|---|---|---|
-| `config_not_found` | 0 in hook mode | Not a Scion project. | The hooks do nothing outside Scion projects. |
+| `config_not_found` | 3, or 0 with `--hook` | Not a Scion project. | The hooks do nothing outside Scion projects. |
 | `usage` | 2 | `guard` without `--hook`, `--path` or `--command`. | Pass one. |
 
 ## Examples
@@ -1739,7 +1749,8 @@ dotnet scion gen --list tunables --search Balance
 
 # judge
 
-The `judge` commands manage the Scion Judge: `judge list` and `judge show` describe heads, `judge new` creates one
+The `judge` commands manage the Scion Judge: `judge model pull` downloads the eye model into the model cache,
+`judge list` and `judge show` describe heads, `judge new` creates one
 from a question file, `judge vote` opens a local page for blind duels and labels, `judge train` trains and promotes a
 new head version, and `judge run` scores a run's captures. Heads, questions and votes live in `judge.dir`
 (`scion/judge/`); embeddings in `judge.cache`.
@@ -1747,6 +1758,7 @@ new head version, and `judge run` scores a run's captures. Heads, questions and 
 ## Synopsis
 
 ```text
+dotnet scion judge model pull [<eyes>]
 dotnet scion judge list
 dotnet scion judge show <head>
 dotnet scion judge new <head> --question <file> [--view full|hud|corners|actor] [--sequence]
@@ -1758,6 +1770,13 @@ dotnet scion judge run <run> [--heads a,b] [--references N] [--pairs <run>]
 ## Description
 
 The judge never changes a verdict or an exit code of trials. It runs locally with the eye model in `judge.eyes`.
+
+## judge model pull
+
+Downloads the eye model (`<eyes>`, default `judge.eyes`) into the model cache, `~/.cache/scion/models/<eyes>/`, and
+checks its hash. This is the only judge command that uses the network; every other one reads the cache and fails with
+`model_missing` when the model is not there. It is idempotent: a model already in the cache is not downloaded again
+(`downloaded: false`). On a machine without network, copy the `<eyes>/` folder from another machine's cache.
 
 ## judge list
 
@@ -1793,6 +1812,7 @@ same id in another run.
 
 | Option | Commands | Meaning |
 |---|---|---|
+| `<eyes>` | model pull | `siglip2-so400m`, `siglip2-base`, `dinov2-base` or `uiclip` ([Models and licenses](/scion/41664431a8f5/judge/models/)); default `judge.eyes`. |
 | `--question <file>` | new | The question. |
 | `--view <view>` | new | `full`, `hud`, `corners`, `actor`. |
 | `--sequence` | new | A motion head. |
@@ -1807,27 +1827,38 @@ same id in another run.
 {"schema_version":1,"command":"judge run","ok":true,"results":".scion/runs/20261011-150512/judge.json","escalate":["HudStates/turn-banner.720p.png"],"next_step":"look at the escalated captures, or ask an evaluator: dotnet scion trial eval 20261011-150512 --with agent"}
 ```
 
-`judge list` returns `heads[]`; `judge show` and `judge train` return `head` (and `training`); `judge vote` returns
-`url` and `votes`.
+`judge model pull` returns `model` (`eyes`, `path`, `bytes`, `downloaded`); `judge list` returns `heads[]`;
+`judge show` and `judge train` return `head` (and `training`); `judge vote` returns `url` and `votes`.
+
+<!-- validate: cli/judge -->
+```json
+{"schema_version":1,"command":"judge model pull","ok":true,"model":{"eyes":"siglip2-so400m","path":"/Users/alex/.cache/scion/models/siglip2-so400m","bytes":1612000000,"downloaded":true},"next_step":"dotnet scion judge list"}
+```
 
 ## Exit codes
 
 | Code | When |
 |---|---|
 | 0 | Done. |
-| 2 | Unknown head, bad question file. |
-| 3 | The eye model is missing. |
+| 2 | Unknown head or eyes, bad question file. |
+| 3 | The eye model is missing, or `judge model pull` could not download it. |
 
 ## Errors
 
 | Code | Exit | Cause | Next action |
 |---|---|---|---|
-| `model_missing` | 3 | The eye model is not downloaded. | Run the command in `hint` (also in `doctor --level 3`). |
+| `model_missing` | 3 | The eye model is not in the model cache. | `dotnet scion judge model pull` (the `hint` names the eyes). |
 | `no_match` | 2 | Unknown head. | `judge list`. |
 | `bad_value` | 2 | The question file does not validate. | Check it against `judge-question.schema.json`. |
 | `not_supported` | 2 | `judge vote` without a browser (an agent). | Votes are for people; agents use `trial eval`. |
 
 ## Examples
+
+### Get the eye model once per machine
+
+```sh
+dotnet scion judge model pull
+```
 
 ### Score a run with two heads
 
@@ -1853,10 +1884,10 @@ dotnet scion judge vote --head hit_weight
 
 # multiverse
 
-`dotnet scion multiverse run` replays a captured match on the core simulator up to a turn, forks it, plays each
-variant to the end and reports, per variant, whether the rules diverged, the first turn and the first field.
-`dotnet scion multiverse show` prints a past result. With `--mosaic`, the test build replays the variants side by
-side.
+`dotnet scion multiverse run` replays a captured match up to a turn, forks it, plays each variant to the end and
+reports, per variant, whether the rules diverged, the first turn and the first field. Rule variants run on the core
+simulator; `grafts:` variants and presentation tunables run in the test build. `dotnet scion multiverse show` prints a
+past result. With `--mosaic`, the test build replays the variants side by side.
 
 ## Synopsis
 
@@ -1867,7 +1898,11 @@ dotnet scion multiverse show <run>
 
 ## Description
 
-Everything except `--mosaic` runs in plain .NET on the registered `ISimulation`, in parallel, without Unity.
+Variants that change only what the rules read (rule tunables in the core assembly, presets of them, bots) run in plain
+.NET on the registered `ISimulation`, in parallel, without Unity. Variants that change presentation code (`grafts:`
+DLLs, tunables declared outside the core assembly) run in copies of the test build: each copy replays the match to
+the fork turn, applies the variant there (a DLL through the control channel) and plays on, and the CLI compares its
+per-turn `turn` hashes with a base copy's. The full rule is on [The multiverse](/scion/41664431a8f5/explore/multiverse/#in-the-test-build).
 
 ## multiverse run
 
@@ -1901,7 +1936,7 @@ Prints the envelope of a past run from its `multiverse.json`.
 | 0 | Done. Divergence of tunable or preset variants is information, not failure. |
 | 1 | A `grafts:` variant diverged (grafts must be visual). |
 | 2 | Unknown match, variant or turn. |
-| 3 | No simulation, or the state cannot be saved. |
+| 3 | No simulation, the state cannot be saved, or no test build for a `grafts:` variant. |
 
 ## Errors
 
@@ -1910,6 +1945,7 @@ Prints the envelope of a past run from its `multiverse.json`.
 | `no_simulation` | 3 | No `[assembly: Simulation]`. | Register an `ISimulation`. |
 | `not_forkable` | 3 | No `ISaveable`. | Implement `Save` and `Load`. |
 | `mosaic_unsupported` | 3 | `--mosaic` without `IMosaicAdapter`. | Implement it or drop `--mosaic`. |
+| `build_not_found` | 3 | A `grafts:` variant or a presentation tunable, and no test build. | `dotnet scion build test`. |
 | `no_match` | 2 | Unknown match or preset. | `trial list`; `scion/presets/`. |
 
 ## Examples
@@ -1917,8 +1953,11 @@ Prints the envelope of a past run from its `multiverse.json`.
 ### Prove a draft is visual
 
 ```sh
+dotnet scion graft build
 dotnet scion multiverse run knight-dies-to-crit --at-turn 0 --variants base,grafts:.scion/grafts/ScionGrafts_51c2.dll
 ```
+
+The DLL path comes from the `dll` field of `graft build`. Both variants replay in the test build with per-turn hashes.
 
 ### See variants side by side
 
@@ -2002,7 +2041,7 @@ simulator for balance-only specs), drops those failing the spec, ranks with the 
 | Code | Exit | Cause | Next action |
 |---|---|---|---|
 | `no_simulation` | 3 | No `ISimulation`. | Register one. |
-| `model_missing` | 3 | The spec uses a judge head and the eyes are missing. | `doctor --level 3`. |
+| `model_missing` | 3 | The spec uses a judge head and the eye model is not in the model cache. | `dotnet scion judge model pull`. |
 | `bad_value` | 2 | A tunable without a range. | `[Tunable(min, max)]`. |
 | `no_match` | 2 | Unknown spec or recipe. | `did_you_mean`. |
 

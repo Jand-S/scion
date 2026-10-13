@@ -32,7 +32,7 @@ These rules are also at the top of [/scion/llms.txt](/scion/41664431a8f5/llms.tx
 - Run `dotnet scion doctor` first. Exit 0 means usable; exit 3 means fix what `error.hint` says.
 - Every command prints one JSON object on stdout (`schema_version`, `ok`, `next_step`, `error` on exits 2 and 3). Parse it; do not scrape text. Follow `next_step`.
 - Exit codes: 0 ok, 1 a check failed, 2 usage error (see `did_you_mean`), 3 environment. Next actions: `https://jand-s.github.io/scion/41664431a8f5/agents/next-action.md`
-- You may approve only `new` baselines (`trial approve --new --reason "..."`). Never approve `changed`, `stale` or `px_changed`, and never edit `scion/baselines/` by hand: ask a person.
+- You may approve only `new` baselines (`trial approve --new --reason "..."`). Never approve `changed`, `stale`, `within` or `px_changed`, and never edit `scion/baselines/` by hand: ask a person.
 - Read `report.md` only for failed or changed recipes; open images only when pixels changed or the task is visual.
 
 Two more that follow from the design:
@@ -138,7 +138,7 @@ recipe ([The Scion skill](/scion/41664431a8f5/agents/skill/)).
 | Signal | Next action |
 |---|---|
 | Exit 1, `failed[]` | Read `failed[].report`, fix, run again. |
-| Exit 1, `changed[]` | Explain the change with `trial show --changed`; ask a person to approve or fix it. |
+| Exit 0, `changed[]` not empty | A review signal, not a failure ([`ok` and `changed`](/scion/41664431a8f5/cli/#ok-and-changed)). Explain the change with `trial show --changed`; ask a person to approve or fix it. |
 | Exit 2 | Fix the call with `error.hint` and `did_you_mean`; never retry unchanged. |
 | Exit 3 | Fix the environment with `error.hint`; `doctor` names the failing check. |
 
@@ -154,9 +154,13 @@ dotnet scion anchor list --search shake
 dotnet scion graft new CritShake --after Orchard.Presentation.HitPresenter.Play
 dotnet scion graft check scion/grafts/CritShake.cs
 dotnet scion build test
+dotnet scion graft build
 dotnet scion trial run --grafts .scion/grafts/ScionGrafts_51c2.dll
 dotnet scion trial show --changed
 ```
+
+`graft build` compiles the drafts against the test build; take the DLL path for `--grafts` from the `dll` field of
+its envelope, never from memory.
 
 The run reports `SlashHit` as `changed` with `hash: same`: only pixels moved. The agent reports to the person:
 "CritShake adds a 0.3 shake on critical hits; SlashHit changed in pixels only (window.png). To accept, promote the

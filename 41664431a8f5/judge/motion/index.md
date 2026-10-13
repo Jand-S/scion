@@ -27,6 +27,7 @@ add style. This guide creates and uses a sequence head.
 
 ## Before you begin
 
+- The eye model in the model cache (`dotnet scion judge model pull`, once per machine).
 - Runs made with `--motion`, so `metrics.json` exists for each recipe.
 - The gates still run first: a sequence that fails photosensitivity is never ranked.
 
@@ -81,7 +82,7 @@ image.
 | Code | Exit | Cause | Next action |
 |---|---|---|---|
 | `bad_value` | 2 | The run has no `metrics.json`. | Run with `--motion`. |
-| `model_missing` | 3 | The eyes are not installed. | `dotnet scion doctor`. |
+| `model_missing` | 3 | The eye model is not in the model cache. | `dotnet scion judge model pull`. |
 
 ## Examples
 

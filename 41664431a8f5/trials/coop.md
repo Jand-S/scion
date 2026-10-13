@@ -56,14 +56,21 @@ public sealed class CoopTurn : OrchardRecipe
 
 ### 3. Play it by role in the adapter
 
+`OrchardAdapter.Run` calls this method when `r.Players > 1`. `hash` is the adapter's field behind `StateHash`, and
+`SetupFor` builds the battle ([Write an adapter](/scion/41664431a8f5/trials/adapters/)):
+
 ```csharp
-protected override IEnumerator Run(OrchardRecipe r, TrialSession s)
+// In OrchardAdapter (Orchard.Trials). Units 0..Players-1 are the players' knights; unit Players is the skeleton.
+IEnumerator RunCoop(OrchardRecipe r, TrialSession s)
 {
-    yield return s.WaitUntil(() => Lobby.Connected == r.Players, "all players connected");
+    hash = null;
+    var battle = Battle.Start(SetupFor(r, s));
+    yield return s.WaitUntil(() => battle.Ready && Lobby.Connected == r.Players, "all players connected");
     s.BeginCut();
     for (int turn = 1; turn <= r.Players; turn++)
     {
-        if (Lobby.LocalPlayer == turn - 1) battle.Issue(Command.Ability("slash", attacker: turn - 1, target: 4));
+        int player = turn - 1;
+        if (Lobby.LocalPlayer == player) battle.Issue(Command.Ability(r.Ability, attacker: player, target: r.Players));
         yield return s.WaitUntil(() => battle.State.Turn > turn, "turn " + turn);
         s.Event("turn", ("turn", turn), ("hash", battle.State.Hash64.ToString("X16")));
     }
@@ -131,7 +138,7 @@ dotnet scion trial run --players 2
 dotnet scion trial run --players 4
 ```
 
-### A two-player recipe with a pass-through flag
+### A co-op recipe with a pass-through flag
 
 ```sh
 dotnet scion trial run CoopTurn -- -orchard-latency 80

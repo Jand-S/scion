@@ -175,11 +175,15 @@ public static void After(HitPresenter presenter, HitEvent e) { }
 `Observe = true` (only on `[Before]`) marks an observer: a graft that only watches. Observers always run, before
 every `[Before]` that may skip the target, ordered by `Priority` among themselves, and may not call `Skip()` or
 `Return()` ([SCN108](/scion/41664431a8f5/reference/diagnostics/grafts/#scn108)). Use one when the graft must see every call,
-including calls another graft skips, such as a trials mark:
+including calls another graft skips, such as a trials mark. `TrialSession` exists only in test builds, so a graft
+that uses it sits inside `#if SCION_TRIALS`; a promoted graft compiles into the game, and without the define the
+final build fails ([Build modes](/scion/41664431a8f5/grafts/build-modes/)):
 
 ```csharp
+#if SCION_TRIALS
 [Before(typeof(HitPresenter), nameof(HitPresenter.Play), Observe = true)]
 public static void Before(HitPresenter presenter, HitEvent e) => TrialSession.Current?.MarkImpact();
+#endif
 ```
 
 ### Order within one call

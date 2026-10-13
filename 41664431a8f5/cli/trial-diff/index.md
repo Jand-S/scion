@@ -43,7 +43,7 @@ both. Frame data is compared column by column in the cause order of `determinism
 
 <!-- validate: cli/trial-diff -->
 ```json
-{"schema_version":1,"command":"trial diff","ok":true,"a":"20261011-143200","b":"20261011-150512","recipes":[{"id":"SlashHit","hash":"same","frames":[46,46],"first_frame":14,"cause":"px","images":[{"file":"window.png","status":"changed","ratio":0.021,"diff":"diff/SlashHit/r1/window.diff.png"}]},{"id":"KnightFalls","hash":"same","frames":[52,52],"first_frame":null,"cause":null,"images":[{"file":"window.png","status":"same","ratio":0,"diff":null}]}],"next_step":"look at diff/SlashHit/r1/window.diff.png"}
+{"schema_version":1,"command":"trial diff","ok":true,"a":"20261011-143200","b":"20261011-150512","recipes":[{"id":"SlashHit","hash":"same","frames":[46,46],"first_frame":14,"cause":"px","images":[{"file":"window.png","status":"changed","ratio":0.021,"diff":"diff/SlashHit/r1/window.diff.png"}]},{"id":"KnightFalls","hash":"same","frames":[52,52],"first_frame":null,"cause":null,"images":[{"file":"window.png","status":"same","ratio":0,"diff":null}]}],"next_step":"look at /Users/alex/orchard/.scion/runs/20261011-150512/diff/SlashHit/r1/window.diff.png"}
 ```
 
 ## Exit codes

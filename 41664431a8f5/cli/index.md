@@ -41,7 +41,7 @@ dotnet scion --help | --version
 | `diagnose` | | [diagnose](/scion/41664431a8f5/cli/diagnose/) |
 | `index`, `guard` | | [index, guard](/scion/41664431a8f5/cli/index-and-guard/) |
 | `gen` | | [gen](/scion/41664431a8f5/cli/gen/) |
-| `judge` | `list`, `show`, `new`, `vote`, `train`, `run` | [judge](/scion/41664431a8f5/cli/judge/) |
+| `judge` | `model pull`, `list`, `show`, `new`, `vote`, `train`, `run` | [judge](/scion/41664431a8f5/cli/judge/) |
 | `multiverse` | `run`, `show` | [multiverse](/scion/41664431a8f5/cli/multiverse/) |
 | `hunt`, `search` | `run` | [hunt, search](/scion/41664431a8f5/cli/hunt-and-search/) |
 | `mcp` | | [mcp](/scion/41664431a8f5/cli/mcp/) |
@@ -73,8 +73,9 @@ The CLI and the package must have the same version: a DLL injected into a build 
 ### Behavior every command shares
 
 - Commands that write accept `--dry-run` and are idempotent: running one twice changes nothing the second time.
-- Output is compact JSON (about 1.5 KB at most): long lists are cut with `"more": N`, and the full data goes to a
-  file (`summary.json`) whose path is in the envelope.
+- Output is compact JSON (about 1.5 KB at most). A long list is cut, and its last item is then one object
+  `{"more": N}` after the kept items (`"created":["scion.json", ..., {"more":14}]`), so parse each list item as either
+  its documented type or `{"more": N}`. The full data goes to a file (`summary.json`) whose path is in the envelope.
 - Arguments after `--` go to every player process; a flag also present in `player_args` replaces it.
 
 ## Options
@@ -100,11 +101,18 @@ Every command prints one envelope:
 |---|---|
 | `schema_version` | 1. |
 | `command` | The command as typed, without options (`trial run`). |
-| `ok` | True when the exit code is 0. |
+| `ok` | True when the exit code is 0 ([`ok` and `changed`](#ok-and-changed)). |
 | `next_step` | One line: what to do next. Always present. |
 | `warnings[]` | `{code, message}`; never change the exit code. |
 | `error` | Only on exit 2 and 3: `code`, `message`, `hint`, `did_you_mean`. |
 | command fields | Documented on each command's page and in its JSON Schema. |
+
+### `ok` and `changed`
+
+`ok` is `true` exactly when the exit code is 0. A `changed` verdict (like `within`, `px_changed`, `new` and `stale`)
+is a review signal, not a failure: `trial run` still exits 0 with `ok: true` and lists the id in `changed[]`. So
+exit 0 does not mean "nothing to look at": read `changed[]` and `runs.new` before you call a task done. Only failed
+recipes, checks, graft checks and specs exit 1 with `ok: false`. Other pages link here for this rule.
 
 ## Exit codes
 
@@ -122,7 +130,7 @@ then 0. See [Exit codes](/scion/41664431a8f5/reference/exit-codes/).
 
 | Code | Exit | Cause | Next action |
 |---|---|---|---|
-| `config_not_found` | 2 | No `scion.json` above the current folder. | `dotnet scion init`, or `cd` into the project. |
+| `config_not_found` | 3 | No `scion.json` above the current folder. | `dotnet scion init`, or `cd` into the project. |
 | `config_invalid` | 3 | `scion.json` does not match its schema. | Fix the key in the message. |
 | `unknown_command`, `unknown_option` | 2 | A typo. | Use `did_you_mean`. |
 | `build_not_found` | 3 | No test build found. | `dotnet scion build test`. |

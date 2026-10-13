@@ -51,8 +51,9 @@ probes, notes and logged errors. Most failures are explained here, without an im
 
 Open an image when `changed[].hash` is `same` (only pixels moved), when the verdict is `px_changed` or `within` and the
 task is visual, or when the task itself is about the look. `window.png` holds up to 12 consecutive frames around the
-impact, 3 columns, numbered with their game time and marks. Prefer `grid.png` from `trial show <Id> --grid` for a
-`changed` recipe: baseline, current and difference rows in one image.
+impact, 3 columns, numbered with their game time and marks. Prefer the grid image from `trial show <Id> --grid` for a
+`changed` recipe: `diff/<IdDir>/r<n>/<artifact>.grid.png`, with the baseline, the current frames and the difference
+in three columns.
 
 ### 4. Open context.png only if the window is not enough
 
@@ -121,7 +122,7 @@ asked in both orders.
 | `report.md` missing for a failed pair | The copy crashed: read `q<i>/player.log` (`player_crashed`). |
 | `window.png` missing | The recipe never called `MarkImpact` and had no cut; read `report.md` and the recipe. |
 | An image is blank or magenta | The `blank` or `magenta` check failed too; it is in `report.md`. |
-| `grid.png` missing | The recipe keeps no images (`Tolerance = null`); compare `window.png` of both runs with `trial diff`. |
+| `<artifact>.grid.png` missing | The recipe keeps no images (`Tolerance = null`); compare `window.png` of both runs with `trial diff`. |
 
 ## Examples
 
@@ -140,7 +141,8 @@ the rule code first.
 {"changed":[{"id":"SlashHit","vs_approved":"changed","hash":"same","image":"q0/SlashHit/r1/window.png","diff":"diff/SlashHit/r1/window.diff.png"}]}
 ```
 
-`hash: same`: the rules did not change. Open `grid.png` (`trial show SlashHit --grid`) to see the visual change and
+`hash: same`: the rules did not change. Open `diff/SlashHit/r1/window.grid.png` (`trial show SlashHit --grid`) to see
+the visual change and
 report it to the person.
 
 ## See also

@@ -394,7 +394,7 @@ dotnet scion trial diff 20261011-143200 20261011-150512 SlashHit
 
 <!-- validate: cli/trial-diff -->
 ```json
-{"schema_version":1,"command":"trial diff","ok":true,"a":"20261011-143200","b":"20261011-150512","recipes":[{"id":"SlashHit","hash":"same","frames":[46,48],"first_frame":14,"cause":"px","images":[{"file":"window.png","status":"changed","ratio":0.021,"diff":"diff/SlashHit/r1/window.diff.png"}]}],"next_step":"look at diff/SlashHit/r1/window.diff.png"}
+{"schema_version":1,"command":"trial diff","ok":true,"a":"20261011-143200","b":"20261011-150512","recipes":[{"id":"SlashHit","hash":"same","frames":[46,48],"first_frame":14,"cause":"px","images":[{"file":"window.png","status":"changed","ratio":0.021,"diff":"diff/SlashHit/r1/window.diff.png"}]}],"next_step":"look at /Users/alex/orchard/.scion/runs/20261011-150512/diff/SlashHit/r1/window.diff.png"}
 ```
 
 ### 3. Ask blind

@@ -32,7 +32,10 @@ static trial needs no adapter of its own.
 ```csharp
 using System.Collections;
 using System.Collections.Generic;
+using Orchard.Core;
+using Orchard.Runtime;
 using Scion.Trials;
+using UnityEngine;
 
 namespace Orchard.Trials
 {

@@ -46,14 +46,17 @@ namespace Orchard.Trials
 {
     public abstract class OrchardRecipe : TrialRecipe
     {
-        public string Attacker = "knight";
-        public string Defender = "skeleton";
+        public string Attacker = "knight";     // a UnitKind.Id
+        public string Defender = "skeleton";   // a UnitKind.Id
         public int DefenderHp = 20;
+        public int Defenders = 1;
         public int Distance = 1;
         public string Ability = "slash";
     }
 }
 ```
+
+These are the fields of the [Orchard sample](/scion/41664431a8f5/reference/orchard-sample/); your game has its own.
 
 ### 2. One recipe
 
@@ -81,18 +84,34 @@ namespace Orchard.Trials
 The adapter decides when the interesting part starts and ends:
 
 ```csharp
-session.BeginCut();                 // frames from here on are captured
-battle.Issue(Command.Attack(recipe.Ability, target));
-yield return session.WaitUntil(() => battle.Idle, "attack finished");
-yield return session.WaitSeconds(recipe.TailSeconds);
-session.EndCut();
+// Inside OrchardAdapter.Run(OrchardRecipe r, TrialSession s)
+s.BeginCut();                       // frames from here on are captured
+battle.Issue(Command.Ability(r.Ability, attacker: 0, target: r.Players));
+yield return s.WaitUntil(() => battle.Idle, "ability resolved");
+yield return s.WaitSeconds(r.TailSeconds);
+s.EndCut();
 ```
 
-The moment that matters is marked from a trials-only observer graft, so `window.png` centers on it:
+The moment that matters is marked from a trials-only observer graft, so `window.png` centers on it. It uses
+`TrialSession`, which exists only in test builds, so the whole graft sits inside `#if SCION_TRIALS`
+([Build modes](/scion/41664431a8f5/grafts/build-modes/)); without it the final build fails to compile:
 
 ```csharp
-[Before(typeof(HitPresenter), nameof(HitPresenter.Play), Observe = true)]
-public static void Before(HitPresenter presenter, HitEvent e) => TrialSession.Current?.MarkImpact();
+#if SCION_TRIALS
+using Orchard.Core;
+using Orchard.Presentation;
+using Scion;
+using Scion.Trials;
+
+namespace Orchard.Grafts
+{
+    public static class ImpactMark
+    {
+        [Before(typeof(HitPresenter), nameof(HitPresenter.Play), Observe = true)]
+        public static void Before(HitPresenter presenter, HitEvent e) => TrialSession.Current?.MarkImpact();
+    }
+}
+#endif
 ```
 
 ### 4. List and run it
@@ -157,14 +176,14 @@ They run only when named: `dotnet scion trial run KnightFallsSlow`.
 
 ## Examples
 
-### Three attackers
+### Three targets
 
 ```csharp
 public sealed class FireballArea : OrchardRecipe
 {
     public FireballArea()
     {
-        Attacker = "mage"; Ability = "fireball"; Distance = 4;
+        Attacker = "mage"; Ability = "fireball"; Distance = 4; Defenders = 3;
         Description = "A fireball hits three skeletons in an area.";
         Tags = new[] { "combat", "area" };
     }

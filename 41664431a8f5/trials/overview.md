@@ -61,7 +61,7 @@ virtual, so the same recipe gives the same frames on any machine.
 | `same` | Hash, frame count and images match the baseline. | 0 |
 | `within` | Images differ but inside the tolerance. | 0 |
 | `px_changed` | Hash and frames match; pixel hashes differ and the recipe compares no images. Informative. | 0 |
-| `changed` | Hash, frame count (beyond ±1) or images outside the tolerance differ. | 0 (it is a review signal, not a failure) |
+| `changed` | Hash, frame count (beyond ±1) or images outside the tolerance differ. | 0 with `ok: true` and `changed[]` filled: a review signal, not a failure ([`ok` and `changed`](/scion/41664431a8f5/cli/#ok-and-changed)) |
 | `new` | No `baseline.json` for this id. | 0 |
 | `stale` | The baseline is for another platform, fps, Unity or player args; images are suspended, the hash still counts. | 0 |
 

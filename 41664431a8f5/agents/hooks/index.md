@@ -76,15 +76,16 @@ command passes untouched. For an approval it runs the approve as `--dry-run` and
 | The approval would replace | Decision | Effect |
 |---|---|---|
 | Only `new` recipes | allow | The command runs. |
-| Any `changed`, `stale` or `px_changed` recipe | ask | Claude Code asks the person, showing the reason. |
+| Any `changed`, `stale`, `within` or `px_changed` recipe | deny | The command does not run. The reason gives the person the review command and the approve command to run at their own terminal. |
 | A run made with `--grafts`, or a refused recipe | deny | The command does not run; the reason says why. |
 
 ```json
-{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"ask","permissionDecisionReason":"This approves SlashHit (changed: image) and replaces a baseline a person approved. Review: dotnet scion trial show SlashHit --grid"}}
+{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"SlashHit is changed (image) and replaces a baseline a person approved; only a person approves it, at a terminal. Review: dotnet scion trial show SlashHit --grid. Then the person runs: dotnet scion trial approve SlashHit --reason \"...\""}}
 ```
 
-The CLI itself also refuses such approvals without a terminal (`human_required`); the guard explains it before the
-command runs.
+The guard denies instead of asking because asking could not help: an agent's shell has no terminal, so the CLI would
+refuse the approval anyway (`human_required`, exit 2). The person runs the command from the reason at their own
+terminal.
 
 ## PreToolUse Edit and Write: baseline guard
 

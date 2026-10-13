@@ -130,7 +130,8 @@ Comma-separated tags. Only recipes with any of them. CLI: `--tag`.
 
 ### -scion-mode
 
-A mode name from `[assembly: TrialModes]`. `name=WxH` modes set the capture size; others go to `ITrialModeAware`.
+A mode name. `name=WxH` modes from `[assembly: TrialModes]` set the capture size; any other name, declared or not,
+keeps the default size and goes to `ITrialModeAware`.
 CLI: `--mode`.
 
 ### -scion-seeds

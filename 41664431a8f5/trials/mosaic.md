@@ -61,7 +61,7 @@ public sealed class OrchardAdapter : TrialAdapter<OrchardRecipe>, IMosaicAdapter
     protected override IEnumerator Run(OrchardRecipe r, TrialSession s)
     {
         var arena = s.Arena;                     // 0..K-1
-        var battle = Battle.Start(setup, root: Arenas.Root(arena));
+        var battle = Battle.Start(SetupFor(r, s), root: Arenas.Root(arena));
         // ... the same as a single run, through battle and arena-local objects ...
     }
 }

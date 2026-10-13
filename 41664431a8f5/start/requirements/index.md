@@ -84,7 +84,8 @@ capture at 1280x720 and 30 fps.
 The Judge runs on the CPU, or on the GPU through ONNX Runtime when one is available (CoreML on macOS, DirectML on
 Windows, CUDA on Linux). Computing embeddings for 10,000 images takes about 5 to 10 minutes on an M5; training a head
 takes seconds; judging one image takes 10 to 50 ms. Eye models take 0.4 to 1.6 GB of disk each in
-`~/.scion/models/`. See [Models and licenses](/scion/41664431a8f5/judge/models/).
+the model cache, `~/.cache/scion/models/`; `dotnet scion judge model pull` downloads them. See
+[Models and licenses](/scion/41664431a8f5/judge/models/).
 
 ## See also
 
