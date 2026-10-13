@@ -124,6 +124,6 @@ protected override void Checks(TrialChecks c) => c.Marked("IMPACT").ProbeIs("sha
 
 ## See also
 
-- [Fx API](/scion/reference/api/fx/)
-- [Test grafts without Unity](/scion/grafts/testing/)
-- [Telemetry, probes and sensors](/scion/evaluation/telemetry/)
+- [Fx API](/scion/41664431a8f5/reference/api/fx/)
+- [Test grafts without Unity](/scion/41664431a8f5/grafts/testing/)
+- [Telemetry, probes and sensors](/scion/41664431a8f5/evaluation/telemetry/)

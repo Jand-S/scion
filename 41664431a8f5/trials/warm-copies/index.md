@@ -80,7 +80,7 @@ dotnet scion trial serve --stop
 
 Each copy writes `control.json` in its output folder and the same object in `~/.scion/live/<pid>.json`, mode 0600,
 after the channel listens. The CLI finds copies through the live folder and deletes files of dead processes. The
-token in the file authenticates every request ([control.json and live files](/scion/reference/files/control-json/)).
+token in the file authenticates every request ([control.json and live files](/scion/41664431a8f5/reference/files/control-json/)).
 
 ### Lifecycle of a copy
 
@@ -119,7 +119,7 @@ dotnet scion trial serve --format json | jq '.copies[] | {pid, state}'
 
 ## See also
 
-- [trial serve](/scion/cli/trial-serve/)
-- [Live injection](/scion/grafts/injection/)
-- [Control protocol](/scion/reference/control-protocol/)
-- [control.json and live files](/scion/reference/files/control-json/)
+- [trial serve](/scion/41664431a8f5/cli/trial-serve/)
+- [Live injection](/scion/41664431a8f5/grafts/injection/)
+- [Control protocol](/scion/41664431a8f5/reference/control-protocol/)
+- [control.json and live files](/scion/41664431a8f5/reference/files/control-json/)

@@ -113,6 +113,6 @@ dotnet scion multiverse run knight-dies-to-crit --at-turn 2 --variants base,heav
 
 ## See also
 
-- [Parallel copies](/scion/trials/parallel/)
-- [Find non-determinism](/scion/determinism/diagnose/)
-- [The multiverse](/scion/explore/multiverse/)
+- [Parallel copies](/scion/41664431a8f5/trials/parallel/)
+- [Find non-determinism](/scion/41664431a8f5/determinism/diagnose/)
+- [The multiverse](/scion/41664431a8f5/explore/multiverse/)

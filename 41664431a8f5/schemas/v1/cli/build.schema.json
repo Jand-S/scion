@@ -1,11 +1,11 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://jand-s.github.io/scion/schemas/v1/cli/build.schema.json",
+  "$id": "https://jand-s.github.io/scion/41664431a8f5/schemas/v1/cli/build.schema.json",
   "title": "build output",
   "description": "Output of dotnet scion build test and build final.",
   "allOf": [
     {
-      "$ref": "https://jand-s.github.io/scion/schemas/v1/envelope.schema.json"
+      "$ref": "https://jand-s.github.io/scion/41664431a8f5/schemas/v1/envelope.schema.json"
     },
     {
       "type": "object",
@@ -116,7 +116,7 @@
                 "additionalProperties": false
               },
               {
-                "$ref": "https://jand-s.github.io/scion/schemas/v1/envelope.schema.json#/$defs/more"
+                "$ref": "https://jand-s.github.io/scion/41664431a8f5/schemas/v1/envelope.schema.json#/$defs/more"
               }
             ]
           },

@@ -99,6 +99,6 @@ dotnet scion search run StrongerCrits --tunables CritShake.Strength,CritShake.St
 
 ## See also
 
-- [Rare-moment hunter](/scion/explore/rare-moments/)
-- [Guided search](/scion/explore/guided-search/)
-- [Turn any match into a recipe](/scion/trials/captured-matches/)
+- [Rare-moment hunter](/scion/41664431a8f5/explore/rare-moments/)
+- [Guided search](/scion/41664431a8f5/explore/guided-search/)
+- [Turn any match into a recipe](/scion/41664431a8f5/trials/captured-matches/)

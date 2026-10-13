@@ -17,7 +17,7 @@ related:
 
 Errors appear in `error.code` of the CLI envelope and of the player's `run.json` (exit codes 2 and 3), or in the
 `error.code` of a control-protocol response. Warnings appear in `warnings[].code` and never change the exit code.
-Diagnostics (`SCNxxx`) are listed separately in [Diagnostics](/scion/reference/diagnostics/). Each entry gives the
+Diagnostics (`SCNxxx`) are listed separately in [Diagnostics](/scion/41664431a8f5/reference/diagnostics/). Each entry gives the
 exit code, where it comes from, the cause and what to do.
 
 ## CLI errors
@@ -62,7 +62,7 @@ Exit 2, CLI. No `scion.json` in the current folder or above. Run `dotnet scion i
 ### config_invalid
 
 Exit 3, CLI. `scion.json`, `scion.local.json` or `ScionSettings.json` does not match its schema. The message names the
-key; validate with the [JSON Schemas](/scion/reference/schemas/).
+key; validate with the [JSON Schemas](/scion/41664431a8f5/reference/schemas/).
 
 ### build_not_found
 
@@ -128,7 +128,7 @@ Exit 3, CLI. `--warm`, `graft inject` or `restore` found no live copy of this bu
 ### no_simulation
 
 Exit 3, CLI. A command needs the rules as an `ISimulation` (multiverse, balance specs, hunt, metamorphic) and none is
-registered. See [Core API](/scion/reference/api/core/).
+registered. See [Core API](/scion/41664431a8f5/reference/api/core/).
 
 ### not_forkable
 
@@ -245,12 +245,12 @@ A `result.json` is missing or invalid. The copy probably crashed; read its log.
 
 ### frame_jitter
 
-Frame counts differ by one between rounds. Usually the Netcode tick; see [Netcode clock](/scion/determinism/netclock/).
+Frame counts differ by one between rounds. Usually the Netcode tick; see [Netcode clock](/scion/41664431a8f5/determinism/netclock/).
 
 ### px_unstable
 
 Pixel hashes vary between rounds of this run, so `px_changed` is noise. See
-[Particles, animators, UI and physics](/scion/determinism/control/).
+[Particles, animators, UI and physics](/scion/41664431a8f5/determinism/control/).
 
 ### baseline_unreadable
 
@@ -282,7 +282,7 @@ The CLI and the package have different versions. Install the same version of bot
 
 ## See also
 
-- [Exit codes](/scion/reference/exit-codes/)
-- [What to do next](/scion/agents/next-action/)
-- [Diagnostics](/scion/reference/diagnostics/)
-- [Control protocol](/scion/reference/control-protocol/)
+- [Exit codes](/scion/41664431a8f5/reference/exit-codes/)
+- [What to do next](/scion/41664431a8f5/agents/next-action/)
+- [Diagnostics](/scion/41664431a8f5/reference/diagnostics/)
+- [Control protocol](/scion/41664431a8f5/reference/control-protocol/)

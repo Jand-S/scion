@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://jand-s.github.io/scion/schemas/v1/result.schema.json",
+  "$id": "https://jand-s.github.io/scion/41664431a8f5/schemas/v1/result.schema.json",
   "title": "result.json",
   "description": "The verdict of one recipe in one round: read it first. Contract between the player, the CLI and the Judge.",
   "type": "object",

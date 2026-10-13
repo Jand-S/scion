@@ -15,7 +15,7 @@ related:
 
 # SCN001-SCN005
 
-These analyzers enforce the [Scion Standard](/scion/standard/overview/). SCN001, SCN002, SCN004 and SCN005 apply only
+These analyzers enforce the [Scion Standard](/scion/41664431a8f5/standard/overview/). SCN001, SCN002, SCN004 and SCN005 apply only
 to rule code (the assemblies in `analyzers.rule_assemblies` of `ScionSettings.json`); SCN003 applies to graft code.
 With no `analyzers` section they report nothing.
 
@@ -117,7 +117,7 @@ a range.`
 
 ## See also
 
-- [Rules R1-R8](/scion/standard/rules/)
-- [Enforcement](/scion/standard/enforcement/)
-- [Grafts are visual only](/scion/grafts/visual-only/)
-- [Diagnostics](/scion/reference/diagnostics/)
+- [Rules R1-R8](/scion/41664431a8f5/standard/rules/)
+- [Enforcement](/scion/41664431a8f5/standard/enforcement/)
+- [Grafts are visual only](/scion/41664431a8f5/grafts/visual-only/)
+- [Diagnostics](/scion/41664431a8f5/reference/diagnostics/)

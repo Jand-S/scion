@@ -97,8 +97,8 @@ every suppression with its justification.
 
 ## See also
 
-- [SCN001-SCN005](/scion/reference/diagnostics/standard/)
-- [SCN101-SCN114](/scion/reference/diagnostics/grafts/)
-- [SCN120-SCN131](/scion/reference/diagnostics/builds-and-injection/)
-- [SCN201-SCN203](/scion/reference/diagnostics/trials/)
-- [SCN301-SCN307](/scion/reference/diagnostics/determinism/)
+- [SCN001-SCN005](/scion/41664431a8f5/reference/diagnostics/standard/)
+- [SCN101-SCN114](/scion/41664431a8f5/reference/diagnostics/grafts/)
+- [SCN120-SCN131](/scion/41664431a8f5/reference/diagnostics/builds-and-injection/)
+- [SCN201-SCN203](/scion/41664431a8f5/reference/diagnostics/trials/)
+- [SCN301-SCN307](/scion/41664431a8f5/reference/diagnostics/determinism/)

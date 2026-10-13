@@ -97,6 +97,6 @@ dotnet scion trial approve SlashHit --reason "crit shake is stronger"
 
 ## See also
 
-- [Baselines and approval](/scion/trials/baselines/)
-- [Hooks](/scion/agents/hooks/)
-- [baseline.json and platform.json](/scion/reference/files/baselines/)
+- [Baselines and approval](/scion/41664431a8f5/trials/baselines/)
+- [Hooks](/scion/41664431a8f5/agents/hooks/)
+- [baseline.json and platform.json](/scion/41664431a8f5/reference/files/baselines/)

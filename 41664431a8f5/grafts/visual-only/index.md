@@ -43,10 +43,10 @@ Two analyzers read `ProjectSettings/ScionSettings.json`:
 {"schema_version":1,"analyzers":{"rule_assemblies":["Orchard.Core"],"rule_types":["Unity.Netcode.*"],"graft_paths":["Assets/Orchard/Grafts/","../scion/grafts/"]}}
 ```
 
-- [SCN003](/scion/reference/diagnostics/standard/#scn003) (error): inside graft code, any write to a field, property,
+- [SCN003](/scion/41664431a8f5/reference/diagnostics/standard/#scn003) (error): inside graft code, any write to a field, property,
   indexer, event or array element of a rule type, and any use of an internal member of a rule type. A rule type is
   any type in `rule_assemblies`, any type matched by `rule_types`, and any class derived from one.
-- [SCN110](/scion/reference/diagnostics/grafts/#scn110) (error): game code that refers to graft code. Nothing may
+- [SCN110](/scion/41664431a8f5/reference/diagnostics/grafts/#scn110) (error): game code that refers to graft code. Nothing may
   depend on a graft, so deleting the grafts folder leaves a game that compiles and plays the same.
 
 ```csharp
@@ -68,7 +68,7 @@ dotnet scion trial run --rounds 2 --grafts .scion/grafts/ScionGrafts_51c2.dll
 ```
 
 Any `hash: changed` in the second run means the graft touched a rule. The multiverse does the same comparison per turn
-and names the first field that changed ([The multiverse](/scion/explore/multiverse/)).
+and names the first field that changed ([The multiverse](/scion/41664431a8f5/explore/multiverse/)).
 
 ### Rules change in the core
 
@@ -89,7 +89,7 @@ namespace Orchard.Core
 
 The core registers it explicitly (`damage.Add(new BackstabBonus())`), so the rule set is visible in code, enters the
 lobby hash and runs the same in Unity, in the simulator and on every peer. See
-[Core API](/scion/reference/api/core/).
+[Core API](/scion/41664431a8f5/reference/api/core/).
 
 ## Key terms
 
@@ -108,11 +108,11 @@ lobby hash and runs the same in Unity, in the simulator and on every peer. See
   outside it).
 - After editing `ScionSettings.json`, recompile the affected assembly; Unity does not track the file.
 - To reach audio, camera or HUD from a graft, call the `Fx` facade instead of the game's systems
-  ([Effects with Fx](/scion/grafts/fx/)).
+  ([Effects with Fx](/scion/41664431a8f5/grafts/fx/)).
 
 ## See also
 
-- [Rules R1-R8](/scion/standard/rules/)
-- [Core API](/scion/reference/api/core/)
-- [Standard diagnostics](/scion/reference/diagnostics/standard/)
-- [Effects with Fx](/scion/grafts/fx/)
+- [Rules R1-R8](/scion/41664431a8f5/standard/rules/)
+- [Core API](/scion/41664431a8f5/reference/api/core/)
+- [Standard diagnostics](/scion/41664431a8f5/reference/diagnostics/standard/)
+- [Effects with Fx](/scion/41664431a8f5/grafts/fx/)

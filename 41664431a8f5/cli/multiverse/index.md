@@ -90,6 +90,6 @@ dotnet scion multiverse run knight-dies-to-crit --at-turn 2 --variants base,heav
 
 ## See also
 
-- [The multiverse](/scion/explore/multiverse/)
-- [Turn any match into a recipe](/scion/trials/captured-matches/)
-- [Mosaic](/scion/trials/mosaic/)
+- [The multiverse](/scion/41664431a8f5/explore/multiverse/)
+- [Turn any match into a recipe](/scion/41664431a8f5/trials/captured-matches/)
+- [Mosaic](/scion/41664431a8f5/trials/mosaic/)

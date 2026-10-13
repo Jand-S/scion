@@ -29,7 +29,7 @@ dotnet scion anchor show <id> [--build <path>]
 
 ## Description
 
-Eligibility follows the weaver's rules ([Anchors](/scion/grafts/anchors/)): methods that cannot be anchors are left
+Eligibility follows the weaver's rules ([Anchors](/scion/41664431a8f5/grafts/anchors/)): methods that cannot be anchors are left
 out. Each eligible method appears twice, once per side (`B__` before, `A__` after).
 
 ## anchor list
@@ -58,7 +58,7 @@ complete graft method that compiles against the anchor, with `ref Call<T>` when 
 ```
 
 `anchor list` returns `total` and `anchors[]` with `id`, `anchor`, `target`, `signature`, `slot`, `doc` and
-`promoted` ([Anchors](/scion/grafts/anchors/) has an example).
+`promoted` ([Anchors](/scion/41664431a8f5/grafts/anchors/) has an example).
 
 ## Exit codes
 
@@ -92,6 +92,6 @@ dotnet scion anchor show Orchard.Presentation.Hud.ShowTurn
 
 ## See also
 
-- [Anchors](/scion/grafts/anchors/)
-- [graft](/scion/cli/graft/)
-- [Grafts API](/scion/reference/api/grafts/)
+- [Anchors](/scion/41664431a8f5/grafts/anchors/)
+- [graft](/scion/41664431a8f5/cli/graft/)
+- [Grafts API](/scion/41664431a8f5/reference/api/grafts/)

@@ -84,5 +84,5 @@ dotnet scion bisect FireballArea --good 3f2a0b1 --on check:probe:damage
 
 ## See also
 
-- [Bisect a regression](/scion/explore/bisect/)
-- [Exit codes](/scion/reference/exit-codes/)
+- [Bisect a regression](/scion/41664431a8f5/explore/bisect/)
+- [Exit codes](/scion/41664431a8f5/reference/exit-codes/)

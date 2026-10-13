@@ -108,7 +108,7 @@ public static void After(HitPresenter presenter, HitEvent e) { }
 async, RPCs, structs and out parameters have no anchor).`
 
 **Cause.** The target is a constructor, abstract, generic, in a struct, an iterator, `async`, a Netcode RPC, has an
-`out` or pointer parameter, returns by reference, or is otherwise ineligible ([Anchors](/scion/grafts/anchors/)).
+`out` or pointer parameter, returns by reference, or is otherwise ineligible ([Anchors](/scion/41664431a8f5/grafts/anchors/)).
 
 **Fix.** Target the plain method the iterator, `async` method or RPC calls.
 
@@ -241,7 +241,7 @@ Scion.Runtime under SCION_TRIALS, or fix TrialsReads in ScionWeaver.cs.`
 
 ## See also
 
-- [Write a graft](/scion/grafts/write/)
-- [Call and Call\<T\>](/scion/grafts/call-context/)
-- [Anchors](/scion/grafts/anchors/)
-- [Diagnostics](/scion/reference/diagnostics/)
+- [Write a graft](/scion/41664431a8f5/grafts/write/)
+- [Call and Call\<T\>](/scion/41664431a8f5/grafts/call-context/)
+- [Anchors](/scion/41664431a8f5/grafts/anchors/)
+- [Diagnostics](/scion/41664431a8f5/reference/diagnostics/)

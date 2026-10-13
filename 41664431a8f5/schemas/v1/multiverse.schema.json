@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://jand-s.github.io/scion/schemas/v1/multiverse.schema.json",
+  "$id": "https://jand-s.github.io/scion/41664431a8f5/schemas/v1/multiverse.schema.json",
   "title": "multiverse.json",
   "description": "The result of multiverse run: where each variant of a forked match diverged from the base.",
   "type": "object",

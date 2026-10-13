@@ -24,7 +24,7 @@ both orders. The same rules apply when an agent, the judge or a person compares.
 
 - Use `trial show --grid` to compare a run with its baseline.
 - Use `trial diff` to compare two runs (before and after a graft, two presets).
-- Use `judge vote` to collect blind duels from people ([Train a head](/scion/judge/training/)).
+- Use `judge vote` to collect blind duels from people ([Train a head](/scion/41664431a8f5/judge/training/)).
 
 ## Steps
 
@@ -100,6 +100,6 @@ dotnet scion trial show SlashHit --grid
 
 ## See also
 
-- [Image comparison](/scion/trials/image-comparison/)
-- [trial diff](/scion/cli/trial-diff/)
-- [Train a head](/scion/judge/training/)
+- [Image comparison](/scion/41664431a8f5/trials/image-comparison/)
+- [trial diff](/scion/41664431a8f5/cli/trial-diff/)
+- [Train a head](/scion/41664431a8f5/judge/training/)

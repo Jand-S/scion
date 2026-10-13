@@ -141,7 +141,7 @@ Arguments after `--` go to every process of the group and replace the same flag 
 
 ## See also
 
-- [Parallel copies](/scion/trials/parallel/)
-- [Configuration](/scion/reference/configuration/)
-- [Player command line](/scion/reference/player-flags/)
-- [Netcode clock](/scion/determinism/netclock/)
+- [Parallel copies](/scion/41664431a8f5/trials/parallel/)
+- [Configuration](/scion/41664431a8f5/reference/configuration/)
+- [Player command line](/scion/41664431a8f5/reference/player-flags/)
+- [Netcode clock](/scion/41664431a8f5/determinism/netclock/)

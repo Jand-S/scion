@@ -120,6 +120,6 @@ dotnet scion new --genre tactics --name Orchard --players 4
 
 ## See also
 
-- [Start a new project](/scion/start/new-project/)
-- [Add Scion to an existing game](/scion/start/existing-project/)
-- [Enforcement](/scion/standard/enforcement/)
+- [Start a new project](/scion/41664431a8f5/start/new-project/)
+- [Add Scion to an existing game](/scion/41664431a8f5/start/existing-project/)
+- [Enforcement](/scion/41664431a8f5/standard/enforcement/)

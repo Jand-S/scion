@@ -150,8 +150,8 @@ dotnet scion trial diff 20261011-143200 20261011-143512 SlashHit
 
 ## See also
 
-- [graft (CLI)](/scion/cli/graft/)
-- [Warm copies](/scion/trials/warm-copies/)
-- [Injection API](/scion/reference/api/injection/)
-- [InjectReport JSON](/scion/reference/files/inject-report/)
-- [Control protocol](/scion/reference/control-protocol/)
+- [graft (CLI)](/scion/41664431a8f5/cli/graft/)
+- [Warm copies](/scion/41664431a8f5/trials/warm-copies/)
+- [Injection API](/scion/41664431a8f5/reference/api/injection/)
+- [InjectReport JSON](/scion/41664431a8f5/reference/files/inject-report/)
+- [Control protocol](/scion/41664431a8f5/reference/control-protocol/)

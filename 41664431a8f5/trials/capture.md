@@ -63,7 +63,7 @@ dotnet scion trial run SlashHit --frames --size 1920x1080 --sound
 | `sheet.png` | Every item of a static trial, labeled. | Longer side at most 2000 px |
 | `frames/NNNN.png` | Every frame of the cut (`--frames`). | Capture size |
 | `frames/NNNN.raw` + `frames/raw.json` | The exact bytes hashed per frame (`-scion-raw`). | Capture size |
-| motion pack | `motion-diff.png`, `tracks.png`, `idmask/`, `metrics.json`, `preview.gif` (`--motion`) | See [The motion pack](/scion/evaluation/motion-pack/) |
+| motion pack | `motion-diff.png`, `tracks.png`, `idmask/`, `metrics.json`, `preview.gif` (`--motion`) | See [The motion pack](/scion/41664431a8f5/evaluation/motion-pack/) |
 
 Sheets downscale by the smallest integer that keeps the longer side at or under 2000 px: 12 frames of 1280x720 in
 3 columns (3840x2880) downscale by 2. Labels name the frame number and its marks.
@@ -120,7 +120,7 @@ ffmpeg -framerate 30 -i .scion/runs/20261011-143200/q0/SlashHit/r1/frames/%04d.p
 
 ## See also
 
-- [The run folder](/scion/reference/files/run-folder/)
-- [The motion pack](/scion/evaluation/motion-pack/)
-- [Raw frames](/scion/reference/files/raw-frames/)
-- [Baselines and approval](/scion/trials/baselines/)
+- [The run folder](/scion/41664431a8f5/reference/files/run-folder/)
+- [The motion pack](/scion/41664431a8f5/evaluation/motion-pack/)
+- [Raw frames](/scion/41664431a8f5/reference/files/raw-frames/)
+- [Baselines and approval](/scion/41664431a8f5/trials/baselines/)

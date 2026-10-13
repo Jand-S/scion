@@ -26,7 +26,7 @@ SCN005 reports a numeric tunable without a range.
 
 - Use `[Tunable]` on every number in a graft or the core that someone will tune by eye or by search.
 - Use presets to keep named feels (`heavy`, `snappy`) and compare them in trials and judge duels.
-- Use guided search when the space is too big to tune by hand ([Guided search](/scion/explore/guided-search/)).
+- Use guided search when the space is too big to tune by hand ([Guided search](/scion/41664431a8f5/explore/guided-search/)).
 
 ## Steps
 
@@ -111,7 +111,7 @@ dotnet scion gen --list tunables
 ```
 
 prints every tunable with its type, range, default and doc, and `scion gen` writes them into
-`scion.manifest.json` ([gen](/scion/cli/gen/)).
+`scion.manifest.json` ([gen](/scion/41664431a8f5/cli/gen/)).
 
 ## Errors
 
@@ -144,7 +144,7 @@ dotnet scion trial run SlashHit --variants base,heavy,snappy --mosaic 3
 
 ## See also
 
-- [Core API](/scion/reference/api/core/)
-- [Taste heads and feel presets](/scion/judge/presets/)
-- [Guided search](/scion/explore/guided-search/)
-- [gen](/scion/cli/gen/)
+- [Core API](/scion/41664431a8f5/reference/api/core/)
+- [Taste heads and feel presets](/scion/41664431a8f5/judge/presets/)
+- [Guided search](/scion/41664431a8f5/explore/guided-search/)
+- [gen](/scion/41664431a8f5/cli/gen/)

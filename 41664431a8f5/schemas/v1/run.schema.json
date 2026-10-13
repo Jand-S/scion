@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://jand-s.github.io/scion/schemas/v1/run.schema.json",
+  "$id": "https://jand-s.github.io/scion/41664431a8f5/schemas/v1/run.schema.json",
   "title": "run.json",
   "description": "What one player process ran, on what, and how it ended. Written at the start and rewritten at the end.",
   "type": "object",

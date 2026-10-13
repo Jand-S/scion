@@ -130,7 +130,7 @@ dotnet scion judge new hit_weight --question scion/judge/questions/hit_weight.js
 
 ## See also
 
-- [Questions and answers](/scion/judge/questions/)
-- [judge (CLI)](/scion/cli/judge/)
-- [Judge data files](/scion/reference/files/judge-data/)
-- [Judge motion](/scion/judge/motion/)
+- [Questions and answers](/scion/41664431a8f5/judge/questions/)
+- [judge (CLI)](/scion/41664431a8f5/cli/judge/)
+- [Judge data files](/scion/41664431a8f5/reference/files/judge-data/)
+- [Judge motion](/scion/41664431a8f5/judge/motion/)

@@ -62,7 +62,7 @@ A recipe that fails (timeout, `Fail`, a check, an error in the log, a graft that
 ### The adapter is the only game-specific code
 
 Everything above is generic. The game writes recipes (data) and one or more adapters (how to load a scene, start a
-battle, issue a command, read a state hash). The more the game follows the [Scion Standard](/scion/standard/overview/),
+battle, issue a command, read a state hash). The more the game follows the [Scion Standard](/scion/41664431a8f5/standard/overview/),
 the thinner the adapter.
 
 ## Key terms
@@ -83,7 +83,7 @@ the thinner the adapter.
 ## Guarantees and limits
 
 - The same build, recipe and seed give the same state hash on every machine and every round; frame counts may differ
-  by one until the Netcode clock is virtual ([Netcode clock](/scion/determinism/netclock/)).
+  by one until the Netcode clock is virtual ([Netcode clock](/scion/41664431a8f5/determinism/netclock/)).
 - Copies never write into each other's folders; the CLI never writes inside a copy's folder.
 - Images are compared per platform (OS, graphics API, size, capture); the hash is compared everywhere.
 - A copy that makes no progress for 120 seconds of real time is ended (`watchdog`, exit 3).
@@ -91,11 +91,11 @@ the thinner the adapter.
 
 ## See also
 
-- [Quickstart](/scion/start/quickstart/)
-- [Write a recipe](/scion/trials/recipes/)
-- [Write an adapter](/scion/trials/adapters/)
-- [Baselines and approval](/scion/trials/baselines/)
-- [trial run](/scion/cli/trial-run/)
+- [Quickstart](/scion/41664431a8f5/start/quickstart/)
+- [Write a recipe](/scion/41664431a8f5/trials/recipes/)
+- [Write an adapter](/scion/41664431a8f5/trials/adapters/)
+- [Baselines and approval](/scion/41664431a8f5/trials/baselines/)
+- [trial run](/scion/41664431a8f5/cli/trial-run/)
 
 ---
 
@@ -120,7 +120,7 @@ guide covers the members (`Name`, `Id`, `Variant`, `Tags`, `Description`, `Seed`
 
 - An assembly for trials code with `defineConstraints: ["SCION_TRIALS"]`, so it only compiles into test builds
   (`Orchard.Trials`), or `#if SCION_TRIALS` around the code.
-- An adapter for the recipe's base type ([Write an adapter](/scion/trials/adapters/)).
+- An adapter for the recipe's base type ([Write an adapter](/scion/41664431a8f5/trials/adapters/)).
 
 ## Steps
 
@@ -205,13 +205,13 @@ dotnet scion trial run SlashHit --rounds 2
 | `Fps` | `int`, protected set | 30 | Capture rate; game time advances exactly `1/Fps` per frame. |
 | `TailSeconds` | `float`, protected set | 0.5 | Game seconds to keep capturing after the action; the adapter uses it. |
 | `TimeoutSeconds` | `float`, protected set | 30 | Limit for `Run`, in game seconds. |
-| `Players` | `int`, protected set | 1 | 1 to 4; co-op recipes run in groups ([Co-op trials](/scion/trials/coop/)). |
+| `Players` | `int`, protected set | 1 | 1 to 4; co-op recipes run in groups ([Co-op trials](/scion/41664431a8f5/trials/coop/)). |
 | `Explicit` | `bool`, protected set | `false` | Runs only when a pattern names its exact `Id` or `Name`. |
-| `Control` | `DeterminismControl`, protected set | `All` | What the session makes deterministic ([Particles, animators, UI and physics](/scion/determinism/control/)). |
-| `Tolerance` | `ImageTolerance`, protected set | `ImageTolerance.Default` | Image comparison; `null` compares no images ([Image comparison](/scion/trials/image-comparison/)). |
-| `Checks(TrialChecks c)` | protected virtual | none | Declares checks ([Checks](/scion/trials/checks/)). |
+| `Control` | `DeterminismControl`, protected set | `All` | What the session makes deterministic ([Particles, animators, UI and physics](/scion/41664431a8f5/determinism/control/)). |
+| `Tolerance` | `ImageTolerance`, protected set | `ImageTolerance.Default` | Image comparison; `null` compares no images ([Image comparison](/scion/41664431a8f5/trials/image-comparison/)). |
+| `Checks(TrialChecks c)` | protected virtual | none | Declares checks ([Checks](/scion/41664431a8f5/trials/checks/)). |
 | `Setup()` | protected virtual | none | Runs after variant arguments are applied. |
-| `Variants()` | protected virtual | `null` | Yields `TrialArgs`, one per variant ([Variants, modes and seeds](/scion/trials/variants/)). |
+| `Variants()` | protected virtual | `null` | Yields `TrialArgs`, one per variant ([Variants, modes and seeds](/scion/41664431a8f5/trials/variants/)). |
 | `Mask(artifact, rect, why)` | protected | | A region image comparison ignores, in normalized coordinates. |
 
 `Seed` is per recipe; `TrialSession.RunSeed` (`--seed`) is per run, and the adapter maps it to the game's world
@@ -275,10 +275,10 @@ public sealed class KnightFalls : OrchardRecipe
 
 ## See also
 
-- [Write an adapter](/scion/trials/adapters/)
-- [TrialSession](/scion/trials/session/)
-- [Checks](/scion/trials/checks/)
-- [Recipes API](/scion/reference/api/recipes/)
+- [Write an adapter](/scion/41664431a8f5/trials/adapters/)
+- [TrialSession](/scion/41664431a8f5/trials/session/)
+- [Checks](/scion/41664431a8f5/trials/checks/)
+- [Recipes API](/scion/41664431a8f5/reference/api/recipes/)
 
 ---
 
@@ -296,7 +296,7 @@ picks its adapter, the coroutine rules, and the reset and seeding every adapter 
 - Write one adapter per family of recipes that start the same way: battles, HUD screens, menus.
 - Use `ITrialAdapter` directly only when the choice depends on something other than the recipe's type.
 - For screens and items that need no action, derive recipes from `StaticTrial<TItem>` and skip the adapter
-  entirely ([Static trials](/scion/trials/static-trials/)).
+  entirely ([Static trials](/scion/41664431a8f5/trials/static-trials/)).
 
 ## Steps
 
@@ -450,10 +450,10 @@ var battle = Battle.Start(setup with { MapSeed = s.RunSeed * 7919 + r.Seed });
 
 ## See also
 
-- [Write a recipe](/scion/trials/recipes/)
-- [TrialSession](/scion/trials/session/)
-- [Adapters API](/scion/reference/api/adapters/)
-- [SCN201-SCN203](/scion/reference/diagnostics/trials/)
+- [Write a recipe](/scion/41664431a8f5/trials/recipes/)
+- [TrialSession](/scion/41664431a8f5/trials/session/)
+- [Adapters API](/scion/41664431a8f5/reference/api/adapters/)
+- [SCN201-SCN203](/scion/41664431a8f5/reference/diagnostics/trials/)
 
 ---
 
@@ -523,7 +523,7 @@ IEnumerator RunQueue(string only, int rounds, string outDir, Action<int> done = 
 Plays another queue in the same process without restarting the game; adapters already prepared skip `Prepare`.
 `only` is a comma-separated pattern list (null = every non-`Explicit` recipe); `outDir` gets its own `run.json`,
 `results.tsv` and recipe folders. `done` receives the exit code. Warm copies run every queue this way (op `run` of
-the [control protocol](/scion/reference/control-protocol/)). Throws `InvalidOperationException` when a queue is
+the [control protocol](/scion/41664431a8f5/reference/control-protocol/)). Throws `InvalidOperationException` when a queue is
 already playing.
 
 ## Order of one recipe
@@ -536,10 +536,10 @@ already playing.
 
 ## See also
 
-- [Write an adapter](/scion/trials/adapters/)
-- [Checks](/scion/trials/checks/)
-- [Session API](/scion/reference/api/session/)
-- [Telemetry, probes and sensors](/scion/evaluation/telemetry/)
+- [Write an adapter](/scion/41664431a8f5/trials/adapters/)
+- [Checks](/scion/41664431a8f5/trials/checks/)
+- [Session API](/scion/41664431a8f5/reference/api/session/)
+- [Telemetry, probes and sensors](/scion/41664431a8f5/evaluation/telemetry/)
 
 ---
 
@@ -601,7 +601,7 @@ The CLI passes them to every copy with `-scion-log-allow <file>`.
 | `magenta` | A frame has 0.2 % or more of Unity's missing-shader magenta. |
 | `determinism` | With 2 or more rounds in the process: the state hash differs (fails), or the frame count differs by one (warns) or more (fails). |
 | `px` | With 2 or more rounds: the pixel hash differs (fails; set `Deterministic(pixels: false)` to warn only). |
-| `gate:<id>` | An enabled gate fails ([Gates](/scion/evaluation/gates/)). |
+| `gate:<id>` | An enabled gate fails ([Gates](/scion/41664431a8f5/evaluation/gates/)). |
 
 ### TrialChecks
 
@@ -672,9 +672,9 @@ public sealed class SlashMisses : OrchardRecipe
 
 ## See also
 
-- [TrialSession](/scion/trials/session/)
-- [Gates](/scion/evaluation/gates/)
-- [Checks API](/scion/reference/api/checks/)
+- [TrialSession](/scion/41664431a8f5/trials/session/)
+- [Gates](/scion/41664431a8f5/evaluation/gates/)
+- [Checks API](/scion/41664431a8f5/reference/api/checks/)
 
 ---
 
@@ -724,7 +724,7 @@ protected override IEnumerable<TrialArgs> Variants()
 ```
 
 `Variants()` replaces the `[Vary]` grid when it returns non-null. Keys are field or property names of the recipe, or
-`tunable:<Type>.<Field>` ([Tunables and presets](/scion/grafts/tunables/)).
+`tunable:<Type>.<Field>` ([Tunables and presets](/scion/41664431a8f5/grafts/tunables/)).
 
 ### 3. Declare modes
 
@@ -817,10 +817,10 @@ dotnet scion trial run KnightFalls --seeds 1-200 -j 8
 
 ## See also
 
-- [Write a recipe](/scion/trials/recipes/)
-- [trial list](/scion/cli/trial-list/)
-- [recipes.json](/scion/reference/files/recipes-json/)
-- [Recipes API](/scion/reference/api/recipes/)
+- [Write a recipe](/scion/41664431a8f5/trials/recipes/)
+- [trial list](/scion/41664431a8f5/cli/trial-list/)
+- [recipes.json](/scion/41664431a8f5/reference/files/recipes-json/)
+- [Recipes API](/scion/41664431a8f5/reference/api/recipes/)
 
 ---
 
@@ -948,13 +948,13 @@ dotnet scion trial show UnitGallery --changed --grid
 
 ### HUD states at two resolutions
 
-See [Capture every HUD state](/scion/cookbook/hud-states/).
+See [Capture every HUD state](/scion/41664431a8f5/cookbook/hud-states/).
 
 ## See also
 
-- [Capture every HUD state](/scion/cookbook/hud-states/)
-- [Audit level rooms](/scion/cookbook/level-rooms/)
-- [Adapters API](/scion/reference/api/adapters/)
+- [Capture every HUD state](/scion/41664431a8f5/cookbook/hud-states/)
+- [Audit level rooms](/scion/41664431a8f5/cookbook/level-rooms/)
+- [Adapters API](/scion/41664431a8f5/reference/api/adapters/)
 
 ---
 
@@ -1088,10 +1088,10 @@ Arguments after `--` go to every process of the group and replace the same flag 
 
 ## See also
 
-- [Parallel copies](/scion/trials/parallel/)
-- [Configuration](/scion/reference/configuration/)
-- [Player command line](/scion/reference/player-flags/)
-- [Netcode clock](/scion/determinism/netclock/)
+- [Parallel copies](/scion/41664431a8f5/trials/parallel/)
+- [Configuration](/scion/41664431a8f5/reference/configuration/)
+- [Player command line](/scion/41664431a8f5/reference/player-flags/)
+- [Netcode clock](/scion/41664431a8f5/determinism/netclock/)
 
 ---
 
@@ -1137,7 +1137,7 @@ dotnet scion trial run -j 6 --rounds 4
 
 Every (round, id) pair, sorted by round and then by id (ordinal), is assigned round-robin: pair `k` goes to shard
 `k mod N`. Each pair runs in exactly one copy. A copy with no pairs exits 0 at once. Co-op groups take the host's
-shard ([Co-op trials](/scion/trials/coop/)).
+shard ([Co-op trials](/scion/41664431a8f5/trials/coop/)).
 
 ### Options that affect copies
 
@@ -1171,7 +1171,7 @@ On an Apple M5 (10 cores, 16 GB), Orchard's test build at 1280x720 offscreen:
 | 120 recipe-rounds with `-j 1` | 172 s |
 | 120 recipe-rounds with `-j 6` | 31 s |
 
-Startup dominates short runs; warm copies remove it ([Warm copies](/scion/trials/warm-copies/)).
+Startup dominates short runs; warm copies remove it ([Warm copies](/scion/41664431a8f5/trials/warm-copies/)).
 
 ## Errors
 
@@ -1198,10 +1198,10 @@ dotnet scion trial run SlashHit -j 1 --window
 
 ## See also
 
-- [trial run](/scion/cli/trial-run/)
-- [Warm copies](/scion/trials/warm-copies/)
-- [Mosaic](/scion/trials/mosaic/)
-- [doctor](/scion/cli/doctor/)
+- [trial run](/scion/41664431a8f5/cli/trial-run/)
+- [Warm copies](/scion/41664431a8f5/trials/warm-copies/)
+- [Mosaic](/scion/41664431a8f5/trials/mosaic/)
+- [doctor](/scion/41664431a8f5/cli/doctor/)
 
 ---
 
@@ -1273,7 +1273,7 @@ dotnet scion trial serve --stop
 
 Each copy writes `control.json` in its output folder and the same object in `~/.scion/live/<pid>.json`, mode 0600,
 after the channel listens. The CLI finds copies through the live folder and deletes files of dead processes. The
-token in the file authenticates every request ([control.json and live files](/scion/reference/files/control-json/)).
+token in the file authenticates every request ([control.json and live files](/scion/41664431a8f5/reference/files/control-json/)).
 
 ### Lifecycle of a copy
 
@@ -1312,10 +1312,10 @@ dotnet scion trial serve --format json | jq '.copies[] | {pid, state}'
 
 ## See also
 
-- [trial serve](/scion/cli/trial-serve/)
-- [Live injection](/scion/grafts/injection/)
-- [Control protocol](/scion/reference/control-protocol/)
-- [control.json and live files](/scion/reference/files/control-json/)
+- [trial serve](/scion/41664431a8f5/cli/trial-serve/)
+- [Live injection](/scion/41664431a8f5/grafts/injection/)
+- [Control protocol](/scion/41664431a8f5/reference/control-protocol/)
+- [control.json and live files](/scion/41664431a8f5/reference/files/control-json/)
 
 ---
 
@@ -1371,7 +1371,7 @@ dotnet scion trial run SlashHit --frames --size 1920x1080 --sound
 | `sheet.png` | Every item of a static trial, labeled. | Longer side at most 2000 px |
 | `frames/NNNN.png` | Every frame of the cut (`--frames`). | Capture size |
 | `frames/NNNN.raw` + `frames/raw.json` | The exact bytes hashed per frame (`-scion-raw`). | Capture size |
-| motion pack | `motion-diff.png`, `tracks.png`, `idmask/`, `metrics.json`, `preview.gif` (`--motion`) | See [The motion pack](/scion/evaluation/motion-pack/) |
+| motion pack | `motion-diff.png`, `tracks.png`, `idmask/`, `metrics.json`, `preview.gif` (`--motion`) | See [The motion pack](/scion/41664431a8f5/evaluation/motion-pack/) |
 
 Sheets downscale by the smallest integer that keeps the longer side at or under 2000 px: 12 frames of 1280x720 in
 3 columns (3840x2880) downscale by 2. Labels name the frame number and its marks.
@@ -1428,10 +1428,10 @@ ffmpeg -framerate 30 -i .scion/runs/20261011-143200/q0/SlashHit/r1/frames/%04d.p
 
 ## See also
 
-- [The run folder](/scion/reference/files/run-folder/)
-- [The motion pack](/scion/evaluation/motion-pack/)
-- [Raw frames](/scion/reference/files/raw-frames/)
-- [Baselines and approval](/scion/trials/baselines/)
+- [The run folder](/scion/41664431a8f5/reference/files/run-folder/)
+- [The motion pack](/scion/41664431a8f5/evaluation/motion-pack/)
+- [Raw frames](/scion/41664431a8f5/reference/files/raw-frames/)
+- [Baselines and approval](/scion/41664431a8f5/trials/baselines/)
 
 ---
 
@@ -1511,7 +1511,7 @@ dotnet scion trial approve SlashHit --reason "crit shake is stronger"
 
 Approval is all or nothing: if one id is refused, nothing is written and `refused[]` says why. The `guard` hook
 asks the person before an agent's `trial approve` and denies edits under `scion/baselines/`
-([Hooks](/scion/agents/hooks/)).
+([Hooks](/scion/41664431a8f5/agents/hooks/)).
 
 ### Storage
 
@@ -1559,10 +1559,10 @@ dotnet scion trial approve --changed --reason "new palette" --dry-run
 
 ## See also
 
-- [trial approve](/scion/cli/trial-approve/)
-- [baseline.json and platform.json](/scion/reference/files/baselines/)
-- [Image comparison](/scion/trials/image-comparison/)
-- [Hooks](/scion/agents/hooks/)
+- [trial approve](/scion/41664431a8f5/cli/trial-approve/)
+- [baseline.json and platform.json](/scion/41664431a8f5/reference/files/baselines/)
+- [Image comparison](/scion/41664431a8f5/trials/image-comparison/)
+- [Hooks](/scion/41664431a8f5/agents/hooks/)
 
 ---
 
@@ -1663,7 +1663,7 @@ another Mac of the same platform id.
 
 | Code | Exit | Cause | Next action |
 |---|---|---|---|
-| warning `mask_cap` | 0 | The learned mask would cover more than 2 %. | Make the recipe deterministic ([Particles, animators, UI and physics](/scion/determinism/control/)). |
+| warning `mask_cap` | 0 | The learned mask would cover more than 2 %. | Make the recipe deterministic ([Particles, animators, UI and physics](/scion/41664431a8f5/determinism/control/)). |
 | warning `px_unstable` | 0 | Frame hashes vary between rounds of this run. | Same as above; `px_changed` is noise until fixed. |
 | warning `baseline_unreadable` | 0 | A baseline image or JSON cannot be read. | Check Git LFS (`git lfs pull`). |
 
@@ -1687,10 +1687,10 @@ Mask("*", new Rect(0f, 0f, 1f, 0.15f), "HUD compared by HudStates with Exact");
 
 ## See also
 
-- [Baselines and approval](/scion/trials/baselines/)
-- [Compare API](/scion/reference/api/compare/)
-- [trial diff](/scion/cli/trial-diff/)
-- [A/B comparisons](/scion/evaluation/ab-comparison/)
+- [Baselines and approval](/scion/41664431a8f5/trials/baselines/)
+- [Compare API](/scion/41664431a8f5/reference/api/compare/)
+- [trial diff](/scion/41664431a8f5/cli/trial-diff/)
+- [A/B comparisons](/scion/41664431a8f5/evaluation/ab-comparison/)
 
 ---
 
@@ -1775,8 +1775,8 @@ for a duel, then approve.
 | `Balance(name, players, matches)` | The rules simulator in .NET, with bots, `matches` times | `ISimulation.Metrics`: `win_rate`, `turns_mean` and the game's own |
 | `Visual(recipe)` | The recipe in the test build, with `--motion` | The motion metrics (`hit_stop_ms`, `shake_peak_px`, `flash_ms`...) and probes |
 | `Judge(recipe, head)` | The judge head on the recipe's images | `score`, `probabilities` |
-| `Metamorphic(property)` | A property on the core ([Metamorphic tests](/scion/explore/metamorphic/)) | pass or fail |
-| `Curve(name, levels)` | A balance curve over levels ([Balance with the simulator](/scion/explore/balance/)) | per-level metrics |
+| `Metamorphic(property)` | A property on the core ([Metamorphic tests](/scion/41664431a8f5/explore/metamorphic/)) | pass or fail |
+| `Curve(name, levels)` | A balance curve over levels ([Balance with the simulator](/scion/41664431a8f5/explore/balance/)) | per-level metrics |
 
 `Expect(metric, min, max)` adds a bound (either may be omitted). `Gate(id)` enables a gate on the recipe.
 
@@ -1797,7 +1797,7 @@ for a duel, then approve.
 | Code | Exit | Cause | Next action |
 |---|---|---|---|
 | `no_match` | 2 | No spec with that name in `specs.project`. | Use `did_you_mean`. |
-| `no_simulation` | 3 | `Balance` needs an `ISimulation` and the core declares none. | Implement `ISimulation` ([Core API](/scion/reference/api/core/)). |
+| `no_simulation` | 3 | `Balance` needs an `ISimulation` and the core declares none. | Implement `ISimulation` ([Core API](/scion/41664431a8f5/reference/api/core/)). |
 | `model_missing` | 3 | `Judge` needs a head that is not trained. | `dotnet scion judge list`; train the head. |
 | spec `ok: false` | 1 | No variant passes. | Read `spec.variants[].failed`. |
 
@@ -1818,10 +1818,10 @@ dotnet scion trial run --spec StrongerCrits --variants base
 
 ## See also
 
-- [Specs API](/scion/reference/api/specs/)
-- [Gates](/scion/evaluation/gates/)
-- [Balance with the simulator](/scion/explore/balance/)
-- [trial run](/scion/cli/trial-run/)
+- [Specs API](/scion/41664431a8f5/reference/api/specs/)
+- [Gates](/scion/41664431a8f5/evaluation/gates/)
+- [Balance with the simulator](/scion/41664431a8f5/explore/balance/)
+- [trial run](/scion/41664431a8f5/cli/trial-run/)
 
 ---
 
@@ -1843,7 +1843,7 @@ match's setup, seed and command log to `scion/recipes/captured/<name>.match.json
 ## Before you begin
 
 - The rules take commands and are deterministic from a seed (level 2 or more, see
-  [Find non-determinism](/scion/determinism/diagnose/)).
+  [Find non-determinism](/scion/41664431a8f5/determinism/diagnose/)).
 
 ## Steps
 
@@ -1909,7 +1909,7 @@ dotnet scion trial run "CapturedMatch[match=knight-dies-to-crit]"
 {"schema_version":1,"name":"knight-dies-to-crit","captured_at":"2026-10-11T16:02:10Z","build_id":"4c49a1e0b2f3","source":"f9","seed":7,"players":1,"setup":{"map":"orchard-02","units":["knight","skeleton","skeleton"]},"commands":[{"turn":1,"player":0,"data":"{\"ability\":\"slash\",\"attacker\":0,\"target\":1}"},{"turn":2,"player":1,"data":"{\"ability\":\"bite\",\"attacker\":1,\"target\":0}"}],"turns":2,"feature":null}
 ```
 
-`source` is `f9`, `hunt` (found by the [rare-moment hunter](/scion/explore/rare-moments/)) or `manual`. Matches the
+`source` is `f9`, `hunt` (found by the [rare-moment hunter](/scion/41664431a8f5/explore/rare-moments/)) or `manual`. Matches the
 hunter finds go to `scion/recipes/found/` until someone moves them to `captured/`.
 
 ### The recipe
@@ -1949,9 +1949,9 @@ dotnet scion trial approve --new --reason "regression guard for the crit death b
 
 ## See also
 
-- [The multiverse](/scion/explore/multiverse/)
-- [Rare-moment hunter](/scion/explore/rare-moments/)
-- [Recipes API](/scion/reference/api/recipes/)
+- [The multiverse](/scion/41664431a8f5/explore/multiverse/)
+- [Rare-moment hunter](/scion/41664431a8f5/explore/rare-moments/)
+- [Recipes API](/scion/41664431a8f5/reference/api/recipes/)
 
 ---
 
@@ -2057,6 +2057,6 @@ dotnet scion multiverse run knight-dies-to-crit --at-turn 2 --variants base,heav
 
 ## See also
 
-- [Parallel copies](/scion/trials/parallel/)
-- [Find non-determinism](/scion/determinism/diagnose/)
-- [The multiverse](/scion/explore/multiverse/)
+- [Parallel copies](/scion/41664431a8f5/trials/parallel/)
+- [Find non-determinism](/scion/41664431a8f5/determinism/diagnose/)
+- [The multiverse](/scion/41664431a8f5/explore/multiverse/)

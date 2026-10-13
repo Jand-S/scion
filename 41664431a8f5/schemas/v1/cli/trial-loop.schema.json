@@ -1,11 +1,11 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://jand-s.github.io/scion/schemas/v1/cli/trial-loop.schema.json",
+  "$id": "https://jand-s.github.io/scion/41664431a8f5/schemas/v1/cli/trial-loop.schema.json",
   "title": "trial loop output",
   "description": "Output of dotnet scion trial loop when the loop stops.",
   "allOf": [
     {
-      "$ref": "https://jand-s.github.io/scion/schemas/v1/envelope.schema.json"
+      "$ref": "https://jand-s.github.io/scion/41664431a8f5/schemas/v1/envelope.schema.json"
     },
     {
       "type": "object",

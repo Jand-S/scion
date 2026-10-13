@@ -23,15 +23,15 @@ that changes a rule is a `RuleModifier<T>`, a sound on a hit is a graft, a numbe
 
 | Primitive | Use it for | Never for | Docs |
 |---|---|---|---|
-| `[Anchor(Id, Doc)]` | Stable, documented presentation moments agents should find first. | Rule methods. | [Anchors](/scion/grafts/anchors/) |
-| Graft (`[Before]`/`[After]`) | Juice, sound, camera, HUD, telemetry, tutorial hints. | Changing a rule. | [Write a graft](/scion/grafts/write/) |
-| `RuleModifier<T>` + `Stage` | Any rule that changes a number (damage, range, cost). | Presentation. | [Core API](/scion/reference/api/core/) |
-| Strategy by enum | Effects, AI choices, presentation per effect. | Open-ended plugins. | [Rules R1-R8](/scion/standard/rules/) |
-| Type Object | Immutable definitions: abilities, units, rooms (data rows, or a ScriptableObject compiled to a table). | State that changes during a match. | [Rules R1-R8](/scion/standard/rules/) |
-| `[Tunable(min, max)]` | A number someone tunes; on rule fields, it enters the lobby hash. | Constants nobody tunes. | [Tunables and presets](/scion/grafts/tunables/) |
-| `[Probe("key")]` | A rule value recorded in trials. | Per-frame values (use a sensor). | [Telemetry, probes and sensors](/scion/evaluation/telemetry/) |
+| `[Anchor(Id, Doc)]` | Stable, documented presentation moments agents should find first. | Rule methods. | [Anchors](/scion/41664431a8f5/grafts/anchors/) |
+| Graft (`[Before]`/`[After]`) | Juice, sound, camera, HUD, telemetry, tutorial hints. | Changing a rule. | [Write a graft](/scion/41664431a8f5/grafts/write/) |
+| `RuleModifier<T>` + `Stage` | Any rule that changes a number (damage, range, cost). | Presentation. | [Core API](/scion/41664431a8f5/reference/api/core/) |
+| Strategy by enum | Effects, AI choices, presentation per effect. | Open-ended plugins. | [Rules R1-R8](/scion/41664431a8f5/standard/rules/) |
+| Type Object | Immutable definitions: abilities, units, rooms (data rows, or a ScriptableObject compiled to a table). | State that changes during a match. | [Rules R1-R8](/scion/41664431a8f5/standard/rules/) |
+| `[Tunable(min, max)]` | A number someone tunes; on rule fields, it enters the lobby hash. | Constants nobody tunes. | [Tunables and presets](/scion/41664431a8f5/grafts/tunables/) |
+| `[Probe("key")]` | A rule value recorded in trials. | Per-frame values (use a sensor). | [Telemetry, probes and sensors](/scion/41664431a8f5/evaluation/telemetry/) |
 | Cue | A visual triggered by an event, one-shot or added and removed (a burning aura). | Logic. | below |
-| Adapter | The game's port: trials, network, input. | Game rules. | [Write an adapter](/scion/trials/adapters/) |
+| Adapter | The game's port: trials, network, input. | Game rules. | [Write an adapter](/scion/41664431a8f5/trials/adapters/) |
 | Exemplar | A small compiled, tested example per primitive for agents to copy. | Documentation prose. | below |
 
 ## Stages of a rule modifier
@@ -69,7 +69,7 @@ project index points agents to them.
 
 ## See also
 
-- [Rules R1-R8](/scion/standard/rules/)
-- [Core API](/scion/reference/api/core/)
-- [Grafts API](/scion/reference/api/grafts/)
-- [Enforcement](/scion/standard/enforcement/)
+- [Rules R1-R8](/scion/41664431a8f5/standard/rules/)
+- [Core API](/scion/41664431a8f5/reference/api/core/)
+- [Grafts API](/scion/41664431a8f5/reference/api/grafts/)
+- [Enforcement](/scion/41664431a8f5/standard/enforcement/)

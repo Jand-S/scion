@@ -88,6 +88,6 @@ dotnet scion trial show SlashHit --grid --image window
 
 ## See also
 
-- [Reading results](/scion/agents/reading-results/)
-- [Baselines and approval](/scion/trials/baselines/)
-- [Image comparison](/scion/trials/image-comparison/)
+- [Reading results](/scion/41664431a8f5/agents/reading-results/)
+- [Baselines and approval](/scion/41664431a8f5/trials/baselines/)
+- [Image comparison](/scion/41664431a8f5/trials/image-comparison/)

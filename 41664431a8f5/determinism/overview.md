@@ -47,17 +47,17 @@ of game time, however long it took to render.
 3. `Clock.Begin(Clock.RecipeStart)`: virtual time restarts at 1000 s, so the position in the queue does not matter;
 4. `SeededRandom.Reset(recipe.Seed)`: the n-th `new System.Random()` gets the same seed every round;
 5. the determinism controls of `recipe.Control`: particle seeds, animator and UI Toolkit updates, physics stepping
-   ([Particles, animators, UI and physics](/scion/determinism/control/)).
+   ([Particles, animators, UI and physics](/scion/41664431a8f5/determinism/control/)).
 
 ### What the game must do
 
 - Seed its own generators from the recipe (`Seed`) and the run (`RunSeed`).
 - Keep rules on the main thread, with ordered collections and integer math in the core (rules R4 and R5 of the
-  [Scion Standard](/scion/standard/rules/)).
+  [Scion Standard](/scion/41664431a8f5/standard/rules/)).
 - Mark real-time code (profilers, timeouts) with `[WallClock]` so it keeps the real clock.
 
 `dotnet scion diagnose` finds the rest: wall-clock reads, threads, unordered collections, `GetHashCode` seeds and
-`Guid`s, with file and line ([Find non-determinism](/scion/determinism/diagnose/)).
+`Guid`s, with file and line ([Find non-determinism](/scion/41664431a8f5/determinism/diagnose/)).
 
 ### The state hash
 
@@ -73,7 +73,7 @@ must agree on it, baselines store it, the multiverse compares it per turn and co
 | Recipe seed | `TrialRecipe.Seed`: seeds Unity's random and `SeededRandom` per recipe. |
 | Run seed | `TrialSession.RunSeed` (`--seed`): the game maps it to its world seed. |
 | State hash | The adapter's hash of rules state; equal across rounds when deterministic. |
-| Adoption level | 1 (grafts), 2 (trials), 3 (multiverse): what the project can use today ([Find non-determinism](/scion/determinism/diagnose/)). |
+| Adoption level | 1 (grafts), 2 (trials), 3 (multiverse): what the project can use today ([Find non-determinism](/scion/41664431a8f5/determinism/diagnose/)). |
 
 ## Guarantees and limits
 
@@ -82,12 +82,12 @@ must agree on it, baselines store it, the multiverse compares it per turn and co
   reflection, keeps its behavior; pass it a seed.
 - Inside `FixedUpdate`, the virtual `Time.time` keeps the frame's value; fixed-step code should add up
   `Time.fixedDeltaTime`.
-- Netcode keeps its own tick unless `SCION_NETCLOCK` is on ([Netcode clock](/scion/determinism/netclock/)).
+- Netcode keeps its own tick unless `SCION_NETCLOCK` is on ([Netcode clock](/scion/41664431a8f5/determinism/netclock/)).
 - Pixels can still vary with GPU drivers across machines; images compare per platform.
 
 ## See also
 
-- [Clock, screen and random](/scion/determinism/clock-and-screen/)
-- [Verify determinism](/scion/determinism/verify/)
-- [Find non-determinism](/scion/determinism/diagnose/)
-- [Determinism API](/scion/reference/api/determinism/)
+- [Clock, screen and random](/scion/41664431a8f5/determinism/clock-and-screen/)
+- [Verify determinism](/scion/41664431a8f5/determinism/verify/)
+- [Find non-determinism](/scion/41664431a8f5/determinism/diagnose/)
+- [Determinism API](/scion/41664431a8f5/reference/api/determinism/)

@@ -97,6 +97,6 @@ dotnet scion trial loop KnightFalls --from .scion/runs/20261011-143200/q1/Knight
 
 ## See also
 
-- [trial loop](/scion/cli/trial-loop/)
-- [Live injection](/scion/grafts/injection/)
-- [Tune a hit effect](/scion/cookbook/tune-hit-feel/)
+- [trial loop](/scion/41664431a8f5/cli/trial-loop/)
+- [Live injection](/scion/41664431a8f5/grafts/injection/)
+- [Tune a hit effect](/scion/41664431a8f5/cookbook/tune-hit-feel/)

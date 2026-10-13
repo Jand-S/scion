@@ -94,6 +94,6 @@ dotnet scion bisect FireballArea --good v1.3.0 --bad v1.4.0 --on hash
 
 ## See also
 
-- [bisect](/scion/cli/bisect/)
-- [Exit codes](/scion/reference/exit-codes/)
-- [Verify determinism](/scion/determinism/verify/)
+- [bisect](/scion/41664431a8f5/cli/bisect/)
+- [Exit codes](/scion/41664431a8f5/reference/exit-codes/)
+- [Verify determinism](/scion/41664431a8f5/determinism/verify/)

@@ -119,7 +119,7 @@ dotnet scion new feature Burn --dry-run
 
 ## See also
 
-- [SCN001-SCN005](/scion/reference/diagnostics/standard/)
-- [init, new, uninstall](/scion/cli/init/)
-- [doctor](/scion/cli/doctor/)
-- [Rules R1-R8](/scion/standard/rules/)
+- [SCN001-SCN005](/scion/41664431a8f5/reference/diagnostics/standard/)
+- [init, new, uninstall](/scion/41664431a8f5/cli/init/)
+- [doctor](/scion/41664431a8f5/cli/doctor/)
+- [Rules R1-R8](/scion/41664431a8f5/standard/rules/)

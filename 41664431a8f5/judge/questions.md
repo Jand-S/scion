@@ -72,7 +72,7 @@ The same shape, with `items` filled, is `eval-in.json` for evaluators.
 
 ## See also
 
-- [The Judge](/scion/judge/overview/)
-- [eval-in.json, eval-out.json, evals.tsv](/scion/reference/files/evals/)
-- [Judge data files](/scion/reference/files/judge-data/)
-- [Evaluators](/scion/evaluation/evaluators/)
+- [The Judge](/scion/41664431a8f5/judge/overview/)
+- [eval-in.json, eval-out.json, evals.tsv](/scion/41664431a8f5/reference/files/evals/)
+- [Judge data files](/scion/41664431a8f5/reference/files/judge-data/)
+- [Evaluators](/scion/41664431a8f5/evaluation/evaluators/)

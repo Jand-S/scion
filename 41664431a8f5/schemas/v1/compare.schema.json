@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://jand-s.github.io/scion/schemas/v1/compare.schema.json",
+  "$id": "https://jand-s.github.io/scion/41664431a8f5/schemas/v1/compare.schema.json",
   "title": "compare.json",
   "description": "The comparison of every recipe of a run with its approved baseline.",
   "type": "object",

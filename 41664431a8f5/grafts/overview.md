@@ -37,7 +37,7 @@ weaver:
 
 The weaver only rewrites the assembly it is compiling. A graft must therefore compile **into the anchor's own
 assembly**: you keep grafts in their own folder and point it at the game assembly with an `.asmref`
-([SCN102](/scion/reference/diagnostics/grafts/#scn102)).
+([SCN102](/scion/41664431a8f5/reference/diagnostics/grafts/#scn102)).
 
 ### Two modes
 
@@ -52,7 +52,7 @@ assembly**: you keep grafts in their own folder and point it at the game assembl
 | A graft that throws | propagates like any other code | is caught, disabled alone and reported to `Faults` |
 
 In slot mode, `[assembly: AnchorScope(typeof(T))]` gives methods a slot even when no graft targets them yet, so a
-new graft can be injected there without a rebuild ([Anchors](/scion/grafts/anchors/)).
+new graft can be injected there without a rebuild ([Anchors](/scion/41664431a8f5/grafts/anchors/)).
 
 ### Why compile time
 
@@ -64,14 +64,14 @@ Scion's weaver gives:
 - one dispatcher per anchor with a fixed order, so the order never depends on load order.
 
 The per-call context `ref Call<T>` follows the model of Mixin's `CallbackInfoReturnable`: grafts can skip the
-anchor, return a value or change its result ([Call and Call\<T\>](/scion/grafts/call-context/)).
+anchor, return a value or change its result ([Call and Call\<T\>](/scion/41664431a8f5/grafts/call-context/)).
 
 ### Grafts are visual
 
 The weaver does not run in plain `dotnet test`, in the rules simulator or anywhere outside Unity. A graft that
 changed a rule would work in the game and vanish everywhere else, and co-op peers would disagree. So every graft is
 presentation: effects, sound, camera, HUD, telemetry. Rules change in the core through `RuleModifier<T>`
-([Grafts are visual only](/scion/grafts/visual-only/)).
+([Grafts are visual only](/scion/41664431a8f5/grafts/visual-only/)).
 
 ## Key terms
 
@@ -89,20 +89,20 @@ presentation: effects, sound, camera, HUD, telemetry. Rules change in the core t
 ## Guarantees and limits
 
 - Removing the grafts folder leaves a game that compiles and plays as before: nothing may depend on a graft
-  ([SCN110](/scion/reference/diagnostics/grafts/#scn110)).
+  ([SCN110](/scion/41664431a8f5/reference/diagnostics/grafts/#scn110)).
 - Order within one call is fixed: observers, then other befores by `Priority`, then the body, then afters by
   `Priority`; ties break on the graft's full name.
 - The final build contains no slots, no injection and no trials code; a final build with test defines fails
-  ([SCN121](/scion/reference/diagnostics/builds-and-injection/#scn121)).
+  ([SCN121](/scion/41664431a8f5/reference/diagnostics/builds-and-injection/#scn121)).
 - Some methods cannot be anchors: iterators, `async` methods, Netcode RPCs, struct methods, generic methods, methods
-  with `out` parameters and a few more ([SCN105](/scion/reference/diagnostics/grafts/#scn105)). Hang the graft on the
+  with `out` parameters and a few more ([SCN105](/scion/41664431a8f5/reference/diagnostics/grafts/#scn105)). Hang the graft on the
   plain method they call.
 - Injected grafts must be `public` in a `public` type: they live in another assembly.
 - Mono never unloads assemblies; a warm copy asks to be recycled after 50 injections (`InjectReport.Recycle`).
 
 ## See also
 
-- [Write a graft](/scion/grafts/write/)
-- [Build modes](/scion/grafts/build-modes/)
-- [Live injection](/scion/grafts/injection/)
-- [Architecture](/scion/contribute/architecture/)
+- [Write a graft](/scion/41664431a8f5/grafts/write/)
+- [Build modes](/scion/41664431a8f5/grafts/build-modes/)
+- [Live injection](/scion/41664431a8f5/grafts/injection/)
+- [Architecture](/scion/41664431a8f5/contribute/architecture/)

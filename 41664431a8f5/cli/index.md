@@ -31,20 +31,20 @@ dotnet scion --help | --version
 
 | Command | Verbs | Page |
 |---|---|---|
-| `doctor` | | [doctor](/scion/cli/doctor/) |
-| `init`, `new`, `uninstall` | | [init, new, uninstall](/scion/cli/init/) |
-| `build` | `test`, `final` | [build test, build final](/scion/cli/build/) |
-| `trial` (alias `trials`) | `list`, `run`, `show`, `approve`, `serve`, `diff`, `eval`, `loop` | [trial run](/scion/cli/trial-run/) and siblings |
-| `anchor` | `list`, `show` | [anchor list, anchor show](/scion/cli/anchor/) |
-| `graft` | `new`, `check`, `build`, `inject`, `restore`, `disable`, `promote`, `watch` | [graft](/scion/cli/graft/) |
-| `bisect` | | [bisect](/scion/cli/bisect/) |
-| `diagnose` | | [diagnose](/scion/cli/diagnose/) |
-| `index`, `guard` | | [index, guard](/scion/cli/index-and-guard/) |
-| `gen` | | [gen](/scion/cli/gen/) |
-| `judge` | `list`, `show`, `new`, `vote`, `train`, `run` | [judge](/scion/cli/judge/) |
-| `multiverse` | `run`, `show` | [multiverse](/scion/cli/multiverse/) |
-| `hunt`, `search` | `run` | [hunt, search](/scion/cli/hunt-and-search/) |
-| `mcp` | | [mcp](/scion/cli/mcp/) |
+| `doctor` | | [doctor](/scion/41664431a8f5/cli/doctor/) |
+| `init`, `new`, `uninstall` | | [init, new, uninstall](/scion/41664431a8f5/cli/init/) |
+| `build` | `test`, `final` | [build test, build final](/scion/41664431a8f5/cli/build/) |
+| `trial` (alias `trials`) | `list`, `run`, `show`, `approve`, `serve`, `diff`, `eval`, `loop` | [trial run](/scion/41664431a8f5/cli/trial-run/) and siblings |
+| `anchor` | `list`, `show` | [anchor list, anchor show](/scion/41664431a8f5/cli/anchor/) |
+| `graft` | `new`, `check`, `build`, `inject`, `restore`, `disable`, `promote`, `watch` | [graft](/scion/41664431a8f5/cli/graft/) |
+| `bisect` | | [bisect](/scion/41664431a8f5/cli/bisect/) |
+| `diagnose` | | [diagnose](/scion/41664431a8f5/cli/diagnose/) |
+| `index`, `guard` | | [index, guard](/scion/41664431a8f5/cli/index-and-guard/) |
+| `gen` | | [gen](/scion/41664431a8f5/cli/gen/) |
+| `judge` | `list`, `show`, `new`, `vote`, `train`, `run` | [judge](/scion/41664431a8f5/cli/judge/) |
+| `multiverse` | `run`, `show` | [multiverse](/scion/41664431a8f5/cli/multiverse/) |
+| `hunt`, `search` | `run` | [hunt, search](/scion/41664431a8f5/cli/hunt-and-search/) |
+| `mcp` | | [mcp](/scion/41664431a8f5/cli/mcp/) |
 
 ## Description
 
@@ -116,7 +116,7 @@ Every command prints one envelope:
 | 3 | Environment: no build, no Unity, a player crashed, a copy timed out. |
 
 When several copies or steps end differently, the command exits with the highest-priority code: 2, then 3, then 1,
-then 0. See [Exit codes](/scion/reference/exit-codes/).
+then 0. See [Exit codes](/scion/41664431a8f5/reference/exit-codes/).
 
 ## Errors
 
@@ -128,7 +128,7 @@ then 0. See [Exit codes](/scion/reference/exit-codes/).
 | `build_not_found` | 3 | No test build found. | `dotnet scion build test`. |
 | `unity_not_found` | 3 | No Unity of the project's version. | Set `unity.editor` in `scion.local.json`. |
 
-Every code: [Error and warning codes](/scion/reference/errors/).
+Every code: [Error and warning codes](/scion/41664431a8f5/reference/errors/).
 
 ## Examples
 
@@ -146,8 +146,8 @@ SCION_BUILD=/tmp/orchard-test/Orchard.app dotnet scion trial list
 
 ## See also
 
-- [Install](/scion/start/install/)
-- [Reading results](/scion/agents/reading-results/)
-- [Exit codes](/scion/reference/exit-codes/)
-- [Error and warning codes](/scion/reference/errors/)
-- [Configuration](/scion/reference/configuration/)
+- [Install](/scion/41664431a8f5/start/install/)
+- [Reading results](/scion/41664431a8f5/agents/reading-results/)
+- [Exit codes](/scion/41664431a8f5/reference/exit-codes/)
+- [Error and warning codes](/scion/41664431a8f5/reference/errors/)
+- [Configuration](/scion/41664431a8f5/reference/configuration/)

@@ -30,10 +30,10 @@ each with a queue of recipes.
 
 | Module | What it does | Start reading |
 |---|---|---|
-| **Grafts** | New code in small files (`[Before]` and `[After]` methods) hung on existing methods by a compile-time weaver. The agent creates files next to the game instead of editing large ones. | [How grafts work](/scion/grafts/overview/) |
-| **Trials** | Recipes (C# classes) played by the real test player in parallel, deterministic copies. Each result has a state hash, frames, images and checks, compared with approved baselines. | [How trials work](/scion/trials/overview/) |
-| **Judge** | A trainable taste model: frozen vision models plus small heads trained on your votes. It ranks candidates so a person only looks at the finalists. | [The Judge](/scion/judge/overview/) |
-| **Exploration** | Tools built on determinism: fork a match at turn N (multiverse), loop a moment of play, bisect regressions, metamorphic tests, a rare-moment hunter and guided search. | [The multiverse](/scion/explore/multiverse/) |
+| **Grafts** | New code in small files (`[Before]` and `[After]` methods) hung on existing methods by a compile-time weaver. The agent creates files next to the game instead of editing large ones. | [How grafts work](/scion/41664431a8f5/grafts/overview/) |
+| **Trials** | Recipes (C# classes) played by the real test player in parallel, deterministic copies. Each result has a state hash, frames, images and checks, compared with approved baselines. | [How trials work](/scion/41664431a8f5/trials/overview/) |
+| **Judge** | A trainable taste model: frozen vision models plus small heads trained on your votes. It ranks candidates so a person only looks at the finalists. | [The Judge](/scion/41664431a8f5/judge/overview/) |
+| **Exploration** | Tools built on determinism: fork a match at turn N (multiverse), loop a moment of play, bisect regressions, metamorphic tests, a rare-moment hunter and guided search. | [The multiverse](/scion/41664431a8f5/explore/multiverse/) |
 
 Around them sit the **evaluation funnel** (state checks, objective gates, then taste) and the **Scion Standard**
 (rules and analyzers that keep a game easy to graft and test).
@@ -44,7 +44,7 @@ Around them sit the **evaluation funnel** (state checks, objective gates, then t
 |---|---|---|
 | Unity package `me.jandson.scion` | Attributes, base classes, the weaver (an ILPostProcessor), the trials runner, capture and telemetry, the analyzers | Git URL with a tag, or OpenUPM |
 | CLI `dotnet scion` | Builds the test player, runs trials in parallel, compares, approves, trains the Judge, serves MCP | `dotnet tool install --local Scion.Cli` |
-| Agent plugin `scion` | The skill, the hooks, the MCP server entry and the `scion-triage` subagent for Claude Code; an `AGENTS.md` block for other agents | `/plugin install scion@scion`, or [agent setup](/scion/agents/setup/) |
+| Agent plugin `scion` | The skill, the hooks, the MCP server entry and the `scion-triage` subagent for Claude Code; an `AGENTS.md` block for other agents | `/plugin install scion@scion`, or [agent setup](/scion/41664431a8f5/agents/setup/) |
 
 ### How one change flows
 
@@ -83,7 +83,7 @@ agent edits scion/grafts/CritShake.cs
 | Baseline | The approved result of a recipe, kept in git under `scion/baselines/`. |
 | Verdict | `same`, `within`, `px_changed`, `changed`, `new` or `stale`: how a run compares with its baseline. |
 
-The [glossary](/scion/reference/glossary/) defines every term the docs use.
+The [glossary](/scion/41664431a8f5/reference/glossary/) defines every term the docs use.
 
 ## Guarantees and limits
 
@@ -101,10 +101,10 @@ The [glossary](/scion/reference/glossary/) defines every term the docs use.
 
 ## See also
 
-- [Requirements](/scion/start/requirements/)
-- [Install](/scion/start/install/)
-- [Quickstart](/scion/start/quickstart/)
-- [For AI agents](/scion/agents/)
+- [Requirements](/scion/41664431a8f5/start/requirements/)
+- [Install](/scion/41664431a8f5/start/install/)
+- [Quickstart](/scion/41664431a8f5/start/quickstart/)
+- [For AI agents](/scion/41664431a8f5/agents/)
 
 ---
 
@@ -130,7 +130,7 @@ parallel trials use. `dotnet scion doctor` checks every item here and says which
 
 Scion has no dependency on Netcode for GameObjects, URP or any render pipeline. It works with the built-in
 renderer, URP and HDRP. When your game uses Netcode for GameObjects, the optional `SCION_NETCLOCK` define keeps its
-tick on the recipe clock ([Netcode clock](/scion/determinism/netclock/)).
+tick on the recipe clock ([Netcode clock](/scion/41664431a8f5/determinism/netclock/)).
 
 ## Operating systems
 
@@ -147,7 +147,7 @@ tick on the recipe clock ([Netcode clock](/scion/determinism/netclock/)).
 | Test build (`dotnet scion build test`) | Mono | Slots are swappable delegates and injection loads assemblies at run time; both need a JIT. `ScionBuild.BuildTestPlayer` forces Mono and restores your setting afterwards. |
 | Final build (`dotnet scion build final`) | IL2CPP (or the project setting) | Grafts become direct static calls; nothing is registered at run time. |
 
-A build with `SCION_SLOTS` on IL2CPP fails with [SCN120](/scion/reference/diagnostics/builds-and-injection/#scn120).
+A build with `SCION_SLOTS` on IL2CPP fails with [SCN120](/scion/41664431a8f5/reference/diagnostics/builds-and-injection/#scn120).
 
 ## Project layout
 
@@ -182,14 +182,14 @@ capture at 1280x720 and 30 fps.
 The Judge runs on the CPU, or on the GPU through ONNX Runtime when one is available (CoreML on macOS, DirectML on
 Windows, CUDA on Linux). Computing embeddings for 10,000 images takes about 5 to 10 minutes on an M5; training a head
 takes seconds; judging one image takes 10 to 50 ms. Eye models take 0.4 to 1.6 GB of disk each in
-`~/.scion/models/`. See [Models and licenses](/scion/judge/models/).
+`~/.scion/models/`. See [Models and licenses](/scion/41664431a8f5/judge/models/).
 
 ## See also
 
-- [Install](/scion/start/install/)
-- [doctor](/scion/cli/doctor/)
-- [Parallel copies](/scion/trials/parallel/)
-- [FAQ](/scion/help/faq/)
+- [Install](/scion/41664431a8f5/start/install/)
+- [doctor](/scion/41664431a8f5/cli/doctor/)
+- [Parallel copies](/scion/41664431a8f5/trials/parallel/)
+- [FAQ](/scion/41664431a8f5/help/faq/)
 
 ---
 
@@ -204,7 +204,7 @@ This tutorial installs Scion 1.0.0 into a Unity project: the `me.jandson.scion` 
 
 ## Before you begin
 
-- Unity 6000.3 or later, with the Mono and IL2CPP modules for your platform ([Requirements](/scion/start/requirements/)).
+- Unity 6000.3 or later, with the Mono and IL2CPP modules for your platform ([Requirements](/scion/41664431a8f5/start/requirements/)).
 - The .NET 10 SDK: `dotnet --version` prints 10 or later.
 - git, and git LFS if you will keep image baselines.
 - The project root is a git repository. Run every command below from it.
@@ -259,7 +259,7 @@ dotnet scion --version
 
 On another clone, `dotnet tool restore` installs the version the manifest names. Keep the CLI version equal to the
 package version: a graft DLL built by one version is refused by a player of another
-([SCN131](/scion/reference/diagnostics/builds-and-injection/#scn131)), and `doctor` warns with `version_mismatch`.
+([SCN131](/scion/41664431a8f5/reference/diagnostics/builds-and-injection/#scn131)), and `doctor` warns with `version_mismatch`.
 
 ### 3. Set up the project
 
@@ -284,7 +284,7 @@ What `init` writes:
 
 | File or folder | Content |
 |---|---|
-| `scion.json` | CLI configuration with defaults for your project ([Configuration](/scion/reference/configuration/)) |
+| `scion.json` | CLI configuration with defaults for your project ([Configuration](/scion/41664431a8f5/reference/configuration/)) |
 | `ProjectSettings/ScionSettings.json` | Weaver, build and analyzer settings; `main_assembly` set to your game assembly |
 | `scion/grafts/`, `scion/recipes/`, `scion/baselines/` | Draft grafts, extra recipes and match files, approved baselines |
 | `<grafts folder>/<Game>.Grafts.asmref` | Makes the promoted grafts folder compile into your game assembly |
@@ -293,7 +293,7 @@ What `init` writes:
 | Your game `.asmdef` | A reference to `Scion.Runtime` (and `Scion.Trials`, `Scion.Injection` for test-only code) |
 
 `init` is idempotent: run it again and it reports everything as `skipped`. To start a project from a genre
-template instead, see [Start a new project](/scion/start/new-project/).
+template instead, see [Start a new project](/scion/41664431a8f5/start/new-project/).
 
 ### 4. Connect your agent
 
@@ -306,7 +306,7 @@ template instead, see [Start a new project](/scion/start/new-project/).
 ```
 
 **Codex, Cursor, GitHub Copilot and others.** Add the MCP server to your agent's configuration and the Scion block
-to `AGENTS.md`. The exact files per agent are on [Set up your agent](/scion/agents/setup/). The server is the CLI
+to `AGENTS.md`. The exact files per agent are on [Set up your agent](/scion/41664431a8f5/agents/setup/). The server is the CLI
 itself:
 
 ```json
@@ -340,16 +340,16 @@ Commit the new files: `scion.json`, `ProjectSettings/ScionSettings.json`, `.conf
 ## Update and uninstall
 
 - **Update:** change the tag in `Packages/manifest.json` (or `openupm add me.jandson.scion@<version>`), then
-  `dotnet tool update --local Scion.Cli --version <version>`. Read the [changelog](/scion/help/changelog/) first.
+  `dotnet tool update --local Scion.Cli --version <version>`. Read the [changelog](/scion/41664431a8f5/help/changelog/) first.
 - **Uninstall:** `dotnet scion uninstall --dry-run` lists what it would remove; `dotnet scion uninstall` removes the
   files `init` created, the package line and the tool. It keeps `scion/baselines/` and your grafts, recipes and specs
-  unless you pass `--purge`. See [init, new, uninstall](/scion/cli/init/).
+  unless you pass `--purge`. See [init, new, uninstall](/scion/41664431a8f5/cli/init/).
 
 ## Next steps
 
-- [Quickstart](/scion/start/quickstart/): a graft, a recipe and a first approved baseline in ten minutes.
-- [Add Scion to an existing game](/scion/start/existing-project/): what to do on day one and how to reach level 2.
-- [For AI agents](/scion/agents/): the loop, the rules and the machine-readable files.
+- [Quickstart](/scion/41664431a8f5/start/quickstart/): a graft, a recipe and a first approved baseline in ten minutes.
+- [Add Scion to an existing game](/scion/41664431a8f5/start/existing-project/): what to do on day one and how to reach level 2.
+- [For AI agents](/scion/41664431a8f5/agents/): the loop, the rules and the machine-readable files.
 
 ---
 
@@ -364,7 +364,7 @@ verdict it causes. You finish with a second recipe of your own.
 
 ## Before you begin
 
-- Scion is installed: package, CLI and `dotnet scion doctor` passing ([Install](/scion/start/install/)).
+- Scion is installed: package, CLI and `dotnet scion doctor` passing ([Install](/scion/41664431a8f5/start/install/)).
 - An empty Unity 6000.3 project in a git repository, with the CLI tool manifest. The commands below create the
   Orchard sample in it:
 
@@ -375,7 +375,7 @@ git add -A && git commit -m "Orchard sample"
 
 `new --genre tactics` writes the Orchard game skeleton (`Assets/Orchard/Core`, `Runtime`, `Grafts`, `Trials`), a
 battle scene, the `OrchardAdapter`, the `SlashHit` recipe, `scion.json` and the agent block in `CLAUDE.md`
-([Start a new project](/scion/start/new-project/)).
+([Start a new project](/scion/41664431a8f5/start/new-project/)).
 
 ## Steps
 
@@ -557,10 +557,10 @@ dotnet scion trial approve --new --reason "first baseline of KnightFalls"
 
 ## Next steps
 
-- [Write a graft](/scion/grafts/write/): every rule of `[Before]`, `[After]`, priorities and observers.
-- [Write a recipe](/scion/trials/recipes/) and [Write an adapter](/scion/trials/adapters/).
-- [Baselines and approval](/scion/trials/baselines/): verdicts and who may approve what.
-- [Live injection](/scion/grafts/injection/): the warm-copy loop in depth.
+- [Write a graft](/scion/41664431a8f5/grafts/write/): every rule of `[Before]`, `[After]`, priorities and observers.
+- [Write a recipe](/scion/41664431a8f5/trials/recipes/) and [Write an adapter](/scion/41664431a8f5/trials/adapters/).
+- [Baselines and approval](/scion/41664431a8f5/trials/baselines/): verdicts and who may approve what.
+- [Live injection](/scion/41664431a8f5/grafts/injection/): the warm-copy loop in depth.
 
 ---
 
@@ -578,13 +578,13 @@ files that compile and pass `doctor` from the first build.
 
 - Use it for a new game, or a prototype you want testable from day one.
 - Do not use it on a game with existing code: `new` writes a full layout. Use
-  [`init --existing`](/scion/start/existing-project/) instead; it only adds files.
+  [`init --existing`](/scion/41664431a8f5/start/existing-project/) instead; it only adds files.
 
 ## Before you begin
 
 - An empty Unity 6000.3 project (created by the Unity Hub) in a git repository.
 - The CLI installed in that repository (`dotnet tool install --local Scion.Cli --version 1.0.0`).
-- The package added to `Packages/manifest.json` (step 1 of [Install](/scion/start/install/)). `new` adds it for you
+- The package added to `Packages/manifest.json` (step 1 of [Install](/scion/41664431a8f5/start/install/)). `new` adds it for you
   when it is missing.
 
 ## Steps
@@ -619,7 +619,7 @@ dotnet scion trial approve --new --reason "first baselines of the template"
 
 ### 4. Grow it with scaffolds
 
-Each scaffold writes code that compiles, follows the [Scion Standard](/scion/standard/overview/) and comes with its
+Each scaffold writes code that compiles, follows the [Scion Standard](/scion/41664431a8f5/standard/overview/) and comes with its
 test:
 
 ```sh
@@ -629,7 +629,7 @@ dotnet scion new graft PoisonGlow --after Orchard.Presentation.UnitView.PlayStat
 dotnet scion new trial PoisonTicks     # a recipe for the effect, with checks
 ```
 
-`new graft` is the same as [`graft new`](/scion/cli/graft/): the draft lands in `scion/grafts/` and comes with a
+`new graft` is the same as [`graft new`](/scion/41664431a8f5/cli/graft/): the draft lands in `scion/grafts/` and comes with a
 recipe stub that exercises its anchor.
 
 ## Reference
@@ -659,7 +659,7 @@ CLAUDE.md, AGENTS.md                     the Scion block between <!-- scion:begi
 
 Dependencies only point down: Core depends on nothing; Runtime on Core; Grafts compile into Runtime; Trials use
 Runtime as a black box and Core to compare hashes. Nothing depends on Grafts. See
-[The Scion Standard](/scion/standard/overview/).
+[The Scion Standard](/scion/41664431a8f5/standard/overview/).
 
 ### Options
 
@@ -699,10 +699,10 @@ dotnet scion build test && dotnet scion trial run BurnTicks
 
 ## See also
 
-- [init, new, uninstall](/scion/cli/init/)
-- [Add Scion to an existing game](/scion/start/existing-project/)
-- [The Scion Standard](/scion/standard/overview/)
-- [Enforcement](/scion/standard/enforcement/)
+- [init, new, uninstall](/scion/41664431a8f5/cli/init/)
+- [Add Scion to an existing game](/scion/41664431a8f5/start/existing-project/)
+- [The Scion Standard](/scion/41664431a8f5/standard/overview/)
+- [Enforcement](/scion/41664431a8f5/standard/enforcement/)
 
 ---
 
@@ -718,11 +718,11 @@ You prove determinism by running the same recipe twice and comparing hashes.
 ## When to use
 
 - Use it when the game has code, scenes and its own folder layout that must stay as they are.
-- Do not use it for a new, empty project: [`new --genre`](/scion/start/new-project/) gives you level 3 directly.
+- Do not use it for a new, empty project: [`new --genre`](/scion/41664431a8f5/start/new-project/) gives you level 3 directly.
 
 ## Before you begin
 
-- The package and the CLI are installed ([Install](/scion/start/install/), steps 1 and 2).
+- The package and the CLI are installed ([Install](/scion/41664431a8f5/start/install/), steps 1 and 2).
 - Your game code is in assembly definitions. If it is all in `Assembly-CSharp`, create one `.asmdef` for the game
   code first: grafts compile into an assembly through an `.asmref`, and `Scion.Runtime` is not auto-referenced.
 
@@ -751,7 +751,7 @@ dotnet scion diagnose
 ```
 
 The full report is in `Library/Scion/diagnose.md`: the level, the blockers worst first, the singletons that would
-block the [mosaic](/scion/trials/mosaic/), large files that mix rules and presentation, and the plan.
+block the [mosaic](/scion/41664431a8f5/trials/mosaic/), large files that mix rules and presentation, and the plan.
 
 ### 3. Level 1: write a graft today
 
@@ -762,7 +762,7 @@ dotnet scion anchor list --search hit
 dotnet scion graft new HitFlash --after Orchard.Presentation.HitPresenter.Play
 ```
 
-Then follow [Write a graft](/scion/grafts/write/). Without an adapter you verify grafts in the editor or a build;
+Then follow [Write a graft](/scion/41664431a8f5/grafts/write/). Without an adapter you verify grafts in the editor or a build;
 with one (level 2) you verify them in recipes.
 
 ### 4. Level 2: write the adapter
@@ -780,7 +780,7 @@ recipe. The real cost of an adapter is knowing three things about your game:
    (a custom PRNG, a seeded service) must take `TrialSession.RunSeed` or the recipe `Seed`.
 
 A one-scene game without networking needs 30 to 50 lines; a networked tactics game about 300. See
-[Write an adapter](/scion/trials/adapters/).
+[Write an adapter](/scion/41664431a8f5/trials/adapters/).
 
 ### 5. Prove determinism
 
@@ -792,7 +792,7 @@ dotnet scion trial run SlashHit --rounds 4 --check
 
 `determinism.hash_stable: true` means every round gave the same state hash. When it is `false`, `determinism.tsv`
 names the first frame and the first column that differs (`state`, `tick`, `rng`, `unscaled`, `time`, `px`,
-`frames`). See [Verify determinism](/scion/determinism/verify/).
+`frames`). See [Verify determinism](/scion/41664431a8f5/determinism/verify/).
 
 ### 6. Level 3: register the simulation
 
@@ -804,7 +804,7 @@ Level 3 needs the rules in an assembly without engine references and a command l
 ```
 
 `doctor` then reports `adoption_level: 3`, and the multiverse, balance specs, metamorphic tests and the rare-moment
-hunter work. See [Core API](/scion/reference/api/core/).
+hunter work. See [Core API](/scion/41664431a8f5/reference/api/core/).
 
 ## Reference
 
@@ -816,7 +816,7 @@ hunter work. See [Core API](/scion/reference/api/core/).
 
 `init --existing` options: `--dry-run`, `--game-assembly <name>` (skip the question), `--grafts-folder <path>`
 (default `Assets/<Game>/Grafts`). `diagnose` options: `--adapter` (write the skeleton), `--assembly <name>` (repeat
-to scan only some). See [init](/scion/cli/init/) and [diagnose](/scion/cli/diagnose/).
+to scan only some). See [init](/scion/41664431a8f5/cli/init/) and [diagnose](/scion/41664431a8f5/cli/diagnose/).
 
 ## Errors
 
@@ -825,7 +825,7 @@ to scan only some). See [init](/scion/cli/init/) and [diagnose](/scion/cli/diagn
 | `usage` | 2 | `init` without `--existing` in a project that has scripts. | Add `--existing`. |
 | `config_invalid` | 3 | An existing `scion.json` has a bad key. | Fix the key named in the message; `init` never overwrites it. |
 | `no_simulation` | 3 | A level 3 command found no `[assembly: Simulation]`. | Register an `ISimulation` (step 6). |
-| `SCN202`, `SCN203` | 3 | The adapter is not valid, or two adapters handle the same recipe type. | See [Trials diagnostics](/scion/reference/diagnostics/trials/). |
+| `SCN202`, `SCN203` | 3 | The adapter is not valid, or two adapters handle the same recipe type. | See [Trials diagnostics](/scion/41664431a8f5/reference/diagnostics/trials/). |
 
 ## Examples
 
@@ -845,7 +845,7 @@ shows up as a `diff` line in `determinism.tsv`.
 
 ## See also
 
-- [diagnose](/scion/cli/diagnose/)
-- [Find non-determinism](/scion/determinism/diagnose/)
-- [Write an adapter](/scion/trials/adapters/)
-- [The Scion Standard](/scion/standard/overview/)
+- [diagnose](/scion/41664431a8f5/cli/diagnose/)
+- [Find non-determinism](/scion/41664431a8f5/determinism/diagnose/)
+- [Write an adapter](/scion/41664431a8f5/trials/adapters/)
+- [The Scion Standard](/scion/41664431a8f5/standard/overview/)

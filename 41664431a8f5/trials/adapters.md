@@ -26,7 +26,7 @@ picks its adapter, the coroutine rules, and the reset and seeding every adapter 
 - Write one adapter per family of recipes that start the same way: battles, HUD screens, menus.
 - Use `ITrialAdapter` directly only when the choice depends on something other than the recipe's type.
 - For screens and items that need no action, derive recipes from `StaticTrial<TItem>` and skip the adapter
-  entirely ([Static trials](/scion/trials/static-trials/)).
+  entirely ([Static trials](/scion/41664431a8f5/trials/static-trials/)).
 
 ## Steps
 
@@ -180,7 +180,7 @@ var battle = Battle.Start(setup with { MapSeed = s.RunSeed * 7919 + r.Seed });
 
 ## See also
 
-- [Write a recipe](/scion/trials/recipes/)
-- [TrialSession](/scion/trials/session/)
-- [Adapters API](/scion/reference/api/adapters/)
-- [SCN201-SCN203](/scion/reference/diagnostics/trials/)
+- [Write a recipe](/scion/41664431a8f5/trials/recipes/)
+- [TrialSession](/scion/41664431a8f5/trials/session/)
+- [Adapters API](/scion/41664431a8f5/reference/api/adapters/)
+- [SCN201-SCN203](/scion/41664431a8f5/reference/diagnostics/trials/)

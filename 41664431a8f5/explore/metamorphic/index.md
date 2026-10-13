@@ -86,7 +86,7 @@ the simulator.
 
 | Code | Exit | Cause | Next action |
 |---|---|---|---|
-| `no_simulation` | 3 | No `ISimulation`. | Register one ([Core API](/scion/reference/api/core/)). |
+| `no_simulation` | 3 | No `ISimulation`. | Register one ([Core API](/scion/41664431a8f5/reference/api/core/)). |
 | spec `ok: false` | 1 | A property failed. | Read the seed, turn and field; save the match. |
 
 ## Examples
@@ -105,6 +105,6 @@ s.Metamorphic("heal_then_hit_equals_hit_then_heal", (sim, seed) => HealOrder.Che
 
 ## See also
 
-- [Specs API](/scion/reference/api/specs/)
-- [Core API](/scion/reference/api/core/)
-- [Balance with the simulator](/scion/explore/balance/)
+- [Specs API](/scion/41664431a8f5/reference/api/specs/)
+- [Core API](/scion/41664431a8f5/reference/api/core/)
+- [Balance with the simulator](/scion/41664431a8f5/explore/balance/)

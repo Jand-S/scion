@@ -103,6 +103,6 @@ s.Visual("SlashHit").Expect("shake_peak_px", min: 4, max: 12);
 
 ## See also
 
-- [Capture and outputs](/scion/trials/capture/)
-- [Judge motion](/scion/judge/motion/)
-- [The run folder](/scion/reference/files/run-folder/)
+- [Capture and outputs](/scion/41664431a8f5/trials/capture/)
+- [Judge motion](/scion/41664431a8f5/judge/motion/)
+- [The run folder](/scion/41664431a8f5/reference/files/run-folder/)

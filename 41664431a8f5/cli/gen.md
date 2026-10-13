@@ -81,6 +81,6 @@ dotnet scion gen --list tunables --search Balance
 
 ## See also
 
-- [Project index and manifest](/scion/agents/project-index/)
-- [scion.manifest.json and GRAFTS.md](/scion/reference/files/manifest/)
-- [Tunables and presets](/scion/grafts/tunables/)
+- [Project index and manifest](/scion/41664431a8f5/agents/project-index/)
+- [scion.manifest.json and GRAFTS.md](/scion/41664431a8f5/reference/files/manifest/)
+- [Tunables and presets](/scion/41664431a8f5/grafts/tunables/)

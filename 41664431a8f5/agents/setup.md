@@ -23,7 +23,7 @@ calls the CLI directly. `dotnet scion init --agent <name>` writes the files for 
 
 ## When to use
 
-- Use it once per project and agent, after [Install](/scion/start/install/).
+- Use it once per project and agent, after [Install](/scion/41664431a8f5/start/install/).
 - Agents that only run shell commands need nothing more than the CLI and the `AGENTS.md` block; MCP is optional.
 
 ## Before you begin
@@ -42,8 +42,8 @@ Install the plugin from the Scion marketplace:
 /plugin install scion@scion
 ```
 
-The plugin brings the [skill](/scion/agents/skill/), the four [hooks](/scion/agents/hooks/), the
-[MCP server](/scion/agents/mcp/) and the `scion-triage` subagent. It does not edit your repository. Optionally, keep
+The plugin brings the [skill](/scion/41664431a8f5/agents/skill/), the four [hooks](/scion/41664431a8f5/agents/hooks/), the
+[MCP server](/scion/41664431a8f5/agents/mcp/) and the `scion-triage` subagent. It does not edit your repository. Optionally, keep
 the project index in `CLAUDE.md` too:
 
 ```sh
@@ -95,8 +95,8 @@ writes `AGENTS.md` and `.vscode/mcp.json` for agent mode in VS Code:
 
 ### Any other agent
 
-- Give it the shell: every command prints one JSON object, and the [rules](/scion/agents/) cover the rest.
-- Point it at [/scion/llms.txt](/scion/llms.txt), or at the version-matched Markdown inside the package
+- Give it the shell: every command prints one JSON object, and the [rules](/scion/41664431a8f5/agents/) cover the rest.
+- Point it at [/scion/llms.txt](/scion/41664431a8f5/llms.txt), or at the version-matched Markdown inside the package
   (`Library/PackageCache/me.jandson.scion@<hash>/Documentation~/site/src/content/docs/`).
 - For agents that speak MCP but cannot run local tools, use GitMCP: add the remote server
   `https://jand-s.gitmcp.io/scion`, which reads `llms.txt` and serves the docs.
@@ -113,7 +113,7 @@ the markers is yours.
 <!-- scion:begin -->
 ## Scion
 
-This project uses Scion 1.0.0 (adoption level 3). Docs: https://jand-s.github.io/scion/llms.txt
+This project uses Scion 1.0.0 (adoption level 3). Docs: https://jand-s.github.io/scion/41664431a8f5/llms.txt
 - Run `dotnet scion doctor` first. Every command prints one JSON object; follow `next_step`.
 - New presentation code goes in grafts (`scion/grafts/*.cs`, `[Before]`/`[After]`); rules change in Orchard.Core with `RuleModifier<T>`.
 - Find anchors with `dotnet scion anchor list --search <word>`; check grafts with `dotnet scion graft check <file>`.
@@ -167,7 +167,7 @@ Both agents read the same `AGENTS.md` block; each has its own MCP file.
 
 ## See also
 
-- [MCP server](/scion/agents/mcp/)
-- [The Scion skill](/scion/agents/skill/)
-- [Hooks](/scion/agents/hooks/)
-- [Project index and manifest](/scion/agents/project-index/)
+- [MCP server](/scion/41664431a8f5/agents/mcp/)
+- [The Scion skill](/scion/41664431a8f5/agents/skill/)
+- [Hooks](/scion/41664431a8f5/agents/hooks/)
+- [Project index and manifest](/scion/41664431a8f5/agents/project-index/)

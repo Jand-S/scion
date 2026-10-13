@@ -58,6 +58,6 @@ Nothing leaves the machine: the judge makes no network calls after the model is 
 
 ## See also
 
-- [The Judge](/scion/judge/overview/)
-- [Judge data files](/scion/reference/files/judge-data/)
-- [License](/scion/help/license/)
+- [The Judge](/scion/41664431a8f5/judge/overview/)
+- [Judge data files](/scion/41664431a8f5/reference/files/judge-data/)
+- [License](/scion/41664431a8f5/help/license/)

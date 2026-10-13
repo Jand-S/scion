@@ -23,7 +23,7 @@ verdict it causes. You finish with a second recipe of your own.
 
 ## Before you begin
 
-- Scion is installed: package, CLI and `dotnet scion doctor` passing ([Install](/scion/start/install/)).
+- Scion is installed: package, CLI and `dotnet scion doctor` passing ([Install](/scion/41664431a8f5/start/install/)).
 - An empty Unity 6000.3 project in a git repository, with the CLI tool manifest. The commands below create the
   Orchard sample in it:
 
@@ -34,7 +34,7 @@ git add -A && git commit -m "Orchard sample"
 
 `new --genre tactics` writes the Orchard game skeleton (`Assets/Orchard/Core`, `Runtime`, `Grafts`, `Trials`), a
 battle scene, the `OrchardAdapter`, the `SlashHit` recipe, `scion.json` and the agent block in `CLAUDE.md`
-([Start a new project](/scion/start/new-project/)).
+([Start a new project](/scion/41664431a8f5/start/new-project/)).
 
 ## Steps
 
@@ -216,7 +216,7 @@ dotnet scion trial approve --new --reason "first baseline of KnightFalls"
 
 ## Next steps
 
-- [Write a graft](/scion/grafts/write/): every rule of `[Before]`, `[After]`, priorities and observers.
-- [Write a recipe](/scion/trials/recipes/) and [Write an adapter](/scion/trials/adapters/).
-- [Baselines and approval](/scion/trials/baselines/): verdicts and who may approve what.
-- [Live injection](/scion/grafts/injection/): the warm-copy loop in depth.
+- [Write a graft](/scion/41664431a8f5/grafts/write/): every rule of `[Before]`, `[After]`, priorities and observers.
+- [Write a recipe](/scion/41664431a8f5/trials/recipes/) and [Write an adapter](/scion/41664431a8f5/trials/adapters/).
+- [Baselines and approval](/scion/41664431a8f5/trials/baselines/): verdicts and who may approve what.
+- [Live injection](/scion/41664431a8f5/grafts/injection/): the warm-copy loop in depth.

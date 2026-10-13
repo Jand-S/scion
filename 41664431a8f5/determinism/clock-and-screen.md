@@ -82,7 +82,7 @@ own assemblies are never redirected. Recompile after editing the file.
 
 ## See also
 
-- [Deterministic runs](/scion/determinism/overview/)
-- [Determinism API](/scion/reference/api/determinism/)
-- [Configuration](/scion/reference/configuration/)
-- [SCN301-SCN307](/scion/reference/diagnostics/determinism/)
+- [Deterministic runs](/scion/41664431a8f5/determinism/overview/)
+- [Determinism API](/scion/41664431a8f5/reference/api/determinism/)
+- [Configuration](/scion/41664431a8f5/reference/configuration/)
+- [SCN301-SCN307](/scion/41664431a8f5/reference/diagnostics/determinism/)

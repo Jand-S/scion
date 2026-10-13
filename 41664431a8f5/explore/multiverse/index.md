@@ -31,8 +31,8 @@ balance change does to a real match.
 ## Before you begin
 
 - Adoption level 3: the rules registered as an `ISimulation`, deterministic in plain .NET
-  ([Find non-determinism](/scion/determinism/diagnose/)).
-- A captured match ([Turn any match into a recipe](/scion/trials/captured-matches/)).
+  ([Find non-determinism](/scion/41664431a8f5/determinism/diagnose/)).
+- A captured match ([Turn any match into a recipe](/scion/41664431a8f5/trials/captured-matches/)).
 
 ## Steps
 
@@ -95,7 +95,7 @@ Steps 1 to 4 run in plain .NET, in parallel, in milliseconds per turn. Only `--m
 | `no_simulation` | 3 | No `[assembly: Simulation]`. | Register an `ISimulation`. |
 | `not_forkable` | 3 | The simulation does not implement `ISaveable`. | Implement `Save` and `Load` on the state. |
 | `no_match` | 2 | The match file or a variant does not exist. | `trial list` shows captured matches. |
-| variant `diverged` with `grafts` | 1 | A graft changed rules. | Move the change to the core ([Grafts are visual only](/scion/grafts/visual-only/)). |
+| variant `diverged` with `grafts` | 1 | A graft changed rules. | Move the change to the core ([Grafts are visual only](/scion/41664431a8f5/grafts/visual-only/)). |
 
 ## Examples
 
@@ -113,7 +113,7 @@ dotnet scion multiverse run knight-dies-to-crit --at-turn 2 --variants bot:aggre
 
 ## See also
 
-- [multiverse (CLI)](/scion/cli/multiverse/)
-- [Turn any match into a recipe](/scion/trials/captured-matches/)
-- [Mosaic](/scion/trials/mosaic/)
-- [Core API](/scion/reference/api/core/)
+- [multiverse (CLI)](/scion/41664431a8f5/cli/multiverse/)
+- [Turn any match into a recipe](/scion/41664431a8f5/trials/captured-matches/)
+- [Mosaic](/scion/41664431a8f5/trials/mosaic/)
+- [Core API](/scion/41664431a8f5/reference/api/core/)

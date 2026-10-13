@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://jand-s.github.io/scion/schemas/v1/envelope.schema.json",
+  "$id": "https://jand-s.github.io/scion/41664431a8f5/schemas/v1/envelope.schema.json",
   "title": "CLI envelope",
   "description": "Fields shared by the JSON object that every dotnet scion command prints on stdout.",
   "type": "object",

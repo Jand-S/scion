@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://jand-s.github.io/scion/schemas/v1/inject-report.schema.json",
+  "$id": "https://jand-s.github.io/scion/41664431a8f5/schemas/v1/inject-report.schema.json",
   "title": "InjectReport",
   "description": "InjectReport.ToJson(): the result of one graft DLL injection.",
   "type": "object",

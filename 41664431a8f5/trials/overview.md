@@ -70,7 +70,7 @@ A recipe that fails (timeout, `Fail`, a check, an error in the log, a graft that
 ### The adapter is the only game-specific code
 
 Everything above is generic. The game writes recipes (data) and one or more adapters (how to load a scene, start a
-battle, issue a command, read a state hash). The more the game follows the [Scion Standard](/scion/standard/overview/),
+battle, issue a command, read a state hash). The more the game follows the [Scion Standard](/scion/41664431a8f5/standard/overview/),
 the thinner the adapter.
 
 ## Key terms
@@ -91,7 +91,7 @@ the thinner the adapter.
 ## Guarantees and limits
 
 - The same build, recipe and seed give the same state hash on every machine and every round; frame counts may differ
-  by one until the Netcode clock is virtual ([Netcode clock](/scion/determinism/netclock/)).
+  by one until the Netcode clock is virtual ([Netcode clock](/scion/41664431a8f5/determinism/netclock/)).
 - Copies never write into each other's folders; the CLI never writes inside a copy's folder.
 - Images are compared per platform (OS, graphics API, size, capture); the hash is compared everywhere.
 - A copy that makes no progress for 120 seconds of real time is ended (`watchdog`, exit 3).
@@ -99,8 +99,8 @@ the thinner the adapter.
 
 ## See also
 
-- [Quickstart](/scion/start/quickstart/)
-- [Write a recipe](/scion/trials/recipes/)
-- [Write an adapter](/scion/trials/adapters/)
-- [Baselines and approval](/scion/trials/baselines/)
-- [trial run](/scion/cli/trial-run/)
+- [Quickstart](/scion/41664431a8f5/start/quickstart/)
+- [Write a recipe](/scion/41664431a8f5/trials/recipes/)
+- [Write an adapter](/scion/41664431a8f5/trials/adapters/)
+- [Baselines and approval](/scion/41664431a8f5/trials/baselines/)
+- [trial run](/scion/41664431a8f5/cli/trial-run/)

@@ -93,8 +93,8 @@ for a duel, then approve.
 | `Balance(name, players, matches)` | The rules simulator in .NET, with bots, `matches` times | `ISimulation.Metrics`: `win_rate`, `turns_mean` and the game's own |
 | `Visual(recipe)` | The recipe in the test build, with `--motion` | The motion metrics (`hit_stop_ms`, `shake_peak_px`, `flash_ms`...) and probes |
 | `Judge(recipe, head)` | The judge head on the recipe's images | `score`, `probabilities` |
-| `Metamorphic(property)` | A property on the core ([Metamorphic tests](/scion/explore/metamorphic/)) | pass or fail |
-| `Curve(name, levels)` | A balance curve over levels ([Balance with the simulator](/scion/explore/balance/)) | per-level metrics |
+| `Metamorphic(property)` | A property on the core ([Metamorphic tests](/scion/41664431a8f5/explore/metamorphic/)) | pass or fail |
+| `Curve(name, levels)` | A balance curve over levels ([Balance with the simulator](/scion/41664431a8f5/explore/balance/)) | per-level metrics |
 
 `Expect(metric, min, max)` adds a bound (either may be omitted). `Gate(id)` enables a gate on the recipe.
 
@@ -115,7 +115,7 @@ for a duel, then approve.
 | Code | Exit | Cause | Next action |
 |---|---|---|---|
 | `no_match` | 2 | No spec with that name in `specs.project`. | Use `did_you_mean`. |
-| `no_simulation` | 3 | `Balance` needs an `ISimulation` and the core declares none. | Implement `ISimulation` ([Core API](/scion/reference/api/core/)). |
+| `no_simulation` | 3 | `Balance` needs an `ISimulation` and the core declares none. | Implement `ISimulation` ([Core API](/scion/41664431a8f5/reference/api/core/)). |
 | `model_missing` | 3 | `Judge` needs a head that is not trained. | `dotnet scion judge list`; train the head. |
 | spec `ok: false` | 1 | No variant passes. | Read `spec.variants[].failed`. |
 
@@ -136,7 +136,7 @@ dotnet scion trial run --spec StrongerCrits --variants base
 
 ## See also
 
-- [Specs API](/scion/reference/api/specs/)
-- [Gates](/scion/evaluation/gates/)
-- [Balance with the simulator](/scion/explore/balance/)
-- [trial run](/scion/cli/trial-run/)
+- [Specs API](/scion/41664431a8f5/reference/api/specs/)
+- [Gates](/scion/41664431a8f5/evaluation/gates/)
+- [Balance with the simulator](/scion/41664431a8f5/explore/balance/)
+- [trial run](/scion/41664431a8f5/cli/trial-run/)

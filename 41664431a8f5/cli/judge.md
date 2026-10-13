@@ -119,6 +119,6 @@ dotnet scion judge vote --head hit_weight
 
 ## See also
 
-- [The Judge](/scion/judge/overview/)
-- [Train a head](/scion/judge/training/)
-- [Judge data files](/scion/reference/files/judge-data/)
+- [The Judge](/scion/41664431a8f5/judge/overview/)
+- [Train a head](/scion/41664431a8f5/judge/training/)
+- [Judge data files](/scion/41664431a8f5/reference/files/judge-data/)

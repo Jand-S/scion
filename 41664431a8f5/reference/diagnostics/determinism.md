@@ -120,7 +120,7 @@ Determinism.SeedFor).`
 
 ## See also
 
-- [Find non-determinism](/scion/determinism/diagnose/)
-- [diagnose](/scion/cli/diagnose/)
-- [Clock, screen and random](/scion/determinism/clock-and-screen/)
-- [Diagnostics](/scion/reference/diagnostics/)
+- [Find non-determinism](/scion/41664431a8f5/determinism/diagnose/)
+- [diagnose](/scion/41664431a8f5/cli/diagnose/)
+- [Clock, screen and random](/scion/41664431a8f5/determinism/clock-and-screen/)
+- [Diagnostics](/scion/41664431a8f5/reference/diagnostics/)

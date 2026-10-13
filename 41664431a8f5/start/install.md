@@ -23,7 +23,7 @@ This tutorial installs Scion 1.0.0 into a Unity project: the `me.jandson.scion` 
 
 ## Before you begin
 
-- Unity 6000.3 or later, with the Mono and IL2CPP modules for your platform ([Requirements](/scion/start/requirements/)).
+- Unity 6000.3 or later, with the Mono and IL2CPP modules for your platform ([Requirements](/scion/41664431a8f5/start/requirements/)).
 - The .NET 10 SDK: `dotnet --version` prints 10 or later.
 - git, and git LFS if you will keep image baselines.
 - The project root is a git repository. Run every command below from it.
@@ -78,7 +78,7 @@ dotnet scion --version
 
 On another clone, `dotnet tool restore` installs the version the manifest names. Keep the CLI version equal to the
 package version: a graft DLL built by one version is refused by a player of another
-([SCN131](/scion/reference/diagnostics/builds-and-injection/#scn131)), and `doctor` warns with `version_mismatch`.
+([SCN131](/scion/41664431a8f5/reference/diagnostics/builds-and-injection/#scn131)), and `doctor` warns with `version_mismatch`.
 
 ### 3. Set up the project
 
@@ -103,7 +103,7 @@ What `init` writes:
 
 | File or folder | Content |
 |---|---|
-| `scion.json` | CLI configuration with defaults for your project ([Configuration](/scion/reference/configuration/)) |
+| `scion.json` | CLI configuration with defaults for your project ([Configuration](/scion/41664431a8f5/reference/configuration/)) |
 | `ProjectSettings/ScionSettings.json` | Weaver, build and analyzer settings; `main_assembly` set to your game assembly |
 | `scion/grafts/`, `scion/recipes/`, `scion/baselines/` | Draft grafts, extra recipes and match files, approved baselines |
 | `<grafts folder>/<Game>.Grafts.asmref` | Makes the promoted grafts folder compile into your game assembly |
@@ -112,7 +112,7 @@ What `init` writes:
 | Your game `.asmdef` | A reference to `Scion.Runtime` (and `Scion.Trials`, `Scion.Injection` for test-only code) |
 
 `init` is idempotent: run it again and it reports everything as `skipped`. To start a project from a genre
-template instead, see [Start a new project](/scion/start/new-project/).
+template instead, see [Start a new project](/scion/41664431a8f5/start/new-project/).
 
 ### 4. Connect your agent
 
@@ -125,7 +125,7 @@ template instead, see [Start a new project](/scion/start/new-project/).
 ```
 
 **Codex, Cursor, GitHub Copilot and others.** Add the MCP server to your agent's configuration and the Scion block
-to `AGENTS.md`. The exact files per agent are on [Set up your agent](/scion/agents/setup/). The server is the CLI
+to `AGENTS.md`. The exact files per agent are on [Set up your agent](/scion/41664431a8f5/agents/setup/). The server is the CLI
 itself:
 
 ```json
@@ -159,13 +159,13 @@ Commit the new files: `scion.json`, `ProjectSettings/ScionSettings.json`, `.conf
 ## Update and uninstall
 
 - **Update:** change the tag in `Packages/manifest.json` (or `openupm add me.jandson.scion@<version>`), then
-  `dotnet tool update --local Scion.Cli --version <version>`. Read the [changelog](/scion/help/changelog/) first.
+  `dotnet tool update --local Scion.Cli --version <version>`. Read the [changelog](/scion/41664431a8f5/help/changelog/) first.
 - **Uninstall:** `dotnet scion uninstall --dry-run` lists what it would remove; `dotnet scion uninstall` removes the
   files `init` created, the package line and the tool. It keeps `scion/baselines/` and your grafts, recipes and specs
-  unless you pass `--purge`. See [init, new, uninstall](/scion/cli/init/).
+  unless you pass `--purge`. See [init, new, uninstall](/scion/41664431a8f5/cli/init/).
 
 ## Next steps
 
-- [Quickstart](/scion/start/quickstart/): a graft, a recipe and a first approved baseline in ten minutes.
-- [Add Scion to an existing game](/scion/start/existing-project/): what to do on day one and how to reach level 2.
-- [For AI agents](/scion/agents/): the loop, the rules and the machine-readable files.
+- [Quickstart](/scion/41664431a8f5/start/quickstart/): a graft, a recipe and a first approved baseline in ten minutes.
+- [Add Scion to an existing game](/scion/41664431a8f5/start/existing-project/): what to do on day one and how to reach level 2.
+- [For AI agents](/scion/41664431a8f5/agents/): the loop, the rules and the machine-readable files.

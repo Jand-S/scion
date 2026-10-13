@@ -72,11 +72,11 @@ notice; code that reads the real clock does.
 | Cause | Column | Usually means |
 |---|---|---|
 | `state` | the adapter's `state` sensor | A rule diverged. Look at the frame's events. |
-| `tick` | the adapter's `tick` sensor | Network or fixed-step timing ([Netcode clock](/scion/determinism/netclock/)). |
+| `tick` | the adapter's `tick` sensor | Network or fixed-step timing ([Netcode clock](/scion/41664431a8f5/determinism/netclock/)). |
 | `rng` | `UnityEngine.Random` state | Something consumed random numbers in a different amount. |
 | `unscaled` | virtual unscaled time | A real-time read leaked. |
 | `time` | virtual time | `Time.timeScale` changed differently. |
-| `px` | pixel hash | Only presentation differs ([Particles, animators, UI and physics](/scion/determinism/control/)). |
+| `px` | pixel hash | Only presentation differs ([Particles, animators, UI and physics](/scion/41664431a8f5/determinism/control/)). |
 | `frames` | frame count | The cut ended on a different frame. |
 
 Register the `state` and `tick` sensors in the adapter's `Prepare` so the first two causes can be found.
@@ -121,6 +121,6 @@ dotnet scion trial run KnightFalls --seeds 1-50 --rounds 2
 
 ## See also
 
-- [Find non-determinism](/scion/determinism/diagnose/)
-- [results.tsv, frames.tsv, determinism.tsv](/scion/reference/files/tables/)
-- [Run Scion in CI](/scion/cookbook/ci/)
+- [Find non-determinism](/scion/41664431a8f5/determinism/diagnose/)
+- [results.tsv, frames.tsv, determinism.tsv](/scion/41664431a8f5/reference/files/tables/)
+- [Run Scion in CI](/scion/41664431a8f5/cookbook/ci/)

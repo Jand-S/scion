@@ -108,7 +108,7 @@ another Mac of the same platform id.
 
 | Code | Exit | Cause | Next action |
 |---|---|---|---|
-| warning `mask_cap` | 0 | The learned mask would cover more than 2 %. | Make the recipe deterministic ([Particles, animators, UI and physics](/scion/determinism/control/)). |
+| warning `mask_cap` | 0 | The learned mask would cover more than 2 %. | Make the recipe deterministic ([Particles, animators, UI and physics](/scion/41664431a8f5/determinism/control/)). |
 | warning `px_unstable` | 0 | Frame hashes vary between rounds of this run. | Same as above; `px_changed` is noise until fixed. |
 | warning `baseline_unreadable` | 0 | A baseline image or JSON cannot be read. | Check Git LFS (`git lfs pull`). |
 
@@ -132,7 +132,7 @@ Mask("*", new Rect(0f, 0f, 1f, 0.15f), "HUD compared by HudStates with Exact");
 
 ## See also
 
-- [Baselines and approval](/scion/trials/baselines/)
-- [Compare API](/scion/reference/api/compare/)
-- [trial diff](/scion/cli/trial-diff/)
-- [A/B comparisons](/scion/evaluation/ab-comparison/)
+- [Baselines and approval](/scion/41664431a8f5/trials/baselines/)
+- [Compare API](/scion/41664431a8f5/reference/api/compare/)
+- [trial diff](/scion/41664431a8f5/cli/trial-diff/)
+- [A/B comparisons](/scion/41664431a8f5/evaluation/ab-comparison/)

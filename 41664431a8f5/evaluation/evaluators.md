@@ -65,7 +65,7 @@ dotnet scion trial eval 20261011-150512 --import eval-out.json
 | `eval-out.json` | the evaluator | Answers per item and question, with probabilities, confidence and evidence. |
 | `evals.tsv` | the CLI | `id evaluator question score label`, one line per answer. |
 
-The shapes are the judge's question and answer formats ([eval-in.json, eval-out.json, evals.tsv](/scion/reference/files/evals/)).
+The shapes are the judge's question and answer formats ([eval-in.json, eval-out.json, evals.tsv](/scion/41664431a8f5/reference/files/evals/)).
 
 ### Rules
 
@@ -98,6 +98,6 @@ dotnet scion trial eval 20261011-150512 --with agent --dry-run
 
 ## See also
 
-- [trial eval](/scion/cli/trial-eval/)
-- [eval-in.json, eval-out.json, evals.tsv](/scion/reference/files/evals/)
-- [Questions and answers](/scion/judge/questions/)
+- [trial eval](/scion/41664431a8f5/cli/trial-eval/)
+- [eval-in.json, eval-out.json, evals.tsv](/scion/41664431a8f5/reference/files/evals/)
+- [Questions and answers](/scion/41664431a8f5/judge/questions/)

@@ -104,6 +104,6 @@ dotnet scion hunt run CoopTurn --budget 10 --seed 42
 
 ## See also
 
-- [hunt, search](/scion/cli/hunt-and-search/)
-- [Turn any match into a recipe](/scion/trials/captured-matches/)
-- [Core API](/scion/reference/api/core/)
+- [hunt, search](/scion/41664431a8f5/cli/hunt-and-search/)
+- [Turn any match into a recipe](/scion/41664431a8f5/trials/captured-matches/)
+- [Core API](/scion/41664431a8f5/reference/api/core/)

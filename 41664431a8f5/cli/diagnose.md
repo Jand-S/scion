@@ -82,6 +82,6 @@ dotnet scion diagnose --assembly Orchard.Core
 
 ## See also
 
-- [Find non-determinism](/scion/determinism/diagnose/)
-- [SCN301-SCN307](/scion/reference/diagnostics/determinism/)
-- [Add Scion to an existing game](/scion/start/existing-project/)
+- [Find non-determinism](/scion/41664431a8f5/determinism/diagnose/)
+- [SCN301-SCN307](/scion/41664431a8f5/reference/diagnostics/determinism/)
+- [Add Scion to an existing game](/scion/41664431a8f5/start/existing-project/)

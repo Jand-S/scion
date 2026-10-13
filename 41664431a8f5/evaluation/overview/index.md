@@ -27,25 +27,25 @@ evaluates in a funnel: cheap, certain stages first, each cutting what reaches th
 ### 1. State oracle (blocks)
 
 What the rules say happened: the state hash, checks, probes, the turn log. A graft that changes the hash is wrong
-whatever it looks like. Cost: free, already in every run. See [Checks](/scion/trials/checks/).
+whatever it looks like. Cost: free, already in every run. See [Checks](/scion/41664431a8f5/trials/checks/).
 
 ### 2. Objective gates (block)
 
 Measurable visual rules that do not need taste: text that overflows its box, contrast under WCAG, flashes that risk
 seizures, a regression against the baseline, telemetry that says something happened while the pixels show nothing.
-A gate is a check with the id `gate:<name>`; a failing gate fails the recipe. See [Gates](/scion/evaluation/gates/).
+A gate is a check with the id `gate:<name>`; a failing gate fails the recipe. See [Gates](/scion/41664431a8f5/evaluation/gates/).
 
 ### 3. Taste triage (orders)
 
 What remains is a matter of feel: is the hit heavy enough, is the HUD clean? Judge heads score images and sequences
 in milliseconds; evaluators (scripts or agents) add scores from files. Scores never fail a run (`gate: false`): they
-sort variants and pick which pairs a person should see. See [The Judge](/scion/judge/overview/) and
-[Evaluators](/scion/evaluation/evaluators/).
+sort variants and pick which pairs a person should see. See [The Judge](/scion/41664431a8f5/judge/overview/) and
+[Evaluators](/scion/41664431a8f5/evaluation/evaluators/).
 
 ### 4. A person picks
 
 The person sees few, well-chosen comparisons: blind A/B pairs aligned on the impact frame
-([A/B comparisons](/scion/evaluation/ab-comparison/)). Their vote approves the baseline and trains the judge.
+([A/B comparisons](/scion/41664431a8f5/evaluation/ab-comparison/)). Their vote approves the baseline and trains the judge.
 
 ### Where the inputs come from
 
@@ -72,11 +72,11 @@ The person sees few, well-chosen comparisons: blind A/B pairs aligned on the imp
 - Only stages 1 and 2 change exit codes. A low judge score is never a failure.
 - Gates measure what they can measure: a gate that passes does not mean the screen looks good.
 - The judge is trained on the team's own votes; it predicts their taste, not general quality.
-- A person approves every replaced baseline ([Baselines and approval](/scion/trials/baselines/)).
+- A person approves every replaced baseline ([Baselines and approval](/scion/41664431a8f5/trials/baselines/)).
 
 ## See also
 
-- [Gates](/scion/evaluation/gates/)
-- [The motion pack](/scion/evaluation/motion-pack/)
-- [The Judge](/scion/judge/overview/)
-- [Evaluators](/scion/evaluation/evaluators/)
+- [Gates](/scion/41664431a8f5/evaluation/gates/)
+- [The motion pack](/scion/41664431a8f5/evaluation/motion-pack/)
+- [The Judge](/scion/41664431a8f5/judge/overview/)
+- [Evaluators](/scion/41664431a8f5/evaluation/evaluators/)

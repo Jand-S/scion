@@ -53,7 +53,7 @@ dotnet scion trial run -j 6 --rounds 4
 
 Every (round, id) pair, sorted by round and then by id (ordinal), is assigned round-robin: pair `k` goes to shard
 `k mod N`. Each pair runs in exactly one copy. A copy with no pairs exits 0 at once. Co-op groups take the host's
-shard ([Co-op trials](/scion/trials/coop/)).
+shard ([Co-op trials](/scion/41664431a8f5/trials/coop/)).
 
 ### Options that affect copies
 
@@ -87,7 +87,7 @@ On an Apple M5 (10 cores, 16 GB), Orchard's test build at 1280x720 offscreen:
 | 120 recipe-rounds with `-j 1` | 172 s |
 | 120 recipe-rounds with `-j 6` | 31 s |
 
-Startup dominates short runs; warm copies remove it ([Warm copies](/scion/trials/warm-copies/)).
+Startup dominates short runs; warm copies remove it ([Warm copies](/scion/41664431a8f5/trials/warm-copies/)).
 
 ## Errors
 
@@ -114,7 +114,7 @@ dotnet scion trial run SlashHit -j 1 --window
 
 ## See also
 
-- [trial run](/scion/cli/trial-run/)
-- [Warm copies](/scion/trials/warm-copies/)
-- [Mosaic](/scion/trials/mosaic/)
-- [doctor](/scion/cli/doctor/)
+- [trial run](/scion/41664431a8f5/cli/trial-run/)
+- [Warm copies](/scion/41664431a8f5/trials/warm-copies/)
+- [Mosaic](/scion/41664431a8f5/trials/mosaic/)
+- [doctor](/scion/41664431a8f5/cli/doctor/)

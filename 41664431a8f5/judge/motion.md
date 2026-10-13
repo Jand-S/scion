@@ -99,6 +99,6 @@ dotnet scion judge run 20261012-091500 --heads hit_weight,juice
 
 ## See also
 
-- [The motion pack](/scion/evaluation/motion-pack/)
-- [Train a head](/scion/judge/training/)
-- [Tune a hit effect](/scion/cookbook/tune-hit-feel/)
+- [The motion pack](/scion/41664431a8f5/evaluation/motion-pack/)
+- [Train a head](/scion/41664431a8f5/judge/training/)
+- [Tune a hit effect](/scion/41664431a8f5/cookbook/tune-hit-feel/)

@@ -29,7 +29,7 @@ match's setup, seed and command log to `scion/recipes/captured/<name>.match.json
 ## Before you begin
 
 - The rules take commands and are deterministic from a seed (level 2 or more, see
-  [Find non-determinism](/scion/determinism/diagnose/)).
+  [Find non-determinism](/scion/41664431a8f5/determinism/diagnose/)).
 
 ## Steps
 
@@ -95,7 +95,7 @@ dotnet scion trial run "CapturedMatch[match=knight-dies-to-crit]"
 {"schema_version":1,"name":"knight-dies-to-crit","captured_at":"2026-10-11T16:02:10Z","build_id":"4c49a1e0b2f3","source":"f9","seed":7,"players":1,"setup":{"map":"orchard-02","units":["knight","skeleton","skeleton"]},"commands":[{"turn":1,"player":0,"data":"{\"ability\":\"slash\",\"attacker\":0,\"target\":1}"},{"turn":2,"player":1,"data":"{\"ability\":\"bite\",\"attacker\":1,\"target\":0}"}],"turns":2,"feature":null}
 ```
 
-`source` is `f9`, `hunt` (found by the [rare-moment hunter](/scion/explore/rare-moments/)) or `manual`. Matches the
+`source` is `f9`, `hunt` (found by the [rare-moment hunter](/scion/41664431a8f5/explore/rare-moments/)) or `manual`. Matches the
 hunter finds go to `scion/recipes/found/` until someone moves them to `captured/`.
 
 ### The recipe
@@ -135,6 +135,6 @@ dotnet scion trial approve --new --reason "regression guard for the crit death b
 
 ## See also
 
-- [The multiverse](/scion/explore/multiverse/)
-- [Rare-moment hunter](/scion/explore/rare-moments/)
-- [Recipes API](/scion/reference/api/recipes/)
+- [The multiverse](/scion/41664431a8f5/explore/multiverse/)
+- [Rare-moment hunter](/scion/41664431a8f5/explore/rare-moments/)
+- [Recipes API](/scion/41664431a8f5/reference/api/recipes/)

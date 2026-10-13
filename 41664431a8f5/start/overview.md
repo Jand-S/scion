@@ -37,10 +37,10 @@ each with a queue of recipes.
 
 | Module | What it does | Start reading |
 |---|---|---|
-| **Grafts** | New code in small files (`[Before]` and `[After]` methods) hung on existing methods by a compile-time weaver. The agent creates files next to the game instead of editing large ones. | [How grafts work](/scion/grafts/overview/) |
-| **Trials** | Recipes (C# classes) played by the real test player in parallel, deterministic copies. Each result has a state hash, frames, images and checks, compared with approved baselines. | [How trials work](/scion/trials/overview/) |
-| **Judge** | A trainable taste model: frozen vision models plus small heads trained on your votes. It ranks candidates so a person only looks at the finalists. | [The Judge](/scion/judge/overview/) |
-| **Exploration** | Tools built on determinism: fork a match at turn N (multiverse), loop a moment of play, bisect regressions, metamorphic tests, a rare-moment hunter and guided search. | [The multiverse](/scion/explore/multiverse/) |
+| **Grafts** | New code in small files (`[Before]` and `[After]` methods) hung on existing methods by a compile-time weaver. The agent creates files next to the game instead of editing large ones. | [How grafts work](/scion/41664431a8f5/grafts/overview/) |
+| **Trials** | Recipes (C# classes) played by the real test player in parallel, deterministic copies. Each result has a state hash, frames, images and checks, compared with approved baselines. | [How trials work](/scion/41664431a8f5/trials/overview/) |
+| **Judge** | A trainable taste model: frozen vision models plus small heads trained on your votes. It ranks candidates so a person only looks at the finalists. | [The Judge](/scion/41664431a8f5/judge/overview/) |
+| **Exploration** | Tools built on determinism: fork a match at turn N (multiverse), loop a moment of play, bisect regressions, metamorphic tests, a rare-moment hunter and guided search. | [The multiverse](/scion/41664431a8f5/explore/multiverse/) |
 
 Around them sit the **evaluation funnel** (state checks, objective gates, then taste) and the **Scion Standard**
 (rules and analyzers that keep a game easy to graft and test).
@@ -51,7 +51,7 @@ Around them sit the **evaluation funnel** (state checks, objective gates, then t
 |---|---|---|
 | Unity package `me.jandson.scion` | Attributes, base classes, the weaver (an ILPostProcessor), the trials runner, capture and telemetry, the analyzers | Git URL with a tag, or OpenUPM |
 | CLI `dotnet scion` | Builds the test player, runs trials in parallel, compares, approves, trains the Judge, serves MCP | `dotnet tool install --local Scion.Cli` |
-| Agent plugin `scion` | The skill, the hooks, the MCP server entry and the `scion-triage` subagent for Claude Code; an `AGENTS.md` block for other agents | `/plugin install scion@scion`, or [agent setup](/scion/agents/setup/) |
+| Agent plugin `scion` | The skill, the hooks, the MCP server entry and the `scion-triage` subagent for Claude Code; an `AGENTS.md` block for other agents | `/plugin install scion@scion`, or [agent setup](/scion/41664431a8f5/agents/setup/) |
 
 ### How one change flows
 
@@ -90,7 +90,7 @@ agent edits scion/grafts/CritShake.cs
 | Baseline | The approved result of a recipe, kept in git under `scion/baselines/`. |
 | Verdict | `same`, `within`, `px_changed`, `changed`, `new` or `stale`: how a run compares with its baseline. |
 
-The [glossary](/scion/reference/glossary/) defines every term the docs use.
+The [glossary](/scion/41664431a8f5/reference/glossary/) defines every term the docs use.
 
 ## Guarantees and limits
 
@@ -108,7 +108,7 @@ The [glossary](/scion/reference/glossary/) defines every term the docs use.
 
 ## See also
 
-- [Requirements](/scion/start/requirements/)
-- [Install](/scion/start/install/)
-- [Quickstart](/scion/start/quickstart/)
-- [For AI agents](/scion/agents/)
+- [Requirements](/scion/41664431a8f5/start/requirements/)
+- [Install](/scion/41664431a8f5/start/install/)
+- [Quickstart](/scion/41664431a8f5/start/quickstart/)
+- [For AI agents](/scion/41664431a8f5/agents/)

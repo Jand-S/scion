@@ -124,6 +124,6 @@ Assert.Equal(0.5f, c.Result);
 
 ## See also
 
-- [Testing API](/scion/reference/api/testing/)
-- [Effects with Fx](/scion/grafts/fx/)
-- [Call and Call\<T\>](/scion/grafts/call-context/)
+- [Testing API](/scion/41664431a8f5/reference/api/testing/)
+- [Effects with Fx](/scion/41664431a8f5/grafts/fx/)
+- [Call and Call\<T\>](/scion/41664431a8f5/grafts/call-context/)

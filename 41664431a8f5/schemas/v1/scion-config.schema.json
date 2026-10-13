@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://jand-s.github.io/scion/schemas/v1/scion-config.schema.json",
+  "$id": "https://jand-s.github.io/scion/41664431a8f5/schemas/v1/scion-config.schema.json",
   "title": "scion.json and scion.local.json",
   "description": "CLI configuration at the project root; scion.local.json has the same shape with only the keys that change on one machine.",
   "type": "object",
@@ -297,7 +297,7 @@
   "additionalProperties": false,
   "examples": [
     {
-      "$schema": "https://jand-s.github.io/scion/schemas/v1/scion-config.schema.json",
+      "$schema": "https://jand-s.github.io/scion/41664431a8f5/schemas/v1/scion-config.schema.json",
       "schema_version": 1,
       "unity_project": ".",
       "grafts": {

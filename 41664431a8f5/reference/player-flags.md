@@ -162,7 +162,7 @@ An integer K, 2 to 16. Run K arenas in this process. CLI: `--mosaic`.
 
 ## See also
 
-- [trial run](/scion/cli/trial-run/)
-- [Exit codes](/scion/reference/exit-codes/)
-- [How trials work](/scion/trials/overview/)
-- [run.json](/scion/reference/files/run-json/)
+- [trial run](/scion/41664431a8f5/cli/trial-run/)
+- [Exit codes](/scion/41664431a8f5/reference/exit-codes/)
+- [How trials work](/scion/41664431a8f5/trials/overview/)
+- [run.json](/scion/41664431a8f5/reference/files/run-json/)

@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://jand-s.github.io/scion/schemas/v1/control.schema.json",
+  "$id": "https://jand-s.github.io/scion/41664431a8f5/schemas/v1/control.schema.json",
   "title": "control.json",
   "description": "How to reach the control server of a player started with -scion-control; also written to ~/.scion/live/<pid>.json.",
   "type": "object",

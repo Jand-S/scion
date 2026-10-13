@@ -96,7 +96,7 @@ dotnet scion trial run
 dotnet scion trial approve --changed --reason "damage numbers pop on spawn"
 ```
 
-Approving `changed` needs a person at an interactive terminal ([Baselines and approval](/scion/trials/baselines/)).
+Approving `changed` needs a person at an interactive terminal ([Baselines and approval](/scion/41664431a8f5/trials/baselines/)).
 
 ### 7. Ship
 
@@ -123,7 +123,7 @@ dotnet scion graft watch --recipe SlashHit
 
 On every save under `scion/grafts/`: `graft build`, `graft inject --to all`, `trial run --warm SlashHit`. It prints one
 JSON line per cycle and stops on Ctrl-C. With `trial loop` running, each injection applies on the next pass of the
-loop ([The live loop](/scion/explore/live-loop/)).
+loop ([The live loop](/scion/41664431a8f5/explore/live-loop/)).
 
 ## Errors
 
@@ -142,7 +142,7 @@ loop ([The live loop](/scion/explore/live-loop/)).
 dotnet scion graft check --hook
 ```
 
-See [Hooks](/scion/agents/hooks/).
+See [Hooks](/scion/41664431a8f5/agents/hooks/).
 
 ### Preview a promotion
 
@@ -152,7 +152,7 @@ dotnet scion graft promote DamageNumberPop --dry-run
 
 ## See also
 
-- [graft (CLI)](/scion/cli/graft/)
-- [Live injection](/scion/grafts/injection/)
-- [Baselines and approval](/scion/trials/baselines/)
-- [The live loop](/scion/explore/live-loop/)
+- [graft (CLI)](/scion/41664431a8f5/cli/graft/)
+- [Live injection](/scion/41664431a8f5/grafts/injection/)
+- [Baselines and approval](/scion/41664431a8f5/trials/baselines/)
+- [The live loop](/scion/41664431a8f5/explore/live-loop/)

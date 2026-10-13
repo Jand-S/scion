@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://jand-s.github.io/scion/schemas/v1/raw-frames.schema.json",
+  "$id": "https://jand-s.github.io/scion/41664431a8f5/schemas/v1/raw-frames.schema.json",
   "title": "raw.json",
   "description": "frames/raw.json: the layout of the raw frames kept with -scion-raw.",
   "type": "object",

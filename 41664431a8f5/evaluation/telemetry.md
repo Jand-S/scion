@@ -30,7 +30,7 @@ session.Probe("damage", hpBefore - hpAfter);
 - Keys: lowercase letters, digits and `_`.
 
 Core code can declare probes without referencing Trials: `[Probe("damage")]` on a field or property of a rule type
-makes the adapter's generated code record it at the end of each recipe ([Core API](/scion/reference/api/core/)).
+makes the adapter's generated code record it at the end of each recipe ([Core API](/scion/41664431a8f5/reference/api/core/)).
 
 ## Sensors
 
@@ -40,7 +40,7 @@ session.Sensor("enemy_hp", () => battle.State.Unit(1).Hp);
 
 - A column in `frames.tsv`, read once per captured frame.
 - Registered once per process, in `Prepare`; columns freeze at the first `BeginCut` of a recipe.
-- `state` and `tick` are the conventional names that `--check` reads first ([Verify determinism](/scion/determinism/verify/)).
+- `state` and `tick` are the conventional names that `--check` reads first ([Verify determinism](/scion/41664431a8f5/determinism/verify/)).
 
 ## Marks
 
@@ -82,7 +82,7 @@ Every line has `f` (frame of the cut, -1 outside it), `t` (game seconds since th
 
 ## See also
 
-- [TrialSession](/scion/trials/session/)
-- [telemetry.jsonl](/scion/reference/files/telemetry-jsonl/)
-- [results.tsv, frames.tsv, determinism.tsv](/scion/reference/files/tables/)
-- [Effects with Fx](/scion/grafts/fx/)
+- [TrialSession](/scion/41664431a8f5/trials/session/)
+- [telemetry.jsonl](/scion/41664431a8f5/reference/files/telemetry-jsonl/)
+- [results.tsv, frames.tsv, determinism.tsv](/scion/41664431a8f5/reference/files/tables/)
+- [Effects with Fx](/scion/41664431a8f5/grafts/fx/)

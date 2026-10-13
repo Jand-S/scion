@@ -69,7 +69,7 @@ The CLI passes them to every copy with `-scion-log-allow <file>`.
 | `magenta` | A frame has 0.2 % or more of Unity's missing-shader magenta. |
 | `determinism` | With 2 or more rounds in the process: the state hash differs (fails), or the frame count differs by one (warns) or more (fails). |
 | `px` | With 2 or more rounds: the pixel hash differs (fails; set `Deterministic(pixels: false)` to warn only). |
-| `gate:<id>` | An enabled gate fails ([Gates](/scion/evaluation/gates/)). |
+| `gate:<id>` | An enabled gate fails ([Gates](/scion/41664431a8f5/evaluation/gates/)). |
 
 ### TrialChecks
 
@@ -140,6 +140,6 @@ public sealed class SlashMisses : OrchardRecipe
 
 ## See also
 
-- [TrialSession](/scion/trials/session/)
-- [Gates](/scion/evaluation/gates/)
-- [Checks API](/scion/reference/api/checks/)
+- [TrialSession](/scion/41664431a8f5/trials/session/)
+- [Gates](/scion/41664431a8f5/evaluation/gates/)
+- [Checks API](/scion/41664431a8f5/reference/api/checks/)

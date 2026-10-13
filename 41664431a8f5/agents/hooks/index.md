@@ -53,7 +53,7 @@ stdout. Outside a Scion project (no `scion.json` above the working folder), each
 ```
 
 The index lists categories and counts, not every anchor: the agent asks `anchor list` for details. See
-[Project index and manifest](/scion/agents/project-index/).
+[Project index and manifest](/scion/41664431a8f5/agents/project-index/).
 
 ## PostToolUse: graft check
 
@@ -108,7 +108,7 @@ Run any hook by hand to see what it does: `echo '{"tool_name":"Write","tool_inpu
 
 ## See also
 
-- [index, guard](/scion/cli/index-and-guard/)
-- [graft](/scion/cli/graft/)
-- [Baselines and approval](/scion/trials/baselines/)
-- [Set up your agent](/scion/agents/setup/)
+- [index, guard](/scion/41664431a8f5/cli/index-and-guard/)
+- [graft](/scion/41664431a8f5/cli/graft/)
+- [Baselines and approval](/scion/41664431a8f5/trials/baselines/)
+- [Set up your agent](/scion/41664431a8f5/agents/setup/)

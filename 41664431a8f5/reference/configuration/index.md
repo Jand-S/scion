@@ -23,7 +23,7 @@ and the analyzers inside Unity. This page lists every key, plus scripting define
 ## scion.json
 
 ```json
-{"$schema":"https://jand-s.github.io/scion/schemas/v1/scion-config.schema.json","schema_version":1,"unity_project":".","grafts":{"promoted":"Assets/Orchard/Grafts","staging":"scion/grafts"},"trials":{"recipes_staging":"scion/recipes","out":".scion/runs","baselines":"scion/baselines","keep_runs":10,"defaults":{"copies":6,"rounds":1,"headless":true,"size":"1280x720","seed":1,"timeout_s":300},"player_args":[],"host_args":["-orchard-host"],"client_args":["-orchard-join","localhost"],"port_arg":"-orchard-port"},"rule_paths":["Assets/Orchard/Core","Assets/Orchard/Data"],"log_allow":[],"evaluators":[],"build":{"test":{"method":"Scion.Editor.ScionBuild.TestFromCommandLine","output":{"osx":".scion/builds/test/Orchard.app","win":".scion/builds/test/Orchard.exe","linux":".scion/builds/test/Orchard.x86_64"}},"final":{"method":"Scion.Editor.ScionBuild.FinalFromCommandLine","output":{"osx":".scion/builds/final/Orchard.app","win":".scion/builds/final/Orchard.exe","linux":".scion/builds/final/Orchard.x86_64"}}},"specs":{"project":"Trials/Specs/Orchard.Specs/Orchard.Specs.csproj"},"judge":{"dir":"scion/judge","eyes":"siglip2-so400m","cache":".scion/judge"}}
+{"$schema":"https://jand-s.github.io/scion/41664431a8f5/schemas/v1/scion-config.schema.json","schema_version":1,"unity_project":".","grafts":{"promoted":"Assets/Orchard/Grafts","staging":"scion/grafts"},"trials":{"recipes_staging":"scion/recipes","out":".scion/runs","baselines":"scion/baselines","keep_runs":10,"defaults":{"copies":6,"rounds":1,"headless":true,"size":"1280x720","seed":1,"timeout_s":300},"player_args":[],"host_args":["-orchard-host"],"client_args":["-orchard-join","localhost"],"port_arg":"-orchard-port"},"rule_paths":["Assets/Orchard/Core","Assets/Orchard/Data"],"log_allow":[],"evaluators":[],"build":{"test":{"method":"Scion.Editor.ScionBuild.TestFromCommandLine","output":{"osx":".scion/builds/test/Orchard.app","win":".scion/builds/test/Orchard.exe","linux":".scion/builds/test/Orchard.x86_64"}},"final":{"method":"Scion.Editor.ScionBuild.FinalFromCommandLine","output":{"osx":".scion/builds/final/Orchard.app","win":".scion/builds/final/Orchard.exe","linux":".scion/builds/final/Orchard.x86_64"}}},"specs":{"project":"Trials/Specs/Orchard.Specs/Orchard.Specs.csproj"},"judge":{"dir":"scion/judge","eyes":"siglip2-so400m","cache":".scion/judge"}}
 ```
 
 | Key | Type | Default | Meaning |
@@ -54,7 +54,7 @@ and the analyzers inside Unity. This page lists every key, plus scripting define
 | `build.test.output.<os>`, `build.final.output.<os>` | path | `.scion/builds/test\|final/<Name>` | Build outputs per OS (`osx`, `win`, `linux`). |
 | `specs.project` | path or null | null | The specs project. |
 | `judge.dir` | path | `scion/judge` | Heads, questions, votes. |
-| `judge.eyes` | string | `siglip2-so400m` | The eye model ([Models and licenses](/scion/judge/models/)). |
+| `judge.eyes` | string | `siglip2-so400m` | The eye model ([Models and licenses](/scion/41664431a8f5/judge/models/)). |
 | `judge.cache` | path | `.scion/judge` | Embeddings cache. |
 
 Paths are relative to `scion.json`; `~` expands to the home folder.
@@ -108,7 +108,7 @@ Unity does not track this file: recompile the affected assemblies after editing 
 
 ## See also
 
-- [JSON Schemas](/scion/reference/schemas/)
-- [CLI overview](/scion/cli/)
-- [Build modes](/scion/grafts/build-modes/)
-- [Player command line](/scion/reference/player-flags/)
+- [JSON Schemas](/scion/41664431a8f5/reference/schemas/)
+- [CLI overview](/scion/41664431a8f5/cli/)
+- [Build modes](/scion/41664431a8f5/grafts/build-modes/)
+- [Player command line](/scion/41664431a8f5/reference/player-flags/)

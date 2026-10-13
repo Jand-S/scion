@@ -30,7 +30,7 @@ dotnet scion mcp [--root <path>] [--log <file>]
 The server implements MCP over stdio: `initialize`, `tools/list`, `tools/call`, progress notifications and
 cancellation. Every tool runs the corresponding command in-process from the project root and returns its envelope as
 `structuredContent`, with `isError` true for exit codes 2 and 3. Commands that need a person or never end have no
-tool. The full tool list is on [MCP server](/scion/agents/mcp/).
+tool. The full tool list is on [MCP server](/scion/41664431a8f5/agents/mcp/).
 
 ## Options
 
@@ -78,5 +78,5 @@ dotnet scion mcp --log /tmp/scion-mcp.log
 
 ## See also
 
-- [MCP server](/scion/agents/mcp/)
-- [Set up your agent](/scion/agents/setup/)
+- [MCP server](/scion/41664431a8f5/agents/mcp/)
+- [Set up your agent](/scion/41664431a8f5/agents/setup/)

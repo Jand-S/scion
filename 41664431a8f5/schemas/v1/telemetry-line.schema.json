@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://jand-s.github.io/scion/schemas/v1/telemetry-line.schema.json",
+  "$id": "https://jand-s.github.io/scion/41664431a8f5/schemas/v1/telemetry-line.schema.json",
   "title": "telemetry.jsonl line",
   "description": "One line of telemetry.jsonl; the kind field selects the shape.",
   "oneOf": [

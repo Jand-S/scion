@@ -39,7 +39,7 @@ Large models are still useful: as agent evaluators on the few items the judge es
 
 ### Where it sits
 
-The judge is stage 3 of the [evaluation funnel](/scion/evaluation/overview/): after the state oracle and the gates,
+The judge is stage 3 of the [evaluation funnel](/scion/41664431a8f5/evaluation/overview/): after the state oracle and the gates,
 before a person. It sorts variants, picks which pairs a person should see, and escalates items it is unsure about.
 
 ### Pixel art
@@ -65,14 +65,14 @@ neighbor, before the eyes see the image.
 - A head predicts the taste of the people who voted; with few votes it is noisy, and `judge show` says so.
 - Confidence is not accuracy: accuracy is measured on the gold set and reported as `calibration.agreement`.
 - Studio data (captures, votes, heads) stays on your machines; nothing is sent anywhere.
-- Model licenses vary by model card; check them before shipping heads ([Models and licenses](/scion/judge/models/)).
+- Model licenses vary by model card; check them before shipping heads ([Models and licenses](/scion/41664431a8f5/judge/models/)).
 
 ## See also
 
-- [Questions and answers](/scion/judge/questions/)
-- [Train a head](/scion/judge/training/)
-- [Review a UI with the judge](/scion/judge/ui-review/)
-- [judge (CLI)](/scion/cli/judge/)
+- [Questions and answers](/scion/41664431a8f5/judge/questions/)
+- [Train a head](/scion/41664431a8f5/judge/training/)
+- [Review a UI with the judge](/scion/41664431a8f5/judge/ui-review/)
+- [judge (CLI)](/scion/41664431a8f5/cli/judge/)
 
 ---
 
@@ -137,10 +137,10 @@ The same shape, with `items` filled, is `eval-in.json` for evaluators.
 
 ## See also
 
-- [The Judge](/scion/judge/overview/)
-- [eval-in.json, eval-out.json, evals.tsv](/scion/reference/files/evals/)
-- [Judge data files](/scion/reference/files/judge-data/)
-- [Evaluators](/scion/evaluation/evaluators/)
+- [The Judge](/scion/41664431a8f5/judge/overview/)
+- [eval-in.json, eval-out.json, evals.tsv](/scion/41664431a8f5/reference/files/evals/)
+- [Judge data files](/scion/41664431a8f5/reference/files/judge-data/)
+- [Evaluators](/scion/41664431a8f5/evaluation/evaluators/)
 
 ---
 
@@ -263,10 +263,10 @@ dotnet scion judge new hit_weight --question scion/judge/questions/hit_weight.js
 
 ## See also
 
-- [Questions and answers](/scion/judge/questions/)
-- [judge (CLI)](/scion/cli/judge/)
-- [Judge data files](/scion/reference/files/judge-data/)
-- [Judge motion](/scion/judge/motion/)
+- [Questions and answers](/scion/41664431a8f5/judge/questions/)
+- [judge (CLI)](/scion/41664431a8f5/cli/judge/)
+- [Judge data files](/scion/41664431a8f5/reference/files/judge-data/)
+- [Judge motion](/scion/41664431a8f5/judge/motion/)
 
 ---
 
@@ -358,9 +358,9 @@ dotnet scion judge run 20261012-091500 --heads hit_weight,juice
 
 ## See also
 
-- [The motion pack](/scion/evaluation/motion-pack/)
-- [Train a head](/scion/judge/training/)
-- [Tune a hit effect](/scion/cookbook/tune-hit-feel/)
+- [The motion pack](/scion/41664431a8f5/evaluation/motion-pack/)
+- [Train a head](/scion/41664431a8f5/judge/training/)
+- [Tune a hit effect](/scion/41664431a8f5/cookbook/tune-hit-feel/)
 
 ---
 
@@ -423,7 +423,7 @@ ranks it like anything else.
 ### Blend syntax
 
 `base + 0.7 heavy + 0.3 snappy`: weights are decimals, presets are names in `scion/presets/`, `base` is the initial
-values. See [Tunables and presets](/scion/grafts/tunables/).
+values. See [Tunables and presets](/scion/41664431a8f5/grafts/tunables/).
 
 ## Errors
 
@@ -448,9 +448,9 @@ dotnet scion trial run --spec StrongerCrits --variants base,"base + 0.7 heavy + 
 
 ## See also
 
-- [Tunables and presets](/scion/grafts/tunables/)
-- [Train a head](/scion/judge/training/)
-- [Guided search](/scion/explore/guided-search/)
+- [Tunables and presets](/scion/41664431a8f5/grafts/tunables/)
+- [Train a head](/scion/41664431a8f5/judge/training/)
+- [Guided search](/scion/41664431a8f5/explore/guided-search/)
 
 ---
 
@@ -465,8 +465,8 @@ pairs, and a person picks between the final two. The vote trains the judge for n
 
 ## Before you begin
 
-- The `HudStates` static trial ([Capture every HUD state](/scion/cookbook/hud-states/)).
-- Trained heads `readability`, `has_glitch` and `looks_like_orchard` ([Train a head](/scion/judge/training/)).
+- The `HudStates` static trial ([Capture every HUD state](/scion/41664431a8f5/cookbook/hud-states/)).
+- Trained heads `readability`, `has_glitch` and `looks_like_orchard` ([Train a head](/scion/41664431a8f5/judge/training/)).
 - Optional: a reference library of screens from other games, indexed by the judge (`scion/judge/references/`).
 
 ## Steps
@@ -539,15 +539,15 @@ dotnet scion judge train readability
 
 ## Next steps
 
-- Promote the winning grafts and approve the new stills ([From draft to final build](/scion/grafts/lifecycle/)).
-- Add the HUD review to CI with only steps 1 and 2 ([Run Scion in CI](/scion/cookbook/ci/)).
-- Train an audience head for accessibility ([Taste heads and feel presets](/scion/judge/presets/)).
+- Promote the winning grafts and approve the new stills ([From draft to final build](/scion/41664431a8f5/grafts/lifecycle/)).
+- Add the HUD review to CI with only steps 1 and 2 ([Run Scion in CI](/scion/41664431a8f5/cookbook/ci/)).
+- Train an audience head for accessibility ([Taste heads and feel presets](/scion/41664431a8f5/judge/presets/)).
 
 ## See also
 
-- [Capture every HUD state](/scion/cookbook/hud-states/)
-- [Gates](/scion/evaluation/gates/)
-- [Train a head](/scion/judge/training/)
+- [Capture every HUD state](/scion/41664431a8f5/cookbook/hud-states/)
+- [Gates](/scion/41664431a8f5/evaluation/gates/)
+- [Train a head](/scion/41664431a8f5/judge/training/)
 
 ---
 
@@ -598,6 +598,6 @@ Nothing leaves the machine: the judge makes no network calls after the model is 
 
 ## See also
 
-- [The Judge](/scion/judge/overview/)
-- [Judge data files](/scion/reference/files/judge-data/)
-- [License](/scion/help/license/)
+- [The Judge](/scion/41664431a8f5/judge/overview/)
+- [Judge data files](/scion/41664431a8f5/reference/files/judge-data/)
+- [License](/scion/41664431a8f5/help/license/)

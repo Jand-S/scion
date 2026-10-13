@@ -24,11 +24,11 @@ You prove determinism by running the same recipe twice and comparing hashes.
 ## When to use
 
 - Use it when the game has code, scenes and its own folder layout that must stay as they are.
-- Do not use it for a new, empty project: [`new --genre`](/scion/start/new-project/) gives you level 3 directly.
+- Do not use it for a new, empty project: [`new --genre`](/scion/41664431a8f5/start/new-project/) gives you level 3 directly.
 
 ## Before you begin
 
-- The package and the CLI are installed ([Install](/scion/start/install/), steps 1 and 2).
+- The package and the CLI are installed ([Install](/scion/41664431a8f5/start/install/), steps 1 and 2).
 - Your game code is in assembly definitions. If it is all in `Assembly-CSharp`, create one `.asmdef` for the game
   code first: grafts compile into an assembly through an `.asmref`, and `Scion.Runtime` is not auto-referenced.
 
@@ -57,7 +57,7 @@ dotnet scion diagnose
 ```
 
 The full report is in `Library/Scion/diagnose.md`: the level, the blockers worst first, the singletons that would
-block the [mosaic](/scion/trials/mosaic/), large files that mix rules and presentation, and the plan.
+block the [mosaic](/scion/41664431a8f5/trials/mosaic/), large files that mix rules and presentation, and the plan.
 
 ### 3. Level 1: write a graft today
 
@@ -68,7 +68,7 @@ dotnet scion anchor list --search hit
 dotnet scion graft new HitFlash --after Orchard.Presentation.HitPresenter.Play
 ```
 
-Then follow [Write a graft](/scion/grafts/write/). Without an adapter you verify grafts in the editor or a build;
+Then follow [Write a graft](/scion/41664431a8f5/grafts/write/). Without an adapter you verify grafts in the editor or a build;
 with one (level 2) you verify them in recipes.
 
 ### 4. Level 2: write the adapter
@@ -86,7 +86,7 @@ recipe. The real cost of an adapter is knowing three things about your game:
    (a custom PRNG, a seeded service) must take `TrialSession.RunSeed` or the recipe `Seed`.
 
 A one-scene game without networking needs 30 to 50 lines; a networked tactics game about 300. See
-[Write an adapter](/scion/trials/adapters/).
+[Write an adapter](/scion/41664431a8f5/trials/adapters/).
 
 ### 5. Prove determinism
 
@@ -98,7 +98,7 @@ dotnet scion trial run SlashHit --rounds 4 --check
 
 `determinism.hash_stable: true` means every round gave the same state hash. When it is `false`, `determinism.tsv`
 names the first frame and the first column that differs (`state`, `tick`, `rng`, `unscaled`, `time`, `px`,
-`frames`). See [Verify determinism](/scion/determinism/verify/).
+`frames`). See [Verify determinism](/scion/41664431a8f5/determinism/verify/).
 
 ### 6. Level 3: register the simulation
 
@@ -110,7 +110,7 @@ Level 3 needs the rules in an assembly without engine references and a command l
 ```
 
 `doctor` then reports `adoption_level: 3`, and the multiverse, balance specs, metamorphic tests and the rare-moment
-hunter work. See [Core API](/scion/reference/api/core/).
+hunter work. See [Core API](/scion/41664431a8f5/reference/api/core/).
 
 ## Reference
 
@@ -122,7 +122,7 @@ hunter work. See [Core API](/scion/reference/api/core/).
 
 `init --existing` options: `--dry-run`, `--game-assembly <name>` (skip the question), `--grafts-folder <path>`
 (default `Assets/<Game>/Grafts`). `diagnose` options: `--adapter` (write the skeleton), `--assembly <name>` (repeat
-to scan only some). See [init](/scion/cli/init/) and [diagnose](/scion/cli/diagnose/).
+to scan only some). See [init](/scion/41664431a8f5/cli/init/) and [diagnose](/scion/41664431a8f5/cli/diagnose/).
 
 ## Errors
 
@@ -131,7 +131,7 @@ to scan only some). See [init](/scion/cli/init/) and [diagnose](/scion/cli/diagn
 | `usage` | 2 | `init` without `--existing` in a project that has scripts. | Add `--existing`. |
 | `config_invalid` | 3 | An existing `scion.json` has a bad key. | Fix the key named in the message; `init` never overwrites it. |
 | `no_simulation` | 3 | A level 3 command found no `[assembly: Simulation]`. | Register an `ISimulation` (step 6). |
-| `SCN202`, `SCN203` | 3 | The adapter is not valid, or two adapters handle the same recipe type. | See [Trials diagnostics](/scion/reference/diagnostics/trials/). |
+| `SCN202`, `SCN203` | 3 | The adapter is not valid, or two adapters handle the same recipe type. | See [Trials diagnostics](/scion/41664431a8f5/reference/diagnostics/trials/). |
 
 ## Examples
 
@@ -151,7 +151,7 @@ shows up as a `diff` line in `determinism.tsv`.
 
 ## See also
 
-- [diagnose](/scion/cli/diagnose/)
-- [Find non-determinism](/scion/determinism/diagnose/)
-- [Write an adapter](/scion/trials/adapters/)
-- [The Scion Standard](/scion/standard/overview/)
+- [diagnose](/scion/41664431a8f5/cli/diagnose/)
+- [Find non-determinism](/scion/41664431a8f5/determinism/diagnose/)
+- [Write an adapter](/scion/41664431a8f5/trials/adapters/)
+- [The Scion Standard](/scion/41664431a8f5/standard/overview/)

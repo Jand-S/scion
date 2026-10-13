@@ -103,6 +103,6 @@ foreach (var line in Determinism.Census()) s.Note(line);
 
 ## See also
 
-- [Deterministic runs](/scion/determinism/overview/)
-- [Verify determinism](/scion/determinism/verify/)
-- [Determinism API](/scion/reference/api/determinism/)
+- [Deterministic runs](/scion/41664431a8f5/determinism/overview/)
+- [Verify determinism](/scion/41664431a8f5/determinism/verify/)
+- [Determinism API](/scion/41664431a8f5/reference/api/determinism/)

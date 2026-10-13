@@ -85,6 +85,6 @@ dotnet scion trial loop SlashHit --passes 5
 
 ## See also
 
-- [The live loop](/scion/explore/live-loop/)
-- [graft](/scion/cli/graft/)
-- [Turn any match into a recipe](/scion/trials/captured-matches/)
+- [The live loop](/scion/41664431a8f5/explore/live-loop/)
+- [graft](/scion/41664431a8f5/cli/graft/)
+- [Turn any match into a recipe](/scion/41664431a8f5/trials/captured-matches/)

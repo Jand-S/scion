@@ -38,7 +38,7 @@ The manifest is queried through commands, not read whole.
 
 Anchor categories come from the first segment of `[Anchor]` ids (`presentation.hit` is in `presentation`); anchors
 without an id count under their type's namespace. With `--hook` the same text is wrapped as Claude Code
-`SessionStart` context ([Hooks](/scion/agents/hooks/)).
+`SessionStart` context ([Hooks](/scion/41664431a8f5/agents/hooks/)).
 
 ## The block in CLAUDE.md or AGENTS.md
 
@@ -48,7 +48,7 @@ markers is yours and never touched:
 ```md
 <!-- scion:begin -->
 ## Scion
-This project uses Scion 1.0.0 (adoption level 3). Docs: https://jand-s.github.io/scion/llms.txt
+This project uses Scion 1.0.0 (adoption level 3). Docs: https://jand-s.github.io/scion/41664431a8f5/llms.txt
 ...
 <!-- scion:end -->
 ```
@@ -62,11 +62,11 @@ Claude Code and the other agents read the same block.
 
 | File | For | Content |
 |---|---|---|
-| `scion.manifest.json` | tools and agents, through commands | Every anchor with its id, target, signature and doc; every graft with file, line, kind, priority and target; every tunable with type, range, value and layer; every recipe; every probe. Schema: [`manifest.schema.json`](/scion/schemas/v1/manifest.schema.json) |
+| `scion.manifest.json` | tools and agents, through commands | Every anchor with its id, target, signature and doc; every graft with file, line, kind, priority and target; every tunable with type, range, value and layer; every recipe; every probe. Schema: [`manifest.schema.json`](/scion/41664431a8f5/schemas/v1/manifest.schema.json) |
 | `GRAFTS.md` | people and pull requests | A readable table of the same data, grouped by anchor |
 
 Both are generated: nobody edits them by hand, and the baseline guard denies agent edits to them
-([Hooks](/scion/agents/hooks/)). The source of truth is the code: `[Anchor(Id, Doc)]`, `[Before]`/`[After]`,
+([Hooks](/scion/41664431a8f5/agents/hooks/)). The source of truth is the code: `[Anchor(Id, Doc)]`, `[Before]`/`[After]`,
 `[Tunable]`, `[Probe]` and the recipe classes.
 
 `gen` reads source with Roslyn when the Unity project has not compiled, and the build's DLLs with Mono.Cecil when a
@@ -80,7 +80,7 @@ dotnet scion graft check --strict
 ```
 
 The first line fails the job when someone changed an anchor or graft without regenerating. The second fails on
-warnings too. See [Run Scion in CI](/scion/cookbook/ci/).
+warnings too. See [Run Scion in CI](/scion/41664431a8f5/cookbook/ci/).
 
 ## Querying instead of reading
 
@@ -96,7 +96,7 @@ Agents never read the manifest whole. They ask:
 
 ## See also
 
-- [index, guard](/scion/cli/index-and-guard/)
-- [gen](/scion/cli/gen/)
-- [scion.manifest.json and GRAFTS.md](/scion/reference/files/manifest/)
-- [Hooks](/scion/agents/hooks/)
+- [index, guard](/scion/41664431a8f5/cli/index-and-guard/)
+- [gen](/scion/41664431a8f5/cli/gen/)
+- [scion.manifest.json and GRAFTS.md](/scion/41664431a8f5/reference/files/manifest/)
+- [Hooks](/scion/41664431a8f5/agents/hooks/)

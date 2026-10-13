@@ -30,7 +30,7 @@ weaver:
 
 The weaver only rewrites the assembly it is compiling. A graft must therefore compile **into the anchor's own
 assembly**: you keep grafts in their own folder and point it at the game assembly with an `.asmref`
-([SCN102](/scion/reference/diagnostics/grafts/#scn102)).
+([SCN102](/scion/41664431a8f5/reference/diagnostics/grafts/#scn102)).
 
 ### Two modes
 
@@ -45,7 +45,7 @@ assembly**: you keep grafts in their own folder and point it at the game assembl
 | A graft that throws | propagates like any other code | is caught, disabled alone and reported to `Faults` |
 
 In slot mode, `[assembly: AnchorScope(typeof(T))]` gives methods a slot even when no graft targets them yet, so a
-new graft can be injected there without a rebuild ([Anchors](/scion/grafts/anchors/)).
+new graft can be injected there without a rebuild ([Anchors](/scion/41664431a8f5/grafts/anchors/)).
 
 ### Why compile time
 
@@ -57,14 +57,14 @@ Scion's weaver gives:
 - one dispatcher per anchor with a fixed order, so the order never depends on load order.
 
 The per-call context `ref Call<T>` follows the model of Mixin's `CallbackInfoReturnable`: grafts can skip the
-anchor, return a value or change its result ([Call and Call\<T\>](/scion/grafts/call-context/)).
+anchor, return a value or change its result ([Call and Call\<T\>](/scion/41664431a8f5/grafts/call-context/)).
 
 ### Grafts are visual
 
 The weaver does not run in plain `dotnet test`, in the rules simulator or anywhere outside Unity. A graft that
 changed a rule would work in the game and vanish everywhere else, and co-op peers would disagree. So every graft is
 presentation: effects, sound, camera, HUD, telemetry. Rules change in the core through `RuleModifier<T>`
-([Grafts are visual only](/scion/grafts/visual-only/)).
+([Grafts are visual only](/scion/41664431a8f5/grafts/visual-only/)).
 
 ## Key terms
 
@@ -82,23 +82,23 @@ presentation: effects, sound, camera, HUD, telemetry. Rules change in the core t
 ## Guarantees and limits
 
 - Removing the grafts folder leaves a game that compiles and plays as before: nothing may depend on a graft
-  ([SCN110](/scion/reference/diagnostics/grafts/#scn110)).
+  ([SCN110](/scion/41664431a8f5/reference/diagnostics/grafts/#scn110)).
 - Order within one call is fixed: observers, then other befores by `Priority`, then the body, then afters by
   `Priority`; ties break on the graft's full name.
 - The final build contains no slots, no injection and no trials code; a final build with test defines fails
-  ([SCN121](/scion/reference/diagnostics/builds-and-injection/#scn121)).
+  ([SCN121](/scion/41664431a8f5/reference/diagnostics/builds-and-injection/#scn121)).
 - Some methods cannot be anchors: iterators, `async` methods, Netcode RPCs, struct methods, generic methods, methods
-  with `out` parameters and a few more ([SCN105](/scion/reference/diagnostics/grafts/#scn105)). Hang the graft on the
+  with `out` parameters and a few more ([SCN105](/scion/41664431a8f5/reference/diagnostics/grafts/#scn105)). Hang the graft on the
   plain method they call.
 - Injected grafts must be `public` in a `public` type: they live in another assembly.
 - Mono never unloads assemblies; a warm copy asks to be recycled after 50 injections (`InjectReport.Recycle`).
 
 ## See also
 
-- [Write a graft](/scion/grafts/write/)
-- [Build modes](/scion/grafts/build-modes/)
-- [Live injection](/scion/grafts/injection/)
-- [Architecture](/scion/contribute/architecture/)
+- [Write a graft](/scion/41664431a8f5/grafts/write/)
+- [Build modes](/scion/41664431a8f5/grafts/build-modes/)
+- [Live injection](/scion/41664431a8f5/grafts/injection/)
+- [Architecture](/scion/41664431a8f5/contribute/architecture/)
 
 ---
 
@@ -116,7 +116,7 @@ and the ordering controls `Priority` and `Observe`.
 - Use a graft to add presentation to a game method without editing it: an effect, a sound, a camera move, a HUD
   change, telemetry, a trials mark.
 - Do not use a graft to change a rule (damage, range, turn order, anything in the state hash). Change the core with a
-  `RuleModifier<T>` ([Grafts are visual only](/scion/grafts/visual-only/)).
+  `RuleModifier<T>` ([Grafts are visual only](/scion/41664431a8f5/grafts/visual-only/)).
 
 ## Before you begin
 
@@ -188,8 +188,8 @@ The check runs Roslyn and the weaver rules against the test build, without Unity
 
 ### 5. Try and promote it
 
-Inject it into a running copy ([Live injection](/scion/grafts/injection/)), or promote it and rebuild
-([From draft to final build](/scion/grafts/lifecycle/)).
+Inject it into a running copy ([Live injection](/scion/41664431a8f5/grafts/injection/)), or promote it and rebuild
+([From draft to final build](/scion/41664431a8f5/grafts/lifecycle/)).
 
 ## Reference
 
@@ -208,17 +208,17 @@ public static void After(HitPresenter presenter, HitEvent e) { }
 ```
 
 Both attributes allow multiple use, so one method can hang on several targets. Targets must be declared on the type
-itself: a method inherited from a base class is not found ([SCN103](/scion/reference/diagnostics/grafts/#scn103)).
+itself: a method inherited from a base class is not found ([SCN103](/scion/41664431a8f5/reference/diagnostics/grafts/#scn103)).
 
 ### Method shape
 
 | Rule | Diagnostic |
 |---|---|
-| `static void` | [SCN101](/scion/reference/diagnostics/grafts/#scn101) |
+| `static void` | [SCN101](/scion/41664431a8f5/reference/diagnostics/grafts/#scn101) |
 | `public` or `internal` (injected drafts: `public`, in a `public` type) | SCN101 |
 | Not generic, not in a generic type, not in a private or protected nested type | SCN101 |
-| Compiled into the target's assembly (folder with an `.asmref`) | [SCN102](/scion/reference/diagnostics/grafts/#scn102) |
-| Never called by game code | [SCN110](/scion/reference/diagnostics/grafts/#scn110) |
+| Compiled into the target's assembly (folder with an `.asmref`) | [SCN102](/scion/41664431a8f5/reference/diagnostics/grafts/#scn102) |
+| Never called by game code | [SCN110](/scion/41664431a8f5/reference/diagnostics/grafts/#scn110) |
 
 Name the class after the graft (`CritShake`) and the method after its side (`Before` or `After`). The graft's
 identity is its full name, `Orchard.Grafts.CritShake.After`: it orders ties, names the graft in `Fx` telemetry and
@@ -240,8 +240,8 @@ public static void After(HitPresenter presenter) => hits++;   // only the instan
 ```
 
 **Overloads.** The overload whose full signature matches wins; otherwise the single overload the prefix matches.
-When a prefix matches two or more overloads, it is [SCN112](/scion/reference/diagnostics/grafts/#scn112): declare all
-parameters. A signature that matches nothing is [SCN104](/scion/reference/diagnostics/grafts/#scn104), whose hint
+When a prefix matches two or more overloads, it is [SCN112](/scion/41664431a8f5/reference/diagnostics/grafts/#scn112): declare all
+parameters. A signature that matches nothing is [SCN104](/scion/41664431a8f5/reference/diagnostics/grafts/#scn104), whose hint
 gives the expected signature.
 
 **Values.** A graft sees the current parameter values: if the body reassigns a parameter, an `[After]` sees the new
@@ -264,7 +264,7 @@ public static void After(HitPresenter presenter, HitEvent e) { }
 
 `Observe = true` (only on `[Before]`) marks an observer: a graft that only watches. Observers always run, before
 every `[Before]` that may skip the target, ordered by `Priority` among themselves, and may not call `Skip()` or
-`Return()` ([SCN108](/scion/reference/diagnostics/grafts/#scn108)). Use one when the graft must see every call,
+`Return()` ([SCN108](/scion/41664431a8f5/reference/diagnostics/grafts/#scn108)). Use one when the graft must see every call,
 including calls another graft skips, such as a trials mark:
 
 ```csharp
@@ -294,7 +294,7 @@ If the target throws, the `[After]` grafts do not run.
 | `SCN112` | compile error | A prefix matches several overloads. | Declare all parameters. |
 
 In `graft check` and `build test` these come back in `diagnostics[]` or `errors[]` with exit code 1. The full list is
-in [Graft diagnostics](/scion/reference/diagnostics/grafts/).
+in [Graft diagnostics](/scion/41664431a8f5/reference/diagnostics/grafts/).
 
 ## Examples
 
@@ -320,10 +320,10 @@ Both targets share the parameter list `(int amount, Vector3 at)`, so one method 
 
 ## See also
 
-- [Call and Call\<T\>](/scion/grafts/call-context/)
-- [Anchors](/scion/grafts/anchors/)
-- [graft (CLI)](/scion/cli/graft/)
-- [Grafts API](/scion/reference/api/grafts/)
+- [Call and Call\<T\>](/scion/41664431a8f5/grafts/call-context/)
+- [Anchors](/scion/41664431a8f5/grafts/anchors/)
+- [graft (CLI)](/scion/41664431a8f5/cli/graft/)
+- [Grafts API](/scion/41664431a8f5/reference/api/grafts/)
 
 ---
 
@@ -355,8 +355,8 @@ that return `void`, `ref Call<T>` for targets that return `T`. With it a graft r
 | `T` | `ref Call<T> c`, with `T` equal to the return type | `Skipped`, `Result`, `Return(T)`, `Tag` |
 
 It must be passed by `ref`; a `Call` by value, `in` or `out` is a signature error
-([SCN104](/scion/reference/diagnostics/grafts/#scn104)). A `T` that differs from the return type, or `Call` on a
-target that returns a value, is [SCN109](/scion/reference/diagnostics/grafts/#scn109).
+([SCN104](/scion/41664431a8f5/reference/diagnostics/grafts/#scn104)). A `T` that differs from the return type, or `Call` on a
+target that returns a value, is [SCN109](/scion/41664431a8f5/reference/diagnostics/grafts/#scn109).
 
 ### 2. Skip a void target
 
@@ -412,7 +412,7 @@ public static class HitTiming
 ```
 
 When two or more befores, or two or more afters, of one anchor use `Tag`, the weaver warns
-([SCN111](/scion/reference/diagnostics/grafts/#scn111)): let one pair own it, or keep other state in your own fields.
+([SCN111](/scion/41664431a8f5/reference/diagnostics/grafts/#scn111)): let one pair own it, or keep other state in your own fields.
 
 ## Reference
 
@@ -475,13 +475,13 @@ CritShake.After(null, new HitEvent(attacker: 0, target: 1, amount: 9, crit: true
 Assert.Equal(0.56f, c.Result, 3);
 ```
 
-See [Test grafts without Unity](/scion/grafts/testing/).
+See [Test grafts without Unity](/scion/41664431a8f5/grafts/testing/).
 
 ## See also
 
-- [Write a graft](/scion/grafts/write/)
-- [Grafts API](/scion/reference/api/grafts/)
-- [Graft diagnostics](/scion/reference/diagnostics/grafts/)
+- [Write a graft](/scion/41664431a8f5/grafts/write/)
+- [Grafts API](/scion/41664431a8f5/reference/api/grafts/)
+- [Graft diagnostics](/scion/41664431a8f5/reference/diagnostics/grafts/)
 
 ---
 
@@ -554,7 +554,7 @@ every eligible method covered by an `AnchorScope` also gets a slot, with or with
 
 ### Methods that cannot be anchors
 
-A graft on one of these is [SCN105](/scion/reference/diagnostics/grafts/#scn105), with the reason; `AnchorScope`
+A graft on one of these is [SCN105](/scion/41664431a8f5/reference/diagnostics/grafts/#scn105), with the reason; `AnchorScope`
 skips them silently:
 
 - constructors, abstract methods and methods without a body;
@@ -581,16 +581,16 @@ Anchors.Id(true, "Orchard.Presentation.HitPresenter", "Play", new[] { "HitEvent"
 ```
 
 Overloads whose ids collide (for example `List<int>` and `List<string>` parameters) are
-[SCN106](/scion/reference/diagnostics/grafts/#scn106) when a graft targets them, and get no slot in a scope.
+[SCN106](/scion/41664431a8f5/reference/diagnostics/grafts/#scn106) when a graft targets them, and get no slot in a scope.
 
 ### AnchorScope rules
 
 | Rule | Detail |
 |---|---|
-| Where | In the assembly that defines the type; elsewhere it is [SCN107](/scion/reference/diagnostics/grafts/#scn107). |
+| Where | In the assembly that defines the type; elsewhere it is [SCN107](/scion/41664431a8f5/reference/diagnostics/grafts/#scn107). |
 | `Members` omitted | Every eligible method of the type, both sides. |
 | `Members` given | Only those names; an empty array gives none. Use compiled names: a property getter is `get_Name`. |
-| A name that does not exist | [SCN103](/scion/reference/diagnostics/grafts/#scn103) with the closest name. |
+| A name that does not exist | [SCN103](/scion/41664431a8f5/reference/diagnostics/grafts/#scn103) with the closest name. |
 | A name whose overloads are all ineligible or collide | SCN105 or SCN106 (no file and line: it comes from an assembly attribute). |
 | Several attributes for one type | They add up. |
 | Final build | Ignored. |
@@ -603,7 +603,7 @@ Overloads whose ids collide (for example `List<int>` and `List<string>` paramete
 | `dotnet scion anchor show <id>` | One anchor: signature, grafts in run order, a ready graft declaration |
 
 `<id>` is an `[Anchor]` id (`presentation.hit`), a slot id (`A__...`) or `Type.Method`. See
-[anchor list, anchor show](/scion/cli/anchor/).
+[anchor list, anchor show](/scion/41664431a8f5/cli/anchor/).
 
 ## Errors
 
@@ -631,10 +631,10 @@ dotnet scion anchor list --type Orchard.Presentation.CameraRig
 
 ## See also
 
-- [anchor list, anchor show](/scion/cli/anchor/)
-- [Write a graft](/scion/grafts/write/)
-- [Live injection](/scion/grafts/injection/)
-- [Grafts API](/scion/reference/api/grafts/)
+- [anchor list, anchor show](/scion/41664431a8f5/cli/anchor/)
+- [Write a graft](/scion/41664431a8f5/grafts/write/)
+- [Live injection](/scion/41664431a8f5/grafts/injection/)
+- [Grafts API](/scion/41664431a8f5/reference/api/grafts/)
 
 ---
 
@@ -669,10 +669,10 @@ Two analyzers read `ProjectSettings/ScionSettings.json`:
 {"schema_version":1,"analyzers":{"rule_assemblies":["Orchard.Core"],"rule_types":["Unity.Netcode.*"],"graft_paths":["Assets/Orchard/Grafts/","../scion/grafts/"]}}
 ```
 
-- [SCN003](/scion/reference/diagnostics/standard/#scn003) (error): inside graft code, any write to a field, property,
+- [SCN003](/scion/41664431a8f5/reference/diagnostics/standard/#scn003) (error): inside graft code, any write to a field, property,
   indexer, event or array element of a rule type, and any use of an internal member of a rule type. A rule type is
   any type in `rule_assemblies`, any type matched by `rule_types`, and any class derived from one.
-- [SCN110](/scion/reference/diagnostics/grafts/#scn110) (error): game code that refers to graft code. Nothing may
+- [SCN110](/scion/41664431a8f5/reference/diagnostics/grafts/#scn110) (error): game code that refers to graft code. Nothing may
   depend on a graft, so deleting the grafts folder leaves a game that compiles and plays the same.
 
 ```csharp
@@ -694,7 +694,7 @@ dotnet scion trial run --rounds 2 --grafts .scion/grafts/ScionGrafts_51c2.dll
 ```
 
 Any `hash: changed` in the second run means the graft touched a rule. The multiverse does the same comparison per turn
-and names the first field that changed ([The multiverse](/scion/explore/multiverse/)).
+and names the first field that changed ([The multiverse](/scion/41664431a8f5/explore/multiverse/)).
 
 ### Rules change in the core
 
@@ -715,7 +715,7 @@ namespace Orchard.Core
 
 The core registers it explicitly (`damage.Add(new BackstabBonus())`), so the rule set is visible in code, enters the
 lobby hash and runs the same in Unity, in the simulator and on every peer. See
-[Core API](/scion/reference/api/core/).
+[Core API](/scion/41664431a8f5/reference/api/core/).
 
 ## Key terms
 
@@ -734,14 +734,14 @@ lobby hash and runs the same in Unity, in the simulator and on every peer. See
   outside it).
 - After editing `ScionSettings.json`, recompile the affected assembly; Unity does not track the file.
 - To reach audio, camera or HUD from a graft, call the `Fx` facade instead of the game's systems
-  ([Effects with Fx](/scion/grafts/fx/)).
+  ([Effects with Fx](/scion/41664431a8f5/grafts/fx/)).
 
 ## See also
 
-- [Rules R1-R8](/scion/standard/rules/)
-- [Core API](/scion/reference/api/core/)
-- [Standard diagnostics](/scion/reference/diagnostics/standard/)
-- [Effects with Fx](/scion/grafts/fx/)
+- [Rules R1-R8](/scion/41664431a8f5/standard/rules/)
+- [Core API](/scion/41664431a8f5/reference/api/core/)
+- [Standard diagnostics](/scion/41664431a8f5/reference/diagnostics/standard/)
+- [Effects with Fx](/scion/41664431a8f5/grafts/fx/)
 
 ---
 
@@ -776,7 +776,7 @@ dotnet scion build test
 
 The CLI finds the Unity editor of the project and builds in batchmode. With the editor open and the
 `com.unity.pipeline` package installed, it builds through the open editor instead; with the editor open and no
-pipeline, it stops with [`editor_open`](/scion/reference/errors/#editor_open).
+pipeline, it stops with [`editor_open`](/scion/41664431a8f5/reference/errors/#editor_open).
 
 ### 2. Build the final player
 
@@ -819,7 +819,7 @@ public static class OrchardBuilds
 | none | final build | Call mode: anchors call `__ScionGenerated.D_<id>` directly. No slots, no lab. |
 | `SCION_SLOTS` | test build | Slot mode: one delegate field per anchor, `Injection`, the control server. Needs Mono. |
 | `SCION_TRIALS` | test build | `Scion.Trials`, the virtual clock and screen, `SeededRandom`, captures. |
-| `SCION_NETCLOCK` | you, optional | Moves the Netcode tick onto the virtual clock ([Netcode clock](/scion/determinism/netclock/)). |
+| `SCION_NETCLOCK` | you, optional | Moves the Netcode tick onto the virtual clock ([Netcode clock](/scion/41664431a8f5/determinism/netclock/)). |
 | `SCION_VERBOSE` | you, optional | Extra `[Scion]` log lines from the weaver and the session. Off by default. |
 
 Code that uses test-only types sits inside the matching define:
@@ -857,7 +857,7 @@ active profile unless `BuildPlayerOptions.scenes` is set.
 | File | Content |
 |---|---|
 | `<out>/<player_name>.app` (or `.exe`) | The player. `player_name` comes from `build.player_name` in `ScionSettings.json`. |
-| `<out>/scion-build.json` | Build id, git commit, Unity version, backend, defines, slots and recipe names ([scion-build.json](/scion/reference/files/scion-build-json/)). |
+| `<out>/scion-build.json` | Build id, git commit, Unity version, backend, defines, slots and recipe names ([scion-build.json](/scion/41664431a8f5/reference/files/scion-build-json/)). |
 
 `build_id` is the first 12 hex digits of the SHA-256 of the main game assembly as built. Injection and baselines use
 it to tell builds apart.
@@ -890,10 +890,10 @@ dotnet scion trial run --build /tmp/orchard-test/Orchard.app
 
 ## See also
 
-- [build test, build final](/scion/cli/build/)
-- [Editor API](/scion/reference/api/editor/)
-- [scion-build.json](/scion/reference/files/scion-build-json/)
-- [SCN120-SCN131](/scion/reference/diagnostics/builds-and-injection/)
+- [build test, build final](/scion/41664431a8f5/cli/build/)
+- [Editor API](/scion/41664431a8f5/reference/api/editor/)
+- [scion-build.json](/scion/41664431a8f5/reference/files/scion-build-json/)
+- [SCN120-SCN131](/scion/41664431a8f5/reference/diagnostics/builds-and-injection/)
 
 ---
 
@@ -1035,11 +1035,11 @@ dotnet scion trial diff 20261011-143200 20261011-143512 SlashHit
 
 ## See also
 
-- [graft (CLI)](/scion/cli/graft/)
-- [Warm copies](/scion/trials/warm-copies/)
-- [Injection API](/scion/reference/api/injection/)
-- [InjectReport JSON](/scion/reference/files/inject-report/)
-- [Control protocol](/scion/reference/control-protocol/)
+- [graft (CLI)](/scion/41664431a8f5/cli/graft/)
+- [Warm copies](/scion/41664431a8f5/trials/warm-copies/)
+- [Injection API](/scion/41664431a8f5/reference/api/injection/)
+- [InjectReport JSON](/scion/41664431a8f5/reference/files/inject-report/)
+- [Control protocol](/scion/41664431a8f5/reference/control-protocol/)
 
 ---
 
@@ -1128,7 +1128,7 @@ dotnet scion trial run
 dotnet scion trial approve --changed --reason "damage numbers pop on spawn"
 ```
 
-Approving `changed` needs a person at an interactive terminal ([Baselines and approval](/scion/trials/baselines/)).
+Approving `changed` needs a person at an interactive terminal ([Baselines and approval](/scion/41664431a8f5/trials/baselines/)).
 
 ### 7. Ship
 
@@ -1155,7 +1155,7 @@ dotnet scion graft watch --recipe SlashHit
 
 On every save under `scion/grafts/`: `graft build`, `graft inject --to all`, `trial run --warm SlashHit`. It prints one
 JSON line per cycle and stops on Ctrl-C. With `trial loop` running, each injection applies on the next pass of the
-loop ([The live loop](/scion/explore/live-loop/)).
+loop ([The live loop](/scion/41664431a8f5/explore/live-loop/)).
 
 ## Errors
 
@@ -1174,7 +1174,7 @@ loop ([The live loop](/scion/explore/live-loop/)).
 dotnet scion graft check --hook
 ```
 
-See [Hooks](/scion/agents/hooks/).
+See [Hooks](/scion/41664431a8f5/agents/hooks/).
 
 ### Preview a promotion
 
@@ -1184,10 +1184,10 @@ dotnet scion graft promote DamageNumberPop --dry-run
 
 ## See also
 
-- [graft (CLI)](/scion/cli/graft/)
-- [Live injection](/scion/grafts/injection/)
-- [Baselines and approval](/scion/trials/baselines/)
-- [The live loop](/scion/explore/live-loop/)
+- [graft (CLI)](/scion/41664431a8f5/cli/graft/)
+- [Live injection](/scion/41664431a8f5/grafts/injection/)
+- [Baselines and approval](/scion/41664431a8f5/trials/baselines/)
+- [The live loop](/scion/41664431a8f5/explore/live-loop/)
 
 ---
 
@@ -1276,9 +1276,9 @@ catch (Exception e) { Faults.Report("Orchard.Presentation.CustomEffect", e); }
 
 ## See also
 
-- [Grafts API](/scion/reference/api/grafts/)
-- [Build modes](/scion/grafts/build-modes/)
-- [telemetry.jsonl](/scion/reference/files/telemetry-jsonl/)
+- [Grafts API](/scion/41664431a8f5/reference/api/grafts/)
+- [Build modes](/scion/41664431a8f5/grafts/build-modes/)
+- [telemetry.jsonl](/scion/41664431a8f5/reference/files/telemetry-jsonl/)
 
 ---
 
@@ -1395,9 +1395,9 @@ protected override void Checks(TrialChecks c) => c.Marked("IMPACT").ProbeIs("sha
 
 ## See also
 
-- [Fx API](/scion/reference/api/fx/)
-- [Test grafts without Unity](/scion/grafts/testing/)
-- [Telemetry, probes and sensors](/scion/evaluation/telemetry/)
+- [Fx API](/scion/41664431a8f5/reference/api/fx/)
+- [Test grafts without Unity](/scion/41664431a8f5/grafts/testing/)
+- [Telemetry, probes and sensors](/scion/41664431a8f5/evaluation/telemetry/)
 
 ---
 
@@ -1514,9 +1514,9 @@ Assert.Equal(0.5f, c.Result);
 
 ## See also
 
-- [Testing API](/scion/reference/api/testing/)
-- [Effects with Fx](/scion/grafts/fx/)
-- [Call and Call\<T\>](/scion/grafts/call-context/)
+- [Testing API](/scion/41664431a8f5/reference/api/testing/)
+- [Effects with Fx](/scion/41664431a8f5/grafts/fx/)
+- [Call and Call\<T\>](/scion/41664431a8f5/grafts/call-context/)
 
 ---
 
@@ -1534,7 +1534,7 @@ SCN005 reports a numeric tunable without a range.
 
 - Use `[Tunable]` on every number in a graft or the core that someone will tune by eye or by search.
 - Use presets to keep named feels (`heavy`, `snappy`) and compare them in trials and judge duels.
-- Use guided search when the space is too big to tune by hand ([Guided search](/scion/explore/guided-search/)).
+- Use guided search when the space is too big to tune by hand ([Guided search](/scion/41664431a8f5/explore/guided-search/)).
 
 ## Steps
 
@@ -1619,7 +1619,7 @@ dotnet scion gen --list tunables
 ```
 
 prints every tunable with its type, range, default and doc, and `scion gen` writes them into
-`scion.manifest.json` ([gen](/scion/cli/gen/)).
+`scion.manifest.json` ([gen](/scion/41664431a8f5/cli/gen/)).
 
 ## Errors
 
@@ -1652,7 +1652,7 @@ dotnet scion trial run SlashHit --variants base,heavy,snappy --mosaic 3
 
 ## See also
 
-- [Core API](/scion/reference/api/core/)
-- [Taste heads and feel presets](/scion/judge/presets/)
-- [Guided search](/scion/explore/guided-search/)
-- [gen](/scion/cli/gen/)
+- [Core API](/scion/41664431a8f5/reference/api/core/)
+- [Taste heads and feel presets](/scion/41664431a8f5/judge/presets/)
+- [Guided search](/scion/41664431a8f5/explore/guided-search/)
+- [gen](/scion/41664431a8f5/cli/gen/)

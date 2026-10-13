@@ -70,7 +70,7 @@ ranks it like anything else.
 ### Blend syntax
 
 `base + 0.7 heavy + 0.3 snappy`: weights are decimals, presets are names in `scion/presets/`, `base` is the initial
-values. See [Tunables and presets](/scion/grafts/tunables/).
+values. See [Tunables and presets](/scion/41664431a8f5/grafts/tunables/).
 
 ## Errors
 
@@ -95,6 +95,6 @@ dotnet scion trial run --spec StrongerCrits --variants base,"base + 0.7 heavy + 
 
 ## See also
 
-- [Tunables and presets](/scion/grafts/tunables/)
-- [Train a head](/scion/judge/training/)
-- [Guided search](/scion/explore/guided-search/)
+- [Tunables and presets](/scion/41664431a8f5/grafts/tunables/)
+- [Train a head](/scion/41664431a8f5/judge/training/)
+- [Guided search](/scion/41664431a8f5/explore/guided-search/)

@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://jand-s.github.io/scion/schemas/v1/preset.schema.json",
+  "$id": "https://jand-s.github.io/scion/41664431a8f5/schemas/v1/preset.schema.json",
   "title": "Feel preset",
   "description": "scion/presets/<name>.json: a named set of tunable values that recipes, the live loop and guided search blend.",
   "type": "object",

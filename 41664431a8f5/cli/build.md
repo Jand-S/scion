@@ -90,7 +90,7 @@ no test defines, grafts called directly. It fails with SCN121 if a test define i
 | `unity_not_found` | 3 | No Unity of the project's version. | Set `unity.editor` in `scion.local.json`. |
 | `unity_failed` | 3 | Unity exited without a `BUILD_RESULT` line. | Read the log in `log`. |
 | warning `unity_exit` | 0 | Unity exited non-zero after a successful build. | Usually harmless; read the log. |
-| `SCN120`, `SCN121` | 1 | Build guards. | See [Build modes](/scion/grafts/build-modes/). |
+| `SCN120`, `SCN121` | 1 | Build guards. | See [Build modes](/scion/41664431a8f5/grafts/build-modes/). |
 
 ## Examples
 
@@ -108,6 +108,6 @@ dotnet scion build final --out /tmp/orchard-release
 
 ## See also
 
-- [Build modes](/scion/grafts/build-modes/)
-- [scion-build.json](/scion/reference/files/scion-build-json/)
-- [Editor API](/scion/reference/api/editor/)
+- [Build modes](/scion/41664431a8f5/grafts/build-modes/)
+- [scion-build.json](/scion/41664431a8f5/reference/files/scion-build-json/)
+- [Editor API](/scion/41664431a8f5/reference/api/editor/)

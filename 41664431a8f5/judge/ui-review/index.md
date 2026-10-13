@@ -22,8 +22,8 @@ pairs, and a person picks between the final two. The vote trains the judge for n
 
 ## Before you begin
 
-- The `HudStates` static trial ([Capture every HUD state](/scion/cookbook/hud-states/)).
-- Trained heads `readability`, `has_glitch` and `looks_like_orchard` ([Train a head](/scion/judge/training/)).
+- The `HudStates` static trial ([Capture every HUD state](/scion/41664431a8f5/cookbook/hud-states/)).
+- Trained heads `readability`, `has_glitch` and `looks_like_orchard` ([Train a head](/scion/41664431a8f5/judge/training/)).
 - Optional: a reference library of screens from other games, indexed by the judge (`scion/judge/references/`).
 
 ## Steps
@@ -96,12 +96,12 @@ dotnet scion judge train readability
 
 ## Next steps
 
-- Promote the winning grafts and approve the new stills ([From draft to final build](/scion/grafts/lifecycle/)).
-- Add the HUD review to CI with only steps 1 and 2 ([Run Scion in CI](/scion/cookbook/ci/)).
-- Train an audience head for accessibility ([Taste heads and feel presets](/scion/judge/presets/)).
+- Promote the winning grafts and approve the new stills ([From draft to final build](/scion/41664431a8f5/grafts/lifecycle/)).
+- Add the HUD review to CI with only steps 1 and 2 ([Run Scion in CI](/scion/41664431a8f5/cookbook/ci/)).
+- Train an audience head for accessibility ([Taste heads and feel presets](/scion/41664431a8f5/judge/presets/)).
 
 ## See also
 
-- [Capture every HUD state](/scion/cookbook/hud-states/)
-- [Gates](/scion/evaluation/gates/)
-- [Train a head](/scion/judge/training/)
+- [Capture every HUD state](/scion/41664431a8f5/cookbook/hud-states/)
+- [Gates](/scion/41664431a8f5/evaluation/gates/)
+- [Train a head](/scion/41664431a8f5/judge/training/)

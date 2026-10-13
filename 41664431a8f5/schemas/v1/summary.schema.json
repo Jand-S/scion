@@ -1,11 +1,11 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://jand-s.github.io/scion/schemas/v1/summary.schema.json",
+  "$id": "https://jand-s.github.io/scion/41664431a8f5/schemas/v1/summary.schema.json",
   "title": "summary.json",
   "description": "The complete trial run output without the size limit; copies is the list of player processes instead of their count.",
   "allOf": [
     {
-      "$ref": "https://jand-s.github.io/scion/schemas/v1/envelope.schema.json"
+      "$ref": "https://jand-s.github.io/scion/41664431a8f5/schemas/v1/envelope.schema.json"
     },
     {
       "type": "object",
@@ -233,7 +233,7 @@
                 "additionalProperties": false
               },
               {
-                "$ref": "https://jand-s.github.io/scion/schemas/v1/envelope.schema.json#/$defs/more"
+                "$ref": "https://jand-s.github.io/scion/41664431a8f5/schemas/v1/envelope.schema.json#/$defs/more"
               }
             ]
           },
@@ -285,7 +285,7 @@
                 "additionalProperties": false
               },
               {
-                "$ref": "https://jand-s.github.io/scion/schemas/v1/envelope.schema.json#/$defs/more"
+                "$ref": "https://jand-s.github.io/scion/41664431a8f5/schemas/v1/envelope.schema.json#/$defs/more"
               }
             ]
           },

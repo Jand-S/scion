@@ -39,8 +39,8 @@ that return `void`, `ref Call<T>` for targets that return `T`. With it a graft r
 | `T` | `ref Call<T> c`, with `T` equal to the return type | `Skipped`, `Result`, `Return(T)`, `Tag` |
 
 It must be passed by `ref`; a `Call` by value, `in` or `out` is a signature error
-([SCN104](/scion/reference/diagnostics/grafts/#scn104)). A `T` that differs from the return type, or `Call` on a
-target that returns a value, is [SCN109](/scion/reference/diagnostics/grafts/#scn109).
+([SCN104](/scion/41664431a8f5/reference/diagnostics/grafts/#scn104)). A `T` that differs from the return type, or `Call` on a
+target that returns a value, is [SCN109](/scion/41664431a8f5/reference/diagnostics/grafts/#scn109).
 
 ### 2. Skip a void target
 
@@ -96,7 +96,7 @@ public static class HitTiming
 ```
 
 When two or more befores, or two or more afters, of one anchor use `Tag`, the weaver warns
-([SCN111](/scion/reference/diagnostics/grafts/#scn111)): let one pair own it, or keep other state in your own fields.
+([SCN111](/scion/41664431a8f5/reference/diagnostics/grafts/#scn111)): let one pair own it, or keep other state in your own fields.
 
 ## Reference
 
@@ -159,10 +159,10 @@ CritShake.After(null, new HitEvent(attacker: 0, target: 1, amount: 9, crit: true
 Assert.Equal(0.56f, c.Result, 3);
 ```
 
-See [Test grafts without Unity](/scion/grafts/testing/).
+See [Test grafts without Unity](/scion/41664431a8f5/grafts/testing/).
 
 ## See also
 
-- [Write a graft](/scion/grafts/write/)
-- [Grafts API](/scion/reference/api/grafts/)
-- [Graft diagnostics](/scion/reference/diagnostics/grafts/)
+- [Write a graft](/scion/41664431a8f5/grafts/write/)
+- [Grafts API](/scion/41664431a8f5/reference/api/grafts/)
+- [Graft diagnostics](/scion/41664431a8f5/reference/diagnostics/grafts/)

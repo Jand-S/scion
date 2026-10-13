@@ -25,13 +25,13 @@ files that compile and pass `doctor` from the first build.
 
 - Use it for a new game, or a prototype you want testable from day one.
 - Do not use it on a game with existing code: `new` writes a full layout. Use
-  [`init --existing`](/scion/start/existing-project/) instead; it only adds files.
+  [`init --existing`](/scion/41664431a8f5/start/existing-project/) instead; it only adds files.
 
 ## Before you begin
 
 - An empty Unity 6000.3 project (created by the Unity Hub) in a git repository.
 - The CLI installed in that repository (`dotnet tool install --local Scion.Cli --version 1.0.0`).
-- The package added to `Packages/manifest.json` (step 1 of [Install](/scion/start/install/)). `new` adds it for you
+- The package added to `Packages/manifest.json` (step 1 of [Install](/scion/41664431a8f5/start/install/)). `new` adds it for you
   when it is missing.
 
 ## Steps
@@ -66,7 +66,7 @@ dotnet scion trial approve --new --reason "first baselines of the template"
 
 ### 4. Grow it with scaffolds
 
-Each scaffold writes code that compiles, follows the [Scion Standard](/scion/standard/overview/) and comes with its
+Each scaffold writes code that compiles, follows the [Scion Standard](/scion/41664431a8f5/standard/overview/) and comes with its
 test:
 
 ```sh
@@ -76,7 +76,7 @@ dotnet scion new graft PoisonGlow --after Orchard.Presentation.UnitView.PlayStat
 dotnet scion new trial PoisonTicks     # a recipe for the effect, with checks
 ```
 
-`new graft` is the same as [`graft new`](/scion/cli/graft/): the draft lands in `scion/grafts/` and comes with a
+`new graft` is the same as [`graft new`](/scion/41664431a8f5/cli/graft/): the draft lands in `scion/grafts/` and comes with a
 recipe stub that exercises its anchor.
 
 ## Reference
@@ -106,7 +106,7 @@ CLAUDE.md, AGENTS.md                     the Scion block between <!-- scion:begi
 
 Dependencies only point down: Core depends on nothing; Runtime on Core; Grafts compile into Runtime; Trials use
 Runtime as a black box and Core to compare hashes. Nothing depends on Grafts. See
-[The Scion Standard](/scion/standard/overview/).
+[The Scion Standard](/scion/41664431a8f5/standard/overview/).
 
 ### Options
 
@@ -146,7 +146,7 @@ dotnet scion build test && dotnet scion trial run BurnTicks
 
 ## See also
 
-- [init, new, uninstall](/scion/cli/init/)
-- [Add Scion to an existing game](/scion/start/existing-project/)
-- [The Scion Standard](/scion/standard/overview/)
-- [Enforcement](/scion/standard/enforcement/)
+- [init, new, uninstall](/scion/41664431a8f5/cli/init/)
+- [Add Scion to an existing game](/scion/41664431a8f5/start/existing-project/)
+- [The Scion Standard](/scion/41664431a8f5/standard/overview/)
+- [Enforcement](/scion/41664431a8f5/standard/enforcement/)

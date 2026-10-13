@@ -116,7 +116,7 @@ and fail with the door's name when there is none.
 
 ## See also
 
-- [The evaluation funnel](/scion/evaluation/overview/)
-- [Checks](/scion/trials/checks/)
-- [Specs](/scion/trials/specs/)
-- [Specs API](/scion/reference/api/specs/)
+- [The evaluation funnel](/scion/41664431a8f5/evaluation/overview/)
+- [Checks](/scion/41664431a8f5/trials/checks/)
+- [Specs](/scion/41664431a8f5/trials/specs/)
+- [Specs API](/scion/41664431a8f5/reference/api/specs/)

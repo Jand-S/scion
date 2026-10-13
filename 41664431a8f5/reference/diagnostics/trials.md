@@ -70,6 +70,6 @@ wins.`
 
 ## See also
 
-- [Write a recipe](/scion/trials/recipes/)
-- [Write an adapter](/scion/trials/adapters/)
-- [Diagnostics](/scion/reference/diagnostics/)
+- [Write a recipe](/scion/41664431a8f5/trials/recipes/)
+- [Write an adapter](/scion/41664431a8f5/trials/adapters/)
+- [Diagnostics](/scion/41664431a8f5/reference/diagnostics/)

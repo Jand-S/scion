@@ -47,7 +47,7 @@ Large models are still useful: as agent evaluators on the few items the judge es
 
 ### Where it sits
 
-The judge is stage 3 of the [evaluation funnel](/scion/evaluation/overview/): after the state oracle and the gates,
+The judge is stage 3 of the [evaluation funnel](/scion/41664431a8f5/evaluation/overview/): after the state oracle and the gates,
 before a person. It sorts variants, picks which pairs a person should see, and escalates items it is unsure about.
 
 ### Pixel art
@@ -73,11 +73,11 @@ neighbor, before the eyes see the image.
 - A head predicts the taste of the people who voted; with few votes it is noisy, and `judge show` says so.
 - Confidence is not accuracy: accuracy is measured on the gold set and reported as `calibration.agreement`.
 - Studio data (captures, votes, heads) stays on your machines; nothing is sent anywhere.
-- Model licenses vary by model card; check them before shipping heads ([Models and licenses](/scion/judge/models/)).
+- Model licenses vary by model card; check them before shipping heads ([Models and licenses](/scion/41664431a8f5/judge/models/)).
 
 ## See also
 
-- [Questions and answers](/scion/judge/questions/)
-- [Train a head](/scion/judge/training/)
-- [Review a UI with the judge](/scion/judge/ui-review/)
-- [judge (CLI)](/scion/cli/judge/)
+- [Questions and answers](/scion/41664431a8f5/judge/questions/)
+- [Train a head](/scion/41664431a8f5/judge/training/)
+- [Review a UI with the judge](/scion/41664431a8f5/judge/ui-review/)
+- [judge (CLI)](/scion/41664431a8f5/cli/judge/)

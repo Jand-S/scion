@@ -1,11 +1,11 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://jand-s.github.io/scion/schemas/v1/cli/search-run.schema.json",
+  "$id": "https://jand-s.github.io/scion/41664431a8f5/schemas/v1/cli/search-run.schema.json",
   "title": "search run output",
   "description": "Output of dotnet scion search run: the guided search over tunables.",
   "allOf": [
     {
-      "$ref": "https://jand-s.github.io/scion/schemas/v1/envelope.schema.json"
+      "$ref": "https://jand-s.github.io/scion/41664431a8f5/schemas/v1/envelope.schema.json"
     },
     {
       "type": "object",
@@ -67,7 +67,7 @@
                 "additionalProperties": false
               },
               {
-                "$ref": "https://jand-s.github.io/scion/schemas/v1/envelope.schema.json#/$defs/more"
+                "$ref": "https://jand-s.github.io/scion/41664431a8f5/schemas/v1/envelope.schema.json#/$defs/more"
               }
             ]
           },

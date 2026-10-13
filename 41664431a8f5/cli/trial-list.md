@@ -90,6 +90,6 @@ dotnet scion trial list --ids --players 4
 
 ## See also
 
-- [Write a recipe](/scion/trials/recipes/)
-- [Variants, modes and seeds](/scion/trials/variants/)
-- [recipes.json](/scion/reference/files/recipes-json/)
+- [Write a recipe](/scion/41664431a8f5/trials/recipes/)
+- [Variants, modes and seeds](/scion/41664431a8f5/trials/variants/)
+- [recipes.json](/scion/41664431a8f5/reference/files/recipes-json/)

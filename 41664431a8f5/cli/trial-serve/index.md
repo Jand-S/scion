@@ -82,6 +82,6 @@ dotnet scion trial serve --stop
 
 ## See also
 
-- [Warm copies](/scion/trials/warm-copies/)
-- [Control protocol](/scion/reference/control-protocol/)
-- [Live injection](/scion/grafts/injection/)
+- [Warm copies](/scion/41664431a8f5/trials/warm-copies/)
+- [Control protocol](/scion/41664431a8f5/reference/control-protocol/)
+- [Live injection](/scion/41664431a8f5/grafts/injection/)

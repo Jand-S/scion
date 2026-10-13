@@ -113,6 +113,6 @@ GitMCP turns the public site into a remote MCP server with no setup: `https://ja
 
 ## See also
 
-- [mcp](/scion/cli/mcp/)
-- [Set up your agent](/scion/agents/setup/)
-- [For AI agents](/scion/agents/)
+- [mcp](/scion/41664431a8f5/cli/mcp/)
+- [Set up your agent](/scion/41664431a8f5/agents/setup/)
+- [For AI agents](/scion/41664431a8f5/agents/)

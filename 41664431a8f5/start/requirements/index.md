@@ -32,7 +32,7 @@ parallel trials use. `dotnet scion doctor` checks every item here and says which
 
 Scion has no dependency on Netcode for GameObjects, URP or any render pipeline. It works with the built-in
 renderer, URP and HDRP. When your game uses Netcode for GameObjects, the optional `SCION_NETCLOCK` define keeps its
-tick on the recipe clock ([Netcode clock](/scion/determinism/netclock/)).
+tick on the recipe clock ([Netcode clock](/scion/41664431a8f5/determinism/netclock/)).
 
 ## Operating systems
 
@@ -49,7 +49,7 @@ tick on the recipe clock ([Netcode clock](/scion/determinism/netclock/)).
 | Test build (`dotnet scion build test`) | Mono | Slots are swappable delegates and injection loads assemblies at run time; both need a JIT. `ScionBuild.BuildTestPlayer` forces Mono and restores your setting afterwards. |
 | Final build (`dotnet scion build final`) | IL2CPP (or the project setting) | Grafts become direct static calls; nothing is registered at run time. |
 
-A build with `SCION_SLOTS` on IL2CPP fails with [SCN120](/scion/reference/diagnostics/builds-and-injection/#scn120).
+A build with `SCION_SLOTS` on IL2CPP fails with [SCN120](/scion/41664431a8f5/reference/diagnostics/builds-and-injection/#scn120).
 
 ## Project layout
 
@@ -84,11 +84,11 @@ capture at 1280x720 and 30 fps.
 The Judge runs on the CPU, or on the GPU through ONNX Runtime when one is available (CoreML on macOS, DirectML on
 Windows, CUDA on Linux). Computing embeddings for 10,000 images takes about 5 to 10 minutes on an M5; training a head
 takes seconds; judging one image takes 10 to 50 ms. Eye models take 0.4 to 1.6 GB of disk each in
-`~/.scion/models/`. See [Models and licenses](/scion/judge/models/).
+`~/.scion/models/`. See [Models and licenses](/scion/41664431a8f5/judge/models/).
 
 ## See also
 
-- [Install](/scion/start/install/)
-- [doctor](/scion/cli/doctor/)
-- [Parallel copies](/scion/trials/parallel/)
-- [FAQ](/scion/help/faq/)
+- [Install](/scion/41664431a8f5/start/install/)
+- [doctor](/scion/41664431a8f5/cli/doctor/)
+- [Parallel copies](/scion/41664431a8f5/trials/parallel/)
+- [FAQ](/scion/41664431a8f5/help/faq/)

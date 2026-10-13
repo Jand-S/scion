@@ -75,7 +75,7 @@ and the build.`
 
 ## See also
 
-- [Build modes](/scion/grafts/build-modes/)
-- [Live injection](/scion/grafts/injection/)
-- [Versioning and compatibility](/scion/contribute/compatibility/)
-- [Diagnostics](/scion/reference/diagnostics/)
+- [Build modes](/scion/41664431a8f5/grafts/build-modes/)
+- [Live injection](/scion/41664431a8f5/grafts/injection/)
+- [Versioning and compatibility](/scion/41664431a8f5/contribute/compatibility/)
+- [Diagnostics](/scion/41664431a8f5/reference/diagnostics/)

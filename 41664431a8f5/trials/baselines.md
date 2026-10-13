@@ -88,7 +88,7 @@ dotnet scion trial approve SlashHit --reason "crit shake is stronger"
 
 Approval is all or nothing: if one id is refused, nothing is written and `refused[]` says why. The `guard` hook
 asks the person before an agent's `trial approve` and denies edits under `scion/baselines/`
-([Hooks](/scion/agents/hooks/)).
+([Hooks](/scion/41664431a8f5/agents/hooks/)).
 
 ### Storage
 
@@ -136,7 +136,7 @@ dotnet scion trial approve --changed --reason "new palette" --dry-run
 
 ## See also
 
-- [trial approve](/scion/cli/trial-approve/)
-- [baseline.json and platform.json](/scion/reference/files/baselines/)
-- [Image comparison](/scion/trials/image-comparison/)
-- [Hooks](/scion/agents/hooks/)
+- [trial approve](/scion/41664431a8f5/cli/trial-approve/)
+- [baseline.json and platform.json](/scion/41664431a8f5/reference/files/baselines/)
+- [Image comparison](/scion/41664431a8f5/trials/image-comparison/)
+- [Hooks](/scion/41664431a8f5/agents/hooks/)

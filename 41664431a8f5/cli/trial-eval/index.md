@@ -85,6 +85,6 @@ dotnet scion trial eval 20261011-150512 --import eval-out.json
 
 ## See also
 
-- [Evaluators](/scion/evaluation/evaluators/)
-- [eval-in.json, eval-out.json, evals.tsv](/scion/reference/files/evals/)
-- [Questions and answers](/scion/judge/questions/)
+- [Evaluators](/scion/41664431a8f5/evaluation/evaluators/)
+- [eval-in.json, eval-out.json, evals.tsv](/scion/41664431a8f5/reference/files/evals/)
+- [Questions and answers](/scion/41664431a8f5/judge/questions/)

@@ -17,7 +17,7 @@ related:
 
 Each rule below has a statement, the reason, an example from Orchard and how Scion checks it. Rules are numbered for
 reference in reviews and in agent instructions ("this breaks R3"). Analyzer ids are in
-[SCN001-SCN005](/scion/reference/diagnostics/standard/).
+[SCN001-SCN005](/scion/41664431a8f5/reference/diagnostics/standard/).
 
 ## R1 Inherit one level from a Scion base, sealed
 
@@ -112,7 +112,7 @@ only on struct contexts.
 
 ## See also
 
-- [The Scion Standard](/scion/standard/overview/)
-- [Enforcement](/scion/standard/enforcement/)
-- [SCN001-SCN005](/scion/reference/diagnostics/standard/)
-- [Core API](/scion/reference/api/core/)
+- [The Scion Standard](/scion/41664431a8f5/standard/overview/)
+- [Enforcement](/scion/41664431a8f5/standard/enforcement/)
+- [SCN001-SCN005](/scion/41664431a8f5/reference/diagnostics/standard/)
+- [Core API](/scion/41664431a8f5/reference/api/core/)

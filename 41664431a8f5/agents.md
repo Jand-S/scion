@@ -23,22 +23,22 @@ the rules every agent must follow, the reading order that keeps token use low, a
 ## When to use
 
 - Read this page before your first Scion command in a project, and whenever a command's result surprises you.
-- For one exit code or error code, go straight to [What to do next](/scion/agents/next-action/).
+- For one exit code or error code, go straight to [What to do next](/scion/41664431a8f5/agents/next-action/).
 
 ## Rules
 
-These rules are also at the top of [/scion/llms.txt](/scion/llms.txt). Follow them in every session:
+These rules are also at the top of [/scion/llms.txt](/scion/41664431a8f5/llms.txt). Follow them in every session:
 
 - Run `dotnet scion doctor` first. Exit 0 means usable; exit 3 means fix what `error.hint` says.
 - Every command prints one JSON object on stdout (`schema_version`, `ok`, `next_step`, `error` on exits 2 and 3). Parse it; do not scrape text. Follow `next_step`.
-- Exit codes: 0 ok, 1 a check failed, 2 usage error (see `did_you_mean`), 3 environment. Next actions: https://jand-s.github.io/scion/agents/next-action.md
+- Exit codes: 0 ok, 1 a check failed, 2 usage error (see `did_you_mean`), 3 environment. Next actions: https://jand-s.github.io/scion/41664431a8f5/agents/next-action.md
 - You may approve only `new` baselines (`trial approve --new --reason "..."`). Never approve `changed`, `stale` or `px_changed`, and never edit `scion/baselines/` by hand: ask a person.
 - Read `report.md` only for failed or changed recipes; open images only when pixels changed or the task is visual.
 
 Two more that follow from the design:
 
 - Grafts are visual only. A change to damage, range, turn order or any other rule goes into the game's core as a
-  `RuleModifier<T>`, never into a graft ([Grafts are visual only](/scion/grafts/visual-only/)).
+  `RuleModifier<T>`, never into a graft ([Grafts are visual only](/scion/41664431a8f5/grafts/visual-only/)).
 - Never fake a terminal (`script`, `expect`, a pseudo-TTY) to get past `human_required`. Tell the person what changed
   and give them the command from `next_step`.
 
@@ -86,7 +86,7 @@ Warm runs compare state hashes and frame counts. For images, run a cold run with
 
 ### 5. Read the results
 
-Follow [Reading results](/scion/agents/reading-results/): the JSON, then `report.md` of failed or changed recipes,
+Follow [Reading results](/scion/41664431a8f5/agents/reading-results/): the JSON, then `report.md` of failed or changed recipes,
 then images only when pixels changed or the task is visual.
 
 ### 6. Hand over
@@ -102,11 +102,11 @@ then images only when pixels changed or the task is visual.
 
 | File | URL | Use |
 |---|---|---|
-| Page index | [/scion/llms.txt](/scion/llms.txt) | Every page as a link to its Markdown, with one line each; the rules first |
-| Full docs | [/scion/llms-full.txt](/scion/llms-full.txt) | Every page in one file, in sidebar order |
-| Section files | `/scion/<section>/llms-full.txt` | One section in one file, for example [/scion/grafts/llms-full.txt](/scion/grafts/llms-full.txt) |
+| Page index | [/scion/llms.txt](/scion/41664431a8f5/llms.txt) | Every page as a link to its Markdown, with one line each; the rules first |
+| Full docs | [/scion/llms-full.txt](/scion/41664431a8f5/llms-full.txt) | Every page in one file, in sidebar order |
+| Section files | `/scion/<section>/llms-full.txt` | One section in one file, for example [/scion/grafts/llms-full.txt](/scion/41664431a8f5/grafts/llms-full.txt) |
 | Markdown twin | `<page URL>.md` or `<page URL>/index.md` | The page as Markdown with frontmatter (`title`, `type`, `url`, `related`) |
-| JSON Schemas | [JSON Schemas](/scion/reference/schemas/) | Every file format and every CLI output, draft 2020-12 |
+| JSON Schemas | [JSON Schemas](/scion/41664431a8f5/reference/schemas/) | Every file format and every CLI output, draft 2020-12 |
 
 ### Version-matched local docs
 
@@ -131,7 +131,7 @@ Library/PackageCache/me.jandson.scion@<hash>/Documentation~/site/src/content/doc
 | 120 captures opened blindly | about 1 million tokens: never do this |
 
 With more than about 5 images to look at, hand them to the `scion-triage` subagent, which returns one line per
-recipe ([The Scion skill](/scion/agents/skill/)).
+recipe ([The Scion skill](/scion/41664431a8f5/agents/skill/)).
 
 ## Errors
 
@@ -142,7 +142,7 @@ recipe ([The Scion skill](/scion/agents/skill/)).
 | Exit 2 | Fix the call with `error.hint` and `did_you_mean`; never retry unchanged. |
 | Exit 3 | Fix the environment with `error.hint`; `doctor` names the failing check. |
 
-Every signal, with its exact next action: [What to do next](/scion/agents/next-action/).
+Every signal, with its exact next action: [What to do next](/scion/41664431a8f5/agents/next-action/).
 
 ## Examples
 
@@ -164,7 +164,7 @@ graft, rebuild, run and approve at your terminal: `dotnet scion trial approve Sl
 
 ## See also
 
-- [Set up your agent](/scion/agents/setup/)
-- [What to do next](/scion/agents/next-action/)
-- [Reading results](/scion/agents/reading-results/)
-- [MCP server](/scion/agents/mcp/)
+- [Set up your agent](/scion/41664431a8f5/agents/setup/)
+- [What to do next](/scion/41664431a8f5/agents/next-action/)
+- [Reading results](/scion/41664431a8f5/agents/reading-results/)
+- [MCP server](/scion/41664431a8f5/agents/mcp/)

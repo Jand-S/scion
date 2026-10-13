@@ -80,7 +80,7 @@ every eligible method covered by an `AnchorScope` also gets a slot, with or with
 
 ### Methods that cannot be anchors
 
-A graft on one of these is [SCN105](/scion/reference/diagnostics/grafts/#scn105), with the reason; `AnchorScope`
+A graft on one of these is [SCN105](/scion/41664431a8f5/reference/diagnostics/grafts/#scn105), with the reason; `AnchorScope`
 skips them silently:
 
 - constructors, abstract methods and methods without a body;
@@ -107,16 +107,16 @@ Anchors.Id(true, "Orchard.Presentation.HitPresenter", "Play", new[] { "HitEvent"
 ```
 
 Overloads whose ids collide (for example `List<int>` and `List<string>` parameters) are
-[SCN106](/scion/reference/diagnostics/grafts/#scn106) when a graft targets them, and get no slot in a scope.
+[SCN106](/scion/41664431a8f5/reference/diagnostics/grafts/#scn106) when a graft targets them, and get no slot in a scope.
 
 ### AnchorScope rules
 
 | Rule | Detail |
 |---|---|
-| Where | In the assembly that defines the type; elsewhere it is [SCN107](/scion/reference/diagnostics/grafts/#scn107). |
+| Where | In the assembly that defines the type; elsewhere it is [SCN107](/scion/41664431a8f5/reference/diagnostics/grafts/#scn107). |
 | `Members` omitted | Every eligible method of the type, both sides. |
 | `Members` given | Only those names; an empty array gives none. Use compiled names: a property getter is `get_Name`. |
-| A name that does not exist | [SCN103](/scion/reference/diagnostics/grafts/#scn103) with the closest name. |
+| A name that does not exist | [SCN103](/scion/41664431a8f5/reference/diagnostics/grafts/#scn103) with the closest name. |
 | A name whose overloads are all ineligible or collide | SCN105 or SCN106 (no file and line: it comes from an assembly attribute). |
 | Several attributes for one type | They add up. |
 | Final build | Ignored. |
@@ -129,7 +129,7 @@ Overloads whose ids collide (for example `List<int>` and `List<string>` paramete
 | `dotnet scion anchor show <id>` | One anchor: signature, grafts in run order, a ready graft declaration |
 
 `<id>` is an `[Anchor]` id (`presentation.hit`), a slot id (`A__...`) or `Type.Method`. See
-[anchor list, anchor show](/scion/cli/anchor/).
+[anchor list, anchor show](/scion/41664431a8f5/cli/anchor/).
 
 ## Errors
 
@@ -157,7 +157,7 @@ dotnet scion anchor list --type Orchard.Presentation.CameraRig
 
 ## See also
 
-- [anchor list, anchor show](/scion/cli/anchor/)
-- [Write a graft](/scion/grafts/write/)
-- [Live injection](/scion/grafts/injection/)
-- [Grafts API](/scion/reference/api/grafts/)
+- [anchor list, anchor show](/scion/41664431a8f5/cli/anchor/)
+- [Write a graft](/scion/41664431a8f5/grafts/write/)
+- [Live injection](/scion/41664431a8f5/grafts/injection/)
+- [Grafts API](/scion/41664431a8f5/reference/api/grafts/)

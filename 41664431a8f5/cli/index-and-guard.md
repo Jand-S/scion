@@ -105,6 +105,6 @@ dotnet scion guard --command "dotnet scion trial approve --changed --reason x"
 
 ## See also
 
-- [Hooks](/scion/agents/hooks/)
-- [Project index and manifest](/scion/agents/project-index/)
-- [Baselines and approval](/scion/trials/baselines/)
+- [Hooks](/scion/41664431a8f5/agents/hooks/)
+- [Project index and manifest](/scion/41664431a8f5/agents/project-index/)
+- [Baselines and approval](/scion/41664431a8f5/trials/baselines/)

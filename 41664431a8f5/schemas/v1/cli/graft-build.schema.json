@@ -1,11 +1,11 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://jand-s.github.io/scion/schemas/v1/cli/graft-build.schema.json",
+  "$id": "https://jand-s.github.io/scion/41664431a8f5/schemas/v1/cli/graft-build.schema.json",
   "title": "graft build output",
   "description": "Output of dotnet scion graft build: the graft DLL compiled against the test build.",
   "allOf": [
     {
-      "$ref": "https://jand-s.github.io/scion/schemas/v1/envelope.schema.json"
+      "$ref": "https://jand-s.github.io/scion/41664431a8f5/schemas/v1/envelope.schema.json"
     },
     {
       "type": "object",
@@ -85,7 +85,7 @@
                 "additionalProperties": false
               },
               {
-                "$ref": "https://jand-s.github.io/scion/schemas/v1/envelope.schema.json#/$defs/more"
+                "$ref": "https://jand-s.github.io/scion/41664431a8f5/schemas/v1/envelope.schema.json#/$defs/more"
               }
             ]
           },

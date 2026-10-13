@@ -105,6 +105,6 @@ grep tick .scion/runs/20261011-143200/q0/determinism.tsv
 
 ## See also
 
-- [Co-op trials (1-4 players)](/scion/trials/coop/)
-- [Clock, screen and random](/scion/determinism/clock-and-screen/)
-- [Configuration](/scion/reference/configuration/)
+- [Co-op trials (1-4 players)](/scion/41664431a8f5/trials/coop/)
+- [Clock, screen and random](/scion/41664431a8f5/determinism/clock-and-screen/)
+- [Configuration](/scion/41664431a8f5/reference/configuration/)

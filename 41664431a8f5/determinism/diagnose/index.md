@@ -78,7 +78,7 @@ dotnet scion trial run --rounds 2 --check
 | SCN307 | warning | A `Guid` created at run time. |
 
 SCN3xx never appear in the Unity console: the scan can list hundreds of lines, which would bury real errors. They
-appear only in the scan file and in `diagnose`. Details: [SCN301-SCN307](/scion/reference/diagnostics/determinism/).
+appear only in the scan file and in `diagnose`. Details: [SCN301-SCN307](/scion/41664431a8f5/reference/diagnostics/determinism/).
 
 ### Options
 
@@ -112,6 +112,6 @@ int total = units.Sum(u => u.Hp);
 
 ## See also
 
-- [diagnose](/scion/cli/diagnose/)
-- [SCN301-SCN307](/scion/reference/diagnostics/determinism/)
-- [Add Scion to an existing game](/scion/start/existing-project/)
+- [diagnose](/scion/41664431a8f5/cli/diagnose/)
+- [SCN301-SCN307](/scion/41664431a8f5/reference/diagnostics/determinism/)
+- [Add Scion to an existing game](/scion/41664431a8f5/start/existing-project/)

@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://jand-s.github.io/scion/schemas/v1/baseline.schema.json",
+  "$id": "https://jand-s.github.io/scion/41664431a8f5/schemas/v1/baseline.schema.json",
   "title": "baseline.json",
   "description": "The approved result of one recipe that holds on every platform: hash, frames and approval.",
   "type": "object",

@@ -71,17 +71,17 @@ The plugin installs rules in its own folder that load only when the agent reads 
 | `baselines` | `scion/baselines/**` | Never edit; only `trial approve` writes here |
 | `core` | the folders of `rule_paths` | Integers only, no `float` (SCN004); changes go through `RuleModifier<T>` |
 
-Projects add their own in `.claude/rules/*.md` with a `paths:` frontmatter ([Set up your agent](/scion/agents/setup/)).
+Projects add their own in `.claude/rules/*.md` with a `paths:` frontmatter ([Set up your agent](/scion/41664431a8f5/agents/setup/)).
 
 ## Keeping it current
 
 - `dotnet scion doctor` warns `version_mismatch` when the plugin, the CLI and the package differ.
-- `/plugin update scion` updates the plugin; the CLI and the package update as in [Install](/scion/start/install/).
+- `/plugin update scion` updates the plugin; the CLI and the package update as in [Install](/scion/41664431a8f5/start/install/).
 - For agents without the plugin, `dotnet scion index --write AGENTS.md` refreshes the `AGENTS.md` block.
 
 ## See also
 
-- [Set up your agent](/scion/agents/setup/)
-- [Hooks](/scion/agents/hooks/)
-- [Reading results](/scion/agents/reading-results/)
-- [MCP server](/scion/agents/mcp/)
+- [Set up your agent](/scion/41664431a8f5/agents/setup/)
+- [Hooks](/scion/41664431a8f5/agents/hooks/)
+- [Reading results](/scion/41664431a8f5/agents/reading-results/)
+- [MCP server](/scion/41664431a8f5/agents/mcp/)

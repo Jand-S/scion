@@ -77,7 +77,7 @@ IEnumerator RunQueue(string only, int rounds, string outDir, Action<int> done = 
 Plays another queue in the same process without restarting the game; adapters already prepared skip `Prepare`.
 `only` is a comma-separated pattern list (null = every non-`Explicit` recipe); `outDir` gets its own `run.json`,
 `results.tsv` and recipe folders. `done` receives the exit code. Warm copies run every queue this way (op `run` of
-the [control protocol](/scion/reference/control-protocol/)). Throws `InvalidOperationException` when a queue is
+the [control protocol](/scion/41664431a8f5/reference/control-protocol/)). Throws `InvalidOperationException` when a queue is
 already playing.
 
 ## Order of one recipe
@@ -90,7 +90,7 @@ already playing.
 
 ## See also
 
-- [Write an adapter](/scion/trials/adapters/)
-- [Checks](/scion/trials/checks/)
-- [Session API](/scion/reference/api/session/)
-- [Telemetry, probes and sensors](/scion/evaluation/telemetry/)
+- [Write an adapter](/scion/41664431a8f5/trials/adapters/)
+- [Checks](/scion/41664431a8f5/trials/checks/)
+- [Session API](/scion/41664431a8f5/reference/api/session/)
+- [Telemetry, probes and sensors](/scion/41664431a8f5/evaluation/telemetry/)

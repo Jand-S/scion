@@ -36,7 +36,7 @@ The envelope is always under 1.5 KB. Decide from it alone whether anything needs
 | `failed[]` | not empty: read each `report` |
 | `changed[]` | not empty: these recipes differ from their baseline |
 | `runs.new` | above 0: read `report.md` before approving |
-| `determinism.hash_stable` | `false`: see [What to do next](/scion/agents/next-action/) |
+| `determinism.hash_stable` | `false`: see [What to do next](/scion/41664431a8f5/agents/next-action/) |
 | `warnings[]` | not empty |
 
 Paths inside lists are relative to `run`; `next_step` uses absolute paths.
@@ -67,7 +67,7 @@ when a person asks for them.
 ### 6. Delegate when there are many images
 
 With more than about 5 images to judge, give the run folder and the ids to the `scion-triage` subagent (Claude Code)
-or a separate agent. It returns one line per recipe ([The Scion skill](/scion/agents/skill/)).
+or a separate agent. It returns one line per recipe ([The Scion skill](/scion/41664431a8f5/agents/skill/)).
 
 ## Reference
 
@@ -101,7 +101,7 @@ run with `--motion` and read the numbers first:
 | `tracks.png` | Luminance, camera offset, 1 - SSIM and number height over time, with lines at the marks | about 1,250 |
 | `context.png` | 6 key frames | about 1,900 |
 
-See [The motion pack](/scion/evaluation/motion-pack/).
+See [The motion pack](/scion/41664431a8f5/evaluation/motion-pack/).
 
 ### Two-pass review
 
@@ -111,7 +111,7 @@ For a visual judgment, do two passes:
 2. **With numbers:** `tracks.png`, `metrics.json` and `report.md`; check where the description and the numbers
    disagree. About 7,500 tokens.
 
-For A/B choices, see [A/B comparisons](/scion/evaluation/ab-comparison/): variants aligned on the impact, blind labels,
+For A/B choices, see [A/B comparisons](/scion/41664431a8f5/evaluation/ab-comparison/): variants aligned on the impact, blind labels,
 asked in both orders.
 
 ## Errors
@@ -145,7 +145,7 @@ report it to the person.
 
 ## See also
 
-- [What to do next](/scion/agents/next-action/)
-- [Capture and outputs](/scion/trials/capture/)
-- [The motion pack](/scion/evaluation/motion-pack/)
-- [report.md](/scion/reference/files/report-md/)
+- [What to do next](/scion/41664431a8f5/agents/next-action/)
+- [Capture and outputs](/scion/41664431a8f5/trials/capture/)
+- [The motion pack](/scion/41664431a8f5/evaluation/motion-pack/)
+- [report.md](/scion/41664431a8f5/reference/files/report-md/)

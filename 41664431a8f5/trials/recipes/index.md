@@ -33,7 +33,7 @@ guide covers the members (`Name`, `Id`, `Variant`, `Tags`, `Description`, `Seed`
 
 - An assembly for trials code with `defineConstraints: ["SCION_TRIALS"]`, so it only compiles into test builds
   (`Orchard.Trials`), or `#if SCION_TRIALS` around the code.
-- An adapter for the recipe's base type ([Write an adapter](/scion/trials/adapters/)).
+- An adapter for the recipe's base type ([Write an adapter](/scion/41664431a8f5/trials/adapters/)).
 
 ## Steps
 
@@ -118,13 +118,13 @@ dotnet scion trial run SlashHit --rounds 2
 | `Fps` | `int`, protected set | 30 | Capture rate; game time advances exactly `1/Fps` per frame. |
 | `TailSeconds` | `float`, protected set | 0.5 | Game seconds to keep capturing after the action; the adapter uses it. |
 | `TimeoutSeconds` | `float`, protected set | 30 | Limit for `Run`, in game seconds. |
-| `Players` | `int`, protected set | 1 | 1 to 4; co-op recipes run in groups ([Co-op trials](/scion/trials/coop/)). |
+| `Players` | `int`, protected set | 1 | 1 to 4; co-op recipes run in groups ([Co-op trials](/scion/41664431a8f5/trials/coop/)). |
 | `Explicit` | `bool`, protected set | `false` | Runs only when a pattern names its exact `Id` or `Name`. |
-| `Control` | `DeterminismControl`, protected set | `All` | What the session makes deterministic ([Particles, animators, UI and physics](/scion/determinism/control/)). |
-| `Tolerance` | `ImageTolerance`, protected set | `ImageTolerance.Default` | Image comparison; `null` compares no images ([Image comparison](/scion/trials/image-comparison/)). |
-| `Checks(TrialChecks c)` | protected virtual | none | Declares checks ([Checks](/scion/trials/checks/)). |
+| `Control` | `DeterminismControl`, protected set | `All` | What the session makes deterministic ([Particles, animators, UI and physics](/scion/41664431a8f5/determinism/control/)). |
+| `Tolerance` | `ImageTolerance`, protected set | `ImageTolerance.Default` | Image comparison; `null` compares no images ([Image comparison](/scion/41664431a8f5/trials/image-comparison/)). |
+| `Checks(TrialChecks c)` | protected virtual | none | Declares checks ([Checks](/scion/41664431a8f5/trials/checks/)). |
 | `Setup()` | protected virtual | none | Runs after variant arguments are applied. |
-| `Variants()` | protected virtual | `null` | Yields `TrialArgs`, one per variant ([Variants, modes and seeds](/scion/trials/variants/)). |
+| `Variants()` | protected virtual | `null` | Yields `TrialArgs`, one per variant ([Variants, modes and seeds](/scion/41664431a8f5/trials/variants/)). |
 | `Mask(artifact, rect, why)` | protected | | A region image comparison ignores, in normalized coordinates. |
 
 `Seed` is per recipe; `TrialSession.RunSeed` (`--seed`) is per run, and the adapter maps it to the game's world
@@ -188,7 +188,7 @@ public sealed class KnightFalls : OrchardRecipe
 
 ## See also
 
-- [Write an adapter](/scion/trials/adapters/)
-- [TrialSession](/scion/trials/session/)
-- [Checks](/scion/trials/checks/)
-- [Recipes API](/scion/reference/api/recipes/)
+- [Write an adapter](/scion/41664431a8f5/trials/adapters/)
+- [TrialSession](/scion/41664431a8f5/trials/session/)
+- [Checks](/scion/41664431a8f5/trials/checks/)
+- [Recipes API](/scion/41664431a8f5/reference/api/recipes/)

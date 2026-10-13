@@ -43,7 +43,7 @@ dotnet scion build test
 
 The CLI finds the Unity editor of the project and builds in batchmode. With the editor open and the
 `com.unity.pipeline` package installed, it builds through the open editor instead; with the editor open and no
-pipeline, it stops with [`editor_open`](/scion/reference/errors/#editor_open).
+pipeline, it stops with [`editor_open`](/scion/41664431a8f5/reference/errors/#editor_open).
 
 ### 2. Build the final player
 
@@ -86,7 +86,7 @@ public static class OrchardBuilds
 | none | final build | Call mode: anchors call `__ScionGenerated.D_<id>` directly. No slots, no lab. |
 | `SCION_SLOTS` | test build | Slot mode: one delegate field per anchor, `Injection`, the control server. Needs Mono. |
 | `SCION_TRIALS` | test build | `Scion.Trials`, the virtual clock and screen, `SeededRandom`, captures. |
-| `SCION_NETCLOCK` | you, optional | Moves the Netcode tick onto the virtual clock ([Netcode clock](/scion/determinism/netclock/)). |
+| `SCION_NETCLOCK` | you, optional | Moves the Netcode tick onto the virtual clock ([Netcode clock](/scion/41664431a8f5/determinism/netclock/)). |
 | `SCION_VERBOSE` | you, optional | Extra `[Scion]` log lines from the weaver and the session. Off by default. |
 
 Code that uses test-only types sits inside the matching define:
@@ -124,7 +124,7 @@ active profile unless `BuildPlayerOptions.scenes` is set.
 | File | Content |
 |---|---|
 | `<out>/<player_name>.app` (or `.exe`) | The player. `player_name` comes from `build.player_name` in `ScionSettings.json`. |
-| `<out>/scion-build.json` | Build id, git commit, Unity version, backend, defines, slots and recipe names ([scion-build.json](/scion/reference/files/scion-build-json/)). |
+| `<out>/scion-build.json` | Build id, git commit, Unity version, backend, defines, slots and recipe names ([scion-build.json](/scion/41664431a8f5/reference/files/scion-build-json/)). |
 
 `build_id` is the first 12 hex digits of the SHA-256 of the main game assembly as built. Injection and baselines use
 it to tell builds apart.
@@ -157,7 +157,7 @@ dotnet scion trial run --build /tmp/orchard-test/Orchard.app
 
 ## See also
 
-- [build test, build final](/scion/cli/build/)
-- [Editor API](/scion/reference/api/editor/)
-- [scion-build.json](/scion/reference/files/scion-build-json/)
-- [SCN120-SCN131](/scion/reference/diagnostics/builds-and-injection/)
+- [build test, build final](/scion/41664431a8f5/cli/build/)
+- [Editor API](/scion/41664431a8f5/reference/api/editor/)
+- [scion-build.json](/scion/41664431a8f5/reference/files/scion-build-json/)
+- [SCN120-SCN131](/scion/41664431a8f5/reference/diagnostics/builds-and-injection/)

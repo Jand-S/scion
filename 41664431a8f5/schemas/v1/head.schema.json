@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://jand-s.github.io/scion/schemas/v1/head.schema.json",
+  "$id": "https://jand-s.github.io/scion/41664431a8f5/schemas/v1/head.schema.json",
   "title": "Judge head (head.json)",
   "description": "scion/judge/heads/<head>/head.json: one question the Judge answers, its eyes, version and calibration.",
   "type": "object",

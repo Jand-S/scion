@@ -62,7 +62,7 @@ measurement or 600 MB.
 | `checks[]` | `id`, `status`, `detail`, `hint`. |
 | `suggested_copies` | For `trial run -j`. |
 
-Schema: `https://jand-s.github.io/scion/schemas/v1/cli/doctor.schema.json`.
+Schema: `https://jand-s.github.io/scion/41664431a8f5/schemas/v1/cli/doctor.schema.json`.
 
 ## Exit codes
 
@@ -98,6 +98,6 @@ dotnet scion doctor --format json | jq '.checks[] | select(.status != "ok")'
 
 ## See also
 
-- [Install](/scion/start/install/)
-- [Parallel copies](/scion/trials/parallel/)
-- [Find non-determinism](/scion/determinism/diagnose/)
+- [Install](/scion/41664431a8f5/start/install/)
+- [Parallel copies](/scion/41664431a8f5/trials/parallel/)
+- [Find non-determinism](/scion/41664431a8f5/determinism/diagnose/)

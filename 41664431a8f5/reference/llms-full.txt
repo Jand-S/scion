@@ -16,7 +16,7 @@ and the analyzers inside Unity. This page lists every key, plus scripting define
 ## scion.json
 
 ```json
-{"$schema":"https://jand-s.github.io/scion/schemas/v1/scion-config.schema.json","schema_version":1,"unity_project":".","grafts":{"promoted":"Assets/Orchard/Grafts","staging":"scion/grafts"},"trials":{"recipes_staging":"scion/recipes","out":".scion/runs","baselines":"scion/baselines","keep_runs":10,"defaults":{"copies":6,"rounds":1,"headless":true,"size":"1280x720","seed":1,"timeout_s":300},"player_args":[],"host_args":["-orchard-host"],"client_args":["-orchard-join","localhost"],"port_arg":"-orchard-port"},"rule_paths":["Assets/Orchard/Core","Assets/Orchard/Data"],"log_allow":[],"evaluators":[],"build":{"test":{"method":"Scion.Editor.ScionBuild.TestFromCommandLine","output":{"osx":".scion/builds/test/Orchard.app","win":".scion/builds/test/Orchard.exe","linux":".scion/builds/test/Orchard.x86_64"}},"final":{"method":"Scion.Editor.ScionBuild.FinalFromCommandLine","output":{"osx":".scion/builds/final/Orchard.app","win":".scion/builds/final/Orchard.exe","linux":".scion/builds/final/Orchard.x86_64"}}},"specs":{"project":"Trials/Specs/Orchard.Specs/Orchard.Specs.csproj"},"judge":{"dir":"scion/judge","eyes":"siglip2-so400m","cache":".scion/judge"}}
+{"$schema":"https://jand-s.github.io/scion/41664431a8f5/schemas/v1/scion-config.schema.json","schema_version":1,"unity_project":".","grafts":{"promoted":"Assets/Orchard/Grafts","staging":"scion/grafts"},"trials":{"recipes_staging":"scion/recipes","out":".scion/runs","baselines":"scion/baselines","keep_runs":10,"defaults":{"copies":6,"rounds":1,"headless":true,"size":"1280x720","seed":1,"timeout_s":300},"player_args":[],"host_args":["-orchard-host"],"client_args":["-orchard-join","localhost"],"port_arg":"-orchard-port"},"rule_paths":["Assets/Orchard/Core","Assets/Orchard/Data"],"log_allow":[],"evaluators":[],"build":{"test":{"method":"Scion.Editor.ScionBuild.TestFromCommandLine","output":{"osx":".scion/builds/test/Orchard.app","win":".scion/builds/test/Orchard.exe","linux":".scion/builds/test/Orchard.x86_64"}},"final":{"method":"Scion.Editor.ScionBuild.FinalFromCommandLine","output":{"osx":".scion/builds/final/Orchard.app","win":".scion/builds/final/Orchard.exe","linux":".scion/builds/final/Orchard.x86_64"}}},"specs":{"project":"Trials/Specs/Orchard.Specs/Orchard.Specs.csproj"},"judge":{"dir":"scion/judge","eyes":"siglip2-so400m","cache":".scion/judge"}}
 ```
 
 | Key | Type | Default | Meaning |
@@ -47,7 +47,7 @@ and the analyzers inside Unity. This page lists every key, plus scripting define
 | `build.test.output.<os>`, `build.final.output.<os>` | path | `.scion/builds/test\|final/<Name>` | Build outputs per OS (`osx`, `win`, `linux`). |
 | `specs.project` | path or null | null | The specs project. |
 | `judge.dir` | path | `scion/judge` | Heads, questions, votes. |
-| `judge.eyes` | string | `siglip2-so400m` | The eye model ([Models and licenses](/scion/judge/models/)). |
+| `judge.eyes` | string | `siglip2-so400m` | The eye model ([Models and licenses](/scion/41664431a8f5/judge/models/)). |
 | `judge.cache` | path | `.scion/judge` | Embeddings cache. |
 
 Paths are relative to `scion.json`; `~` expands to the home folder.
@@ -101,10 +101,10 @@ Unity does not track this file: recompile the affected assemblies after editing 
 
 ## See also
 
-- [JSON Schemas](/scion/reference/schemas/)
-- [CLI overview](/scion/cli/)
-- [Build modes](/scion/grafts/build-modes/)
-- [Player command line](/scion/reference/player-flags/)
+- [JSON Schemas](/scion/41664431a8f5/reference/schemas/)
+- [CLI overview](/scion/41664431a8f5/cli/)
+- [Build modes](/scion/41664431a8f5/grafts/build-modes/)
+- [Player command line](/scion/41664431a8f5/reference/player-flags/)
 
 ---
 
@@ -259,10 +259,10 @@ An integer K, 2 to 16. Run K arenas in this process. CLI: `--mosaic`.
 
 ## See also
 
-- [trial run](/scion/cli/trial-run/)
-- [Exit codes](/scion/reference/exit-codes/)
-- [How trials work](/scion/trials/overview/)
-- [run.json](/scion/reference/files/run-json/)
+- [trial run](/scion/41664431a8f5/cli/trial-run/)
+- [Exit codes](/scion/41664431a8f5/reference/exit-codes/)
+- [How trials work](/scion/41664431a8f5/trials/overview/)
+- [run.json](/scion/41664431a8f5/reference/files/run-json/)
 
 ---
 
@@ -304,9 +304,9 @@ A player started without `-scion-quit` does not exit; its code is in `run.json` 
 
 ## See also
 
-- [Error and warning codes](/scion/reference/errors/)
-- [CLI overview](/scion/cli/)
-- [What to do next](/scion/agents/next-action/)
+- [Error and warning codes](/scion/41664431a8f5/reference/errors/)
+- [CLI overview](/scion/41664431a8f5/cli/)
+- [What to do next](/scion/41664431a8f5/agents/next-action/)
 
 ---
 
@@ -316,7 +316,7 @@ A player started without `-scion-quit` does not exit; its code is in `run.json` 
 
 Errors appear in `error.code` of the CLI envelope and of the player's `run.json` (exit codes 2 and 3), or in the
 `error.code` of a control-protocol response. Warnings appear in `warnings[].code` and never change the exit code.
-Diagnostics (`SCNxxx`) are listed separately in [Diagnostics](/scion/reference/diagnostics/). Each entry gives the
+Diagnostics (`SCNxxx`) are listed separately in [Diagnostics](/scion/41664431a8f5/reference/diagnostics/). Each entry gives the
 exit code, where it comes from, the cause and what to do.
 
 ## CLI errors
@@ -361,7 +361,7 @@ Exit 2, CLI. No `scion.json` in the current folder or above. Run `dotnet scion i
 ### config_invalid
 
 Exit 3, CLI. `scion.json`, `scion.local.json` or `ScionSettings.json` does not match its schema. The message names the
-key; validate with the [JSON Schemas](/scion/reference/schemas/).
+key; validate with the [JSON Schemas](/scion/41664431a8f5/reference/schemas/).
 
 ### build_not_found
 
@@ -427,7 +427,7 @@ Exit 3, CLI. `--warm`, `graft inject` or `restore` found no live copy of this bu
 ### no_simulation
 
 Exit 3, CLI. A command needs the rules as an `ISimulation` (multiverse, balance specs, hunt, metamorphic) and none is
-registered. See [Core API](/scion/reference/api/core/).
+registered. See [Core API](/scion/41664431a8f5/reference/api/core/).
 
 ### not_forkable
 
@@ -544,12 +544,12 @@ A `result.json` is missing or invalid. The copy probably crashed; read its log.
 
 ### frame_jitter
 
-Frame counts differ by one between rounds. Usually the Netcode tick; see [Netcode clock](/scion/determinism/netclock/).
+Frame counts differ by one between rounds. Usually the Netcode tick; see [Netcode clock](/scion/41664431a8f5/determinism/netclock/).
 
 ### px_unstable
 
 Pixel hashes vary between rounds of this run, so `px_changed` is noise. See
-[Particles, animators, UI and physics](/scion/determinism/control/).
+[Particles, animators, UI and physics](/scion/41664431a8f5/determinism/control/).
 
 ### baseline_unreadable
 
@@ -581,10 +581,10 @@ The CLI and the package have different versions. Install the same version of bot
 
 ## See also
 
-- [Exit codes](/scion/reference/exit-codes/)
-- [What to do next](/scion/agents/next-action/)
-- [Diagnostics](/scion/reference/diagnostics/)
-- [Control protocol](/scion/reference/control-protocol/)
+- [Exit codes](/scion/41664431a8f5/reference/exit-codes/)
+- [What to do next](/scion/41664431a8f5/agents/next-action/)
+- [Diagnostics](/scion/41664431a8f5/reference/diagnostics/)
+- [Control protocol](/scion/41664431a8f5/reference/control-protocol/)
 
 ---
 
@@ -674,11 +674,11 @@ every suppression with its justification.
 
 ## See also
 
-- [SCN001-SCN005](/scion/reference/diagnostics/standard/)
-- [SCN101-SCN114](/scion/reference/diagnostics/grafts/)
-- [SCN120-SCN131](/scion/reference/diagnostics/builds-and-injection/)
-- [SCN201-SCN203](/scion/reference/diagnostics/trials/)
-- [SCN301-SCN307](/scion/reference/diagnostics/determinism/)
+- [SCN001-SCN005](/scion/41664431a8f5/reference/diagnostics/standard/)
+- [SCN101-SCN114](/scion/41664431a8f5/reference/diagnostics/grafts/)
+- [SCN120-SCN131](/scion/41664431a8f5/reference/diagnostics/builds-and-injection/)
+- [SCN201-SCN203](/scion/41664431a8f5/reference/diagnostics/trials/)
+- [SCN301-SCN307](/scion/41664431a8f5/reference/diagnostics/determinism/)
 
 ---
 
@@ -686,7 +686,7 @@ every suppression with its justification.
 
 # SCN001-SCN005
 
-These analyzers enforce the [Scion Standard](/scion/standard/overview/). SCN001, SCN002, SCN004 and SCN005 apply only
+These analyzers enforce the [Scion Standard](/scion/41664431a8f5/standard/overview/). SCN001, SCN002, SCN004 and SCN005 apply only
 to rule code (the assemblies in `analyzers.rule_assemblies` of `ScionSettings.json`); SCN003 applies to graft code.
 With no `analyzers` section they report nothing.
 
@@ -788,10 +788,10 @@ a range.`
 
 ## See also
 
-- [Rules R1-R8](/scion/standard/rules/)
-- [Enforcement](/scion/standard/enforcement/)
-- [Grafts are visual only](/scion/grafts/visual-only/)
-- [Diagnostics](/scion/reference/diagnostics/)
+- [Rules R1-R8](/scion/41664431a8f5/standard/rules/)
+- [Enforcement](/scion/41664431a8f5/standard/enforcement/)
+- [Grafts are visual only](/scion/41664431a8f5/grafts/visual-only/)
+- [Diagnostics](/scion/41664431a8f5/reference/diagnostics/)
 
 ---
 
@@ -892,7 +892,7 @@ public static void After(HitPresenter presenter, HitEvent e) { }
 async, RPCs, structs and out parameters have no anchor).`
 
 **Cause.** The target is a constructor, abstract, generic, in a struct, an iterator, `async`, a Netcode RPC, has an
-`out` or pointer parameter, returns by reference, or is otherwise ineligible ([Anchors](/scion/grafts/anchors/)).
+`out` or pointer parameter, returns by reference, or is otherwise ineligible ([Anchors](/scion/41664431a8f5/grafts/anchors/)).
 
 **Fix.** Target the plain method the iterator, `async` method or RPC calls.
 
@@ -1025,10 +1025,10 @@ Scion.Runtime under SCION_TRIALS, or fix TrialsReads in ScionWeaver.cs.`
 
 ## See also
 
-- [Write a graft](/scion/grafts/write/)
-- [Call and Call\<T\>](/scion/grafts/call-context/)
-- [Anchors](/scion/grafts/anchors/)
-- [Diagnostics](/scion/reference/diagnostics/)
+- [Write a graft](/scion/41664431a8f5/grafts/write/)
+- [Call and Call\<T\>](/scion/41664431a8f5/grafts/call-context/)
+- [Anchors](/scion/41664431a8f5/grafts/anchors/)
+- [Diagnostics](/scion/41664431a8f5/reference/diagnostics/)
 
 ---
 
@@ -1096,10 +1096,10 @@ and the build.`
 
 ## See also
 
-- [Build modes](/scion/grafts/build-modes/)
-- [Live injection](/scion/grafts/injection/)
-- [Versioning and compatibility](/scion/contribute/compatibility/)
-- [Diagnostics](/scion/reference/diagnostics/)
+- [Build modes](/scion/41664431a8f5/grafts/build-modes/)
+- [Live injection](/scion/41664431a8f5/grafts/injection/)
+- [Versioning and compatibility](/scion/41664431a8f5/contribute/compatibility/)
+- [Diagnostics](/scion/41664431a8f5/reference/diagnostics/)
 
 ---
 
@@ -1163,9 +1163,9 @@ wins.`
 
 ## See also
 
-- [Write a recipe](/scion/trials/recipes/)
-- [Write an adapter](/scion/trials/adapters/)
-- [Diagnostics](/scion/reference/diagnostics/)
+- [Write a recipe](/scion/41664431a8f5/trials/recipes/)
+- [Write an adapter](/scion/41664431a8f5/trials/adapters/)
+- [Diagnostics](/scion/41664431a8f5/reference/diagnostics/)
 
 ---
 
@@ -1278,10 +1278,10 @@ Determinism.SeedFor).`
 
 ## See also
 
-- [Find non-determinism](/scion/determinism/diagnose/)
-- [diagnose](/scion/cli/diagnose/)
-- [Clock, screen and random](/scion/determinism/clock-and-screen/)
-- [Diagnostics](/scion/reference/diagnostics/)
+- [Find non-determinism](/scion/41664431a8f5/determinism/diagnose/)
+- [diagnose](/scion/41664431a8f5/cli/diagnose/)
+- [Clock, screen and random](/scion/41664431a8f5/determinism/clock-and-screen/)
+- [Diagnostics](/scion/41664431a8f5/reference/diagnostics/)
 
 ---
 

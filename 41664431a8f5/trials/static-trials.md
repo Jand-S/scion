@@ -135,10 +135,10 @@ dotnet scion trial show UnitGallery --changed --grid
 
 ### HUD states at two resolutions
 
-See [Capture every HUD state](/scion/cookbook/hud-states/).
+See [Capture every HUD state](/scion/41664431a8f5/cookbook/hud-states/).
 
 ## See also
 
-- [Capture every HUD state](/scion/cookbook/hud-states/)
-- [Audit level rooms](/scion/cookbook/level-rooms/)
-- [Adapters API](/scion/reference/api/adapters/)
+- [Capture every HUD state](/scion/41664431a8f5/cookbook/hud-states/)
+- [Audit level rooms](/scion/41664431a8f5/cookbook/level-rooms/)
+- [Adapters API](/scion/41664431a8f5/reference/api/adapters/)

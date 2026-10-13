@@ -27,7 +27,7 @@ of good, different options, ready to save as presets.
 
 ## Before you begin
 
-- The tunables, with ranges ([Tunables and presets](/scion/grafts/tunables/)).
+- The tunables, with ranges ([Tunables and presets](/scion/41664431a8f5/grafts/tunables/)).
 - A spec that says what is acceptable (`Visual(...).Expect(...)`), and a judge head for the taste part.
 
 ## Steps
@@ -97,6 +97,6 @@ dotnet scion search run StrongerCrits --niches flash_delta_l,hit_stop_ms
 
 ## See also
 
-- [hunt, search](/scion/cli/hunt-and-search/)
-- [Tunables and presets](/scion/grafts/tunables/)
-- [Taste heads and feel presets](/scion/judge/presets/)
+- [hunt, search](/scion/41664431a8f5/cli/hunt-and-search/)
+- [Tunables and presets](/scion/41664431a8f5/grafts/tunables/)
+- [Taste heads and feel presets](/scion/41664431a8f5/judge/presets/)

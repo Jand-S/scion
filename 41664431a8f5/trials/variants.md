@@ -57,7 +57,7 @@ protected override IEnumerable<TrialArgs> Variants()
 ```
 
 `Variants()` replaces the `[Vary]` grid when it returns non-null. Keys are field or property names of the recipe, or
-`tunable:<Type>.<Field>` ([Tunables and presets](/scion/grafts/tunables/)).
+`tunable:<Type>.<Field>` ([Tunables and presets](/scion/41664431a8f5/grafts/tunables/)).
 
 ### 3. Declare modes
 
@@ -150,7 +150,7 @@ dotnet scion trial run KnightFalls --seeds 1-200 -j 8
 
 ## See also
 
-- [Write a recipe](/scion/trials/recipes/)
-- [trial list](/scion/cli/trial-list/)
-- [recipes.json](/scion/reference/files/recipes-json/)
-- [Recipes API](/scion/reference/api/recipes/)
+- [Write a recipe](/scion/41664431a8f5/trials/recipes/)
+- [trial list](/scion/41664431a8f5/cli/trial-list/)
+- [recipes.json](/scion/41664431a8f5/reference/files/recipes-json/)
+- [Recipes API](/scion/41664431a8f5/reference/api/recipes/)

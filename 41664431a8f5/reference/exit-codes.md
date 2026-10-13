@@ -49,6 +49,6 @@ A player started without `-scion-quit` does not exit; its code is in `run.json` 
 
 ## See also
 
-- [Error and warning codes](/scion/reference/errors/)
-- [CLI overview](/scion/cli/)
-- [What to do next](/scion/agents/next-action/)
+- [Error and warning codes](/scion/41664431a8f5/reference/errors/)
+- [CLI overview](/scion/41664431a8f5/cli/)
+- [What to do next](/scion/41664431a8f5/agents/next-action/)

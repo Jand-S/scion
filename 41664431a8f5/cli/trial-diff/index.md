@@ -76,6 +76,6 @@ dotnet scion trial diff 20261011-143200/q0 20261011-143200/q3 KnightFalls
 
 ## See also
 
-- [A/B comparisons](/scion/evaluation/ab-comparison/)
-- [Image comparison](/scion/trials/image-comparison/)
-- [Verify determinism](/scion/determinism/verify/)
+- [A/B comparisons](/scion/41664431a8f5/evaluation/ab-comparison/)
+- [Image comparison](/scion/41664431a8f5/trials/image-comparison/)
+- [Verify determinism](/scion/41664431a8f5/determinism/verify/)

@@ -89,7 +89,7 @@ rate players had, and set the bounds from that.
 ### Searching balance
 
 With bounds in a spec, guided search can tune the rules data automatically
-([Guided search](/scion/explore/guided-search/)).
+([Guided search](/scion/41664431a8f5/explore/guided-search/)).
 
 ## Errors
 
@@ -114,6 +114,6 @@ dotnet scion trial run --spec DifficultyCurve --variants base,enemy-hp-90
 
 ## See also
 
-- [Specs](/scion/trials/specs/)
-- [Specs API](/scion/reference/api/specs/)
-- [Core API](/scion/reference/api/core/)
+- [Specs](/scion/41664431a8f5/trials/specs/)
+- [Specs API](/scion/41664431a8f5/reference/api/specs/)
+- [Core API](/scion/41664431a8f5/reference/api/core/)

@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://jand-s.github.io/scion/schemas/v1/control-request.schema.json",
+  "$id": "https://jand-s.github.io/scion/41664431a8f5/schemas/v1/control-request.schema.json",
   "title": "Control request",
   "description": "One request line sent to the control server (one JSON object per line, at most 64 KiB).",
   "oneOf": [

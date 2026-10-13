@@ -98,7 +98,7 @@ one JSON line per cycle until Ctrl-C, then the summary.
 ```
 
 Each command's fields are in its schema: `cli/graft-new`, `cli/graft-check`, `cli/graft-build`, `cli/graft-inject`,
-`cli/graft-restore`, `cli/graft-disable`, `cli/graft-promote`, `cli/graft-watch` ([JSON Schemas](/scion/reference/schemas/)).
+`cli/graft-restore`, `cli/graft-disable`, `cli/graft-promote`, `cli/graft-watch` ([JSON Schemas](/scion/41664431a8f5/reference/schemas/)).
 
 ## Exit codes
 
@@ -113,7 +113,7 @@ Each command's fields are in its schema: `cli/graft-new`, `cli/graft-check`, `cl
 
 | Code | Exit | Cause | Next action |
 |---|---|---|---|
-| `SCN101`-`SCN113` | 1 | Graft rules. | [Graft diagnostics](/scion/reference/diagnostics/grafts/). |
+| `SCN101`-`SCN113` | 1 | Graft rules. | [Graft diagnostics](/scion/41664431a8f5/reference/diagnostics/grafts/). |
 | `SCN130`, `SCN131` | 1 | The DLL does not match the copy's build or ABI. | `graft build` again; same Scion version. |
 | `no_copies` | 3 | No live copy. | `dotnet scion trial serve -j 2`. |
 | `not_supported` | 3 | A copy built without `SCION_SLOTS`. | Use the test build. |
@@ -139,6 +139,6 @@ dotnet scion graft check --strict
 
 ## See also
 
-- [From draft to final build](/scion/grafts/lifecycle/)
-- [Live injection](/scion/grafts/injection/)
-- [Hooks](/scion/agents/hooks/)
+- [From draft to final build](/scion/41664431a8f5/grafts/lifecycle/)
+- [Live injection](/scion/41664431a8f5/grafts/injection/)
+- [Hooks](/scion/41664431a8f5/agents/hooks/)

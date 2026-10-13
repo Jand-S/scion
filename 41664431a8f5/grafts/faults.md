@@ -96,6 +96,6 @@ catch (Exception e) { Faults.Report("Orchard.Presentation.CustomEffect", e); }
 
 ## See also
 
-- [Grafts API](/scion/reference/api/grafts/)
-- [Build modes](/scion/grafts/build-modes/)
-- [telemetry.jsonl](/scion/reference/files/telemetry-jsonl/)
+- [Grafts API](/scion/41664431a8f5/reference/api/grafts/)
+- [Build modes](/scion/41664431a8f5/grafts/build-modes/)
+- [telemetry.jsonl](/scion/41664431a8f5/reference/files/telemetry-jsonl/)

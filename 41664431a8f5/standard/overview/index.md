@@ -67,7 +67,7 @@ depends on nothing of Unity (an assembly with `noEngineReferences: true`).
 |---|---|
 | Core | The rules assembly, listed in `analyzers.rule_assemblies`. |
 | Rule code | Code in the core; follows SCN001, SCN002 and SCN004. |
-| Primitive | One of the standard's building blocks ([Primitives](/scion/standard/primitives/)). |
+| Primitive | One of the standard's building blocks ([Primitives](/scion/41664431a8f5/standard/primitives/)). |
 | Exemplar | A small, compiled, tested example in the project that agents copy. |
 | Completeness test | A test that every enum value has a handler, every enemy a presentation. |
 
@@ -79,7 +79,7 @@ depends on nothing of Unity (an assembly with `noEngineReferences: true`).
 
 ## See also
 
-- [Rules R1-R8](/scion/standard/rules/)
-- [Primitives](/scion/standard/primitives/)
-- [Enforcement](/scion/standard/enforcement/)
-- [Grafts are visual only](/scion/grafts/visual-only/)
+- [Rules R1-R8](/scion/41664431a8f5/standard/rules/)
+- [Primitives](/scion/41664431a8f5/standard/primitives/)
+- [Enforcement](/scion/41664431a8f5/standard/enforcement/)
+- [Grafts are visual only](/scion/41664431a8f5/grafts/visual-only/)

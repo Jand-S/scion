@@ -26,7 +26,7 @@ and the ordering controls `Priority` and `Observe`.
 - Use a graft to add presentation to a game method without editing it: an effect, a sound, a camera move, a HUD
   change, telemetry, a trials mark.
 - Do not use a graft to change a rule (damage, range, turn order, anything in the state hash). Change the core with a
-  `RuleModifier<T>` ([Grafts are visual only](/scion/grafts/visual-only/)).
+  `RuleModifier<T>` ([Grafts are visual only](/scion/41664431a8f5/grafts/visual-only/)).
 
 ## Before you begin
 
@@ -98,8 +98,8 @@ The check runs Roslyn and the weaver rules against the test build, without Unity
 
 ### 5. Try and promote it
 
-Inject it into a running copy ([Live injection](/scion/grafts/injection/)), or promote it and rebuild
-([From draft to final build](/scion/grafts/lifecycle/)).
+Inject it into a running copy ([Live injection](/scion/41664431a8f5/grafts/injection/)), or promote it and rebuild
+([From draft to final build](/scion/41664431a8f5/grafts/lifecycle/)).
 
 ## Reference
 
@@ -118,17 +118,17 @@ public static void After(HitPresenter presenter, HitEvent e) { }
 ```
 
 Both attributes allow multiple use, so one method can hang on several targets. Targets must be declared on the type
-itself: a method inherited from a base class is not found ([SCN103](/scion/reference/diagnostics/grafts/#scn103)).
+itself: a method inherited from a base class is not found ([SCN103](/scion/41664431a8f5/reference/diagnostics/grafts/#scn103)).
 
 ### Method shape
 
 | Rule | Diagnostic |
 |---|---|
-| `static void` | [SCN101](/scion/reference/diagnostics/grafts/#scn101) |
+| `static void` | [SCN101](/scion/41664431a8f5/reference/diagnostics/grafts/#scn101) |
 | `public` or `internal` (injected drafts: `public`, in a `public` type) | SCN101 |
 | Not generic, not in a generic type, not in a private or protected nested type | SCN101 |
-| Compiled into the target's assembly (folder with an `.asmref`) | [SCN102](/scion/reference/diagnostics/grafts/#scn102) |
-| Never called by game code | [SCN110](/scion/reference/diagnostics/grafts/#scn110) |
+| Compiled into the target's assembly (folder with an `.asmref`) | [SCN102](/scion/41664431a8f5/reference/diagnostics/grafts/#scn102) |
+| Never called by game code | [SCN110](/scion/41664431a8f5/reference/diagnostics/grafts/#scn110) |
 
 Name the class after the graft (`CritShake`) and the method after its side (`Before` or `After`). The graft's
 identity is its full name, `Orchard.Grafts.CritShake.After`: it orders ties, names the graft in `Fx` telemetry and
@@ -150,8 +150,8 @@ public static void After(HitPresenter presenter) => hits++;   // only the instan
 ```
 
 **Overloads.** The overload whose full signature matches wins; otherwise the single overload the prefix matches.
-When a prefix matches two or more overloads, it is [SCN112](/scion/reference/diagnostics/grafts/#scn112): declare all
-parameters. A signature that matches nothing is [SCN104](/scion/reference/diagnostics/grafts/#scn104), whose hint
+When a prefix matches two or more overloads, it is [SCN112](/scion/41664431a8f5/reference/diagnostics/grafts/#scn112): declare all
+parameters. A signature that matches nothing is [SCN104](/scion/41664431a8f5/reference/diagnostics/grafts/#scn104), whose hint
 gives the expected signature.
 
 **Values.** A graft sees the current parameter values: if the body reassigns a parameter, an `[After]` sees the new
@@ -174,7 +174,7 @@ public static void After(HitPresenter presenter, HitEvent e) { }
 
 `Observe = true` (only on `[Before]`) marks an observer: a graft that only watches. Observers always run, before
 every `[Before]` that may skip the target, ordered by `Priority` among themselves, and may not call `Skip()` or
-`Return()` ([SCN108](/scion/reference/diagnostics/grafts/#scn108)). Use one when the graft must see every call,
+`Return()` ([SCN108](/scion/41664431a8f5/reference/diagnostics/grafts/#scn108)). Use one when the graft must see every call,
 including calls another graft skips, such as a trials mark:
 
 ```csharp
@@ -204,7 +204,7 @@ If the target throws, the `[After]` grafts do not run.
 | `SCN112` | compile error | A prefix matches several overloads. | Declare all parameters. |
 
 In `graft check` and `build test` these come back in `diagnostics[]` or `errors[]` with exit code 1. The full list is
-in [Graft diagnostics](/scion/reference/diagnostics/grafts/).
+in [Graft diagnostics](/scion/41664431a8f5/reference/diagnostics/grafts/).
 
 ## Examples
 
@@ -230,7 +230,7 @@ Both targets share the parameter list `(int amount, Vector3 at)`, so one method 
 
 ## See also
 
-- [Call and Call\<T\>](/scion/grafts/call-context/)
-- [Anchors](/scion/grafts/anchors/)
-- [graft (CLI)](/scion/cli/graft/)
-- [Grafts API](/scion/reference/api/grafts/)
+- [Call and Call\<T\>](/scion/41664431a8f5/grafts/call-context/)
+- [Anchors](/scion/41664431a8f5/grafts/anchors/)
+- [graft (CLI)](/scion/41664431a8f5/cli/graft/)
+- [Grafts API](/scion/41664431a8f5/reference/api/grafts/)

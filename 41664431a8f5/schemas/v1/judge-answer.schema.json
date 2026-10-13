@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://jand-s.github.io/scion/schemas/v1/judge-answer.schema.json",
+  "$id": "https://jand-s.github.io/scion/41664431a8f5/schemas/v1/judge-answer.schema.json",
   "title": "Judge answer (eval-out.json)",
   "description": "Answers per item; the output of trial eval evaluators and of judge run.",
   "type": "object",

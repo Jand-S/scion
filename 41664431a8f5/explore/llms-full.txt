@@ -23,8 +23,8 @@ balance change does to a real match.
 ## Before you begin
 
 - Adoption level 3: the rules registered as an `ISimulation`, deterministic in plain .NET
-  ([Find non-determinism](/scion/determinism/diagnose/)).
-- A captured match ([Turn any match into a recipe](/scion/trials/captured-matches/)).
+  ([Find non-determinism](/scion/41664431a8f5/determinism/diagnose/)).
+- A captured match ([Turn any match into a recipe](/scion/41664431a8f5/trials/captured-matches/)).
 
 ## Steps
 
@@ -87,7 +87,7 @@ Steps 1 to 4 run in plain .NET, in parallel, in milliseconds per turn. Only `--m
 | `no_simulation` | 3 | No `[assembly: Simulation]`. | Register an `ISimulation`. |
 | `not_forkable` | 3 | The simulation does not implement `ISaveable`. | Implement `Save` and `Load` on the state. |
 | `no_match` | 2 | The match file or a variant does not exist. | `trial list` shows captured matches. |
-| variant `diverged` with `grafts` | 1 | A graft changed rules. | Move the change to the core ([Grafts are visual only](/scion/grafts/visual-only/)). |
+| variant `diverged` with `grafts` | 1 | A graft changed rules. | Move the change to the core ([Grafts are visual only](/scion/41664431a8f5/grafts/visual-only/)). |
 
 ## Examples
 
@@ -105,10 +105,10 @@ dotnet scion multiverse run knight-dies-to-crit --at-turn 2 --variants bot:aggre
 
 ## See also
 
-- [multiverse (CLI)](/scion/cli/multiverse/)
-- [Turn any match into a recipe](/scion/trials/captured-matches/)
-- [Mosaic](/scion/trials/mosaic/)
-- [Core API](/scion/reference/api/core/)
+- [multiverse (CLI)](/scion/41664431a8f5/cli/multiverse/)
+- [Turn any match into a recipe](/scion/41664431a8f5/trials/captured-matches/)
+- [Mosaic](/scion/41664431a8f5/trials/mosaic/)
+- [Core API](/scion/41664431a8f5/reference/api/core/)
 
 ---
 
@@ -198,9 +198,9 @@ dotnet scion trial loop KnightFalls --from .scion/runs/20261011-143200/q1/Knight
 
 ## See also
 
-- [trial loop](/scion/cli/trial-loop/)
-- [Live injection](/scion/grafts/injection/)
-- [Tune a hit effect](/scion/cookbook/tune-hit-feel/)
+- [trial loop](/scion/41664431a8f5/cli/trial-loop/)
+- [Live injection](/scion/41664431a8f5/grafts/injection/)
+- [Tune a hit effect](/scion/41664431a8f5/cookbook/tune-hit-feel/)
 
 ---
 
@@ -287,9 +287,9 @@ dotnet scion bisect FireballArea --good v1.3.0 --bad v1.4.0 --on hash
 
 ## See also
 
-- [bisect](/scion/cli/bisect/)
-- [Exit codes](/scion/reference/exit-codes/)
-- [Verify determinism](/scion/determinism/verify/)
+- [bisect](/scion/41664431a8f5/cli/bisect/)
+- [Exit codes](/scion/41664431a8f5/reference/exit-codes/)
+- [Verify determinism](/scion/41664431a8f5/determinism/verify/)
 
 ---
 
@@ -368,7 +368,7 @@ the simulator.
 
 | Code | Exit | Cause | Next action |
 |---|---|---|---|
-| `no_simulation` | 3 | No `ISimulation`. | Register one ([Core API](/scion/reference/api/core/)). |
+| `no_simulation` | 3 | No `ISimulation`. | Register one ([Core API](/scion/41664431a8f5/reference/api/core/)). |
 | spec `ok: false` | 1 | A property failed. | Read the seed, turn and field; save the match. |
 
 ## Examples
@@ -387,9 +387,9 @@ s.Metamorphic("heal_then_hit_equals_hit_then_heal", (sim, seed) => HealOrder.Che
 
 ## See also
 
-- [Specs API](/scion/reference/api/specs/)
-- [Core API](/scion/reference/api/core/)
-- [Balance with the simulator](/scion/explore/balance/)
+- [Specs API](/scion/41664431a8f5/reference/api/specs/)
+- [Core API](/scion/41664431a8f5/reference/api/core/)
+- [Balance with the simulator](/scion/41664431a8f5/explore/balance/)
 
 ---
 
@@ -486,9 +486,9 @@ dotnet scion hunt run CoopTurn --budget 10 --seed 42
 
 ## See also
 
-- [hunt, search](/scion/cli/hunt-and-search/)
-- [Turn any match into a recipe](/scion/trials/captured-matches/)
-- [Core API](/scion/reference/api/core/)
+- [hunt, search](/scion/41664431a8f5/cli/hunt-and-search/)
+- [Turn any match into a recipe](/scion/41664431a8f5/trials/captured-matches/)
+- [Core API](/scion/41664431a8f5/reference/api/core/)
 
 ---
 
@@ -508,7 +508,7 @@ of good, different options, ready to save as presets.
 
 ## Before you begin
 
-- The tunables, with ranges ([Tunables and presets](/scion/grafts/tunables/)).
+- The tunables, with ranges ([Tunables and presets](/scion/41664431a8f5/grafts/tunables/)).
 - A spec that says what is acceptable (`Visual(...).Expect(...)`), and a judge head for the taste part.
 
 ## Steps
@@ -578,9 +578,9 @@ dotnet scion search run StrongerCrits --niches flash_delta_l,hit_stop_ms
 
 ## See also
 
-- [hunt, search](/scion/cli/hunt-and-search/)
-- [Tunables and presets](/scion/grafts/tunables/)
-- [Taste heads and feel presets](/scion/judge/presets/)
+- [hunt, search](/scion/41664431a8f5/cli/hunt-and-search/)
+- [Tunables and presets](/scion/41664431a8f5/grafts/tunables/)
+- [Taste heads and feel presets](/scion/41664431a8f5/judge/presets/)
 
 ---
 
@@ -662,7 +662,7 @@ rate players had, and set the bounds from that.
 ### Searching balance
 
 With bounds in a spec, guided search can tune the rules data automatically
-([Guided search](/scion/explore/guided-search/)).
+([Guided search](/scion/41664431a8f5/explore/guided-search/)).
 
 ## Errors
 
@@ -687,6 +687,6 @@ dotnet scion trial run --spec DifficultyCurve --variants base,enemy-hp-90
 
 ## See also
 
-- [Specs](/scion/trials/specs/)
-- [Specs API](/scion/reference/api/specs/)
-- [Core API](/scion/reference/api/core/)
+- [Specs](/scion/41664431a8f5/trials/specs/)
+- [Specs API](/scion/41664431a8f5/reference/api/specs/)
+- [Core API](/scion/41664431a8f5/reference/api/core/)

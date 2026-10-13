@@ -110,7 +110,7 @@ dotnet scion trial run [patterns] [-j N] [--rounds N] [selection options] [captu
 | `mosaic` | K, when used. |
 | `spec` | With `--spec`: `name`, `ok`, `variants[]`, `verdict`. |
 
-Files: [summary.json, summary.tsv, compare.json](/scion/reference/files/summary/).
+Files: [summary.json, summary.tsv, compare.json](/scion/41664431a8f5/reference/files/summary/).
 
 ## Exit codes
 
@@ -136,7 +136,7 @@ Copies are combined with precedence 2 > 3 > 1 > 0.
 | `no_copies` | 3 | `--warm` with no warm copies. | `dotnet scion trial serve -j 2`. |
 | `mosaic_unsupported` | 3 | `--mosaic` and no `IMosaicAdapter`. | Implement it or drop `--mosaic`. |
 | warning `build_stale` | 0 | Sources changed after the build. | Rebuild before trusting the result. |
-| warning `px_unstable` | 0 | Pixels vary between rounds. | See [Verify determinism](/scion/determinism/verify/). |
+| warning `px_unstable` | 0 | Pixels vary between rounds. | See [Verify determinism](/scion/41664431a8f5/determinism/verify/). |
 | warning `shard_ignored` | 0 | `-scion-shard` passed after `--`. | Let the CLI shard. |
 
 ## Examples
@@ -161,8 +161,8 @@ dotnet scion trial run --grafts .scion/grafts/ScionGrafts_51c2.dll
 
 ## See also
 
-- [How trials work](/scion/trials/overview/)
-- [Parallel copies](/scion/trials/parallel/)
-- [summary.json, summary.tsv, compare.json](/scion/reference/files/summary/)
-- [Reading results](/scion/agents/reading-results/)
-- [Player command line](/scion/reference/player-flags/)
+- [How trials work](/scion/41664431a8f5/trials/overview/)
+- [Parallel copies](/scion/41664431a8f5/trials/parallel/)
+- [summary.json, summary.tsv, compare.json](/scion/41664431a8f5/reference/files/summary/)
+- [Reading results](/scion/41664431a8f5/agents/reading-results/)
+- [Player command line](/scion/41664431a8f5/reference/player-flags/)
